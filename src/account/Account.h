@@ -150,8 +150,6 @@ namespace Elastos {
 			bool HasMnemonic() const;
 
 			bool HasPassphrase() const;
-		private:
-			void Init() const;
 
 		private:
 

@@ -1,8 +1,10 @@
 import BigNumber from "bignumber.js";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
-import { Transaction } from "../transactions/Transaction";
-import { bytes_t, json, uint64_t } from "../types";
+import { Transaction, TransactionType } from "../transactions/Transaction";
+import { TransactionOutput } from "../transactions/TransactionOutput";
+import { bytes_t, json, uint32_t, uint64_t } from "../types";
+import { Address } from "../walletcore/Address";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { SubWallet } from "./SubWallet";
 import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./WalletCommon";
@@ -57,86 +59,79 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
 
     void ElastosBaseSubWallet::FlushData() {
         _walletManager->DatabaseFlush();
-    }
+    }*/
 
     //default implement ISubWallet
-    nlohmann::json ElastosBaseSubWallet::GetBasicInfo() const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    public GetBasicInfo(): json {
+        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+
+        return {
+            Info: this._walletManager.getWallet().getBasicInfo(),
+            ChainID: this._info.getChainID()
+        };
+    }
+
+    public getAddresses(index: uint32_t, count: uint32_t, internal: boolean): string[] {
+        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+        //ArgInfo("index: {}", index);
+        //ArgInfo("count: {}", count);
+        //ArgInfo("internal: {}", internal);
+
+        ErrorChecker.CheckParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
+
+        let addresses: Address[] = [];
+        this._walletManager.getWallet().getAddresses(addresses, index, count, internal);
+
+        let addressStrings: string[] = [];
+        for (let address of addresses)
+            addressStrings.push(address.String());
+
+        //ArgInfo("r => {}", j.dump());
+
+        return addressStrings;
+    }
+
+    public getPublicKeys(index: uint32_t, count: uint32_t, internal: boolean): json {
+        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+        //ArgInfo("index: {}", index);
+        //ArgInfo("count: {}", count);
+        //ArgInfo("internal: {}", internal);
+
+        ErrorChecker.CheckParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
 
         nlohmann::json j;
-        j["Info"] = _walletManager->GetWallet()->GetBasicInfo();
-        j["ChainID"] = _info->GetChainID();
+        this._walletManager.getWallet().getPublickeys(j, index, count, internal);
 
-        ArgInfo("r => {}", j.dump());
+        //ArgInfo("r => {}", j.dump());
         return j;
     }
 
-    nlohmann::json ElastosBaseSubWallet::GetAddresses(uint32_t index, uint32_t count, bool internal) const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("index: {}", index);
-        ArgInfo("count: {}", count);
-        ArgInfo("internal: {}", internal);
+    public createTransaction(inputsJson: json, outputsJson: json, fee: string, memo: string): json {
+        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+        //ArgInfo("inputs: {}", inputsJson.dump());
+        //ArgInfo("outputs: {}", outputsJson.dump());
+        //ArgInfo("fee: {}", fee);
+        //ArgInfo("memo: {}", memo);
 
-        ErrorChecker::CheckParam(index + count <= index, Error::InvalidArgument, "index & count overflow");
-
-        AddressArray addresses;
-        _walletManager->GetWallet()->GetAddresses(addresses, index, count, internal);
-
-        nlohmann::json j;
-        for (Address &address : addresses)
-            j.push_back(address.String());
-
-        ArgInfo("r => {}", j.dump());
-
-        return j;
-    }
-
-    nlohmann::json ElastosBaseSubWallet::GetPublicKeys(uint32_t index, uint32_t count, bool internal) const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("index: {}", index);
-        ArgInfo("count: {}", count);
-        ArgInfo("internal: {}", internal);
-
-        ErrorChecker::CheckParam(index + count <= index, Error::InvalidArgument, "index & count overflow");
-
-        nlohmann::json j;
-        _walletManager->GetWallet()->GetPublickeys(j, index, count, internal);
-
-        ArgInfo("r => {}", j.dump());
-        return j;
-    }
-
-    nlohmann::json ElastosBaseSubWallet::CreateTransaction(const nlohmann::json &inputsJson,
-                                                const nlohmann::json &outputsJson,
-                                                const std::string &fee,
-                                                const std::string &memo) {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("inputs: {}", inputsJson.dump());
-        ArgInfo("outputs: {}", outputsJson.dump());
-        ArgInfo("fee: {}", fee);
-        ArgInfo("memo: {}", memo);
-
-        WalletPtr wallet = _walletManager->GetWallet();
+        let wallet = this._walletManager.getWallet();
 
         UTXOSet utxos;
-        UTXOFromJson(utxos, inputsJson);
+        this.UTXOFromJson(utxos, inputsJson);
 
         OutputArray outputs;
-        OutputsFromJson(outputs, outputsJson);
+        this.OutputsFromJson(outputs, outputsJson);
 
-        BigInt feeAmount;
-        feeAmount.setDec(fee);
+        let feeAmount = new BigNumber(fee);
 
-        PayloadPtr payload = PayloadPtr(new TransferAsset());
-        TransactionPtr tx = wallet->CreateTransaction(Transaction::transferAsset,
-                                                      payload, utxos, outputs, memo, feeAmount);
+        let payload = new TransferAsset();
+        let tx = wallet.createTransaction(TransactionType.transferAsset, payload, utxos, outputs, memo, feeAmount);
 
-        nlohmann::json result;
-        EncodeTx(result, tx);
+        let result: json = {};
+        this.encodeTx(result, tx);
 
-        ArgInfo("r => {}", result.dump());
+        //ArgInfo("r => {}", result.dump());
         return result;
-    }*/
+    }
 
     public SignTransaction(tx: json, payPassword: string): json {
         /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
@@ -148,7 +143,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         this._walletManager.GetWallet().SignTransaction(txn, payPassword);
 
         let result: json;
-        this.EncodeTx(result, txn);
+        this.encodeTx(result, txn);
 
         //ArgInfo("r => {}", result.dump());
         return result;
@@ -210,7 +205,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
     }*/
 
     // TODO: result as return value
-    protected EncodeTx(result: json, tx: Transaction) {
+    protected encodeTx(result: json, tx: Transaction) {
         let stream = new ByteStream();
         tx.Serialize(stream);
         const bytes_t & hex = stream.GetBytes();
@@ -293,21 +288,21 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
             utxo.insert(UTXOPtr(new UTXO(hash, n, address, amount)));
         }
         return true;
-    }
+    }*/
 
-    bool ElastosBaseSubWallet::OutputsFromJson(OutputArray &outputs, const nlohmann::json &j) {
-        for (nlohmann::json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
+    private OutputsFromJson(outputs: TransactionOutput[], j: json): json {
+        for (nlohmann:: json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
             BigInt amount;
-            amount.setDec((*it)["Amount"].get<std::string>());
-            ErrorChecker::CheckParam(amount < 0, Error::InvalidArgument, "invalid amount of outputs");
+            amount.setDec((* it)["Amount"].get < std:: string > ());
+            ErrorChecker.CheckParam(amount < 0, Error.Code.InvalidArgument, "invalid amount of outputs");
 
-            Address address((*it)["Address"].get<std::string>());
-            ErrorChecker::CheckParam(!address.Valid(), Error::InvalidArgument, "invalid address of outputs");
+            Address address((* it)["Address"].get < std:: string > ());
+            ErrorChecker.CheckParam(!address.Valid(), Error:: InvalidArgument, "invalid address of outputs");
 
-            OutputPtr output(new TransactionOutput(TransactionOutput(amount, address)));
+            let output = new TransactionOutput(amount, address);
             outputs.push_back(output);
         }
         return true;
-    } */
+    }
 
 }

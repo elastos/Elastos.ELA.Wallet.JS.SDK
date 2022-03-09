@@ -2,9 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { CoinType } from "src/app/wallet/model/coin";
-import { Error } from "../common/ErrorChecker";
 import { bytes_t } from "../types";
+import { CoinType } from "./cointype";
 
 export class Key {
 	private _key: secp256k1_key;
@@ -41,10 +40,10 @@ export class Key {
 	} */
 
 	public setPubKey(type: CoinType, pubKey: bytes_t): boolean {
-		return nullptr != _key.setPubKey(type, pubKey);
+		return null !== this._key.setPubKey(type, pubKey);
 	}
 
-		bytes_t Key:: PubKey(bool compress) const {
+	/* 	bytes_t Key:: PubKey(bool compress) const {
 	return _key.getPubKey(compress);
 		}
 
@@ -126,14 +125,14 @@ if (nullptr != sig) {
 return result;
 		}
 
-        bytes_t Key:: SignDER(const uint256 & md) const {
+				bytes_t Key:: SignDER(const uint256 & md) const {
 	bytes_t sig;
 
 ErrorChecker:: CheckLogic(_key.getKey() == nullptr, Error:: Sign, "invalid key for signing");
 
-            unsigned int sigLen = ECDSA_size(_key.getKey());
+						unsigned int sigLen = ECDSA_size(_key.getKey());
 sig.resize(sigLen);
-            int r = ECDSA_sign(0, md.begin(), md.size(), sig.data(), & sigLen, _key.getKey());
+						int r = ECDSA_sign(0, md.begin(), md.size(), sig.data(), & sigLen, _key.getKey());
 if (r != 1)
 	ErrorChecker:: ThrowLogicException(Error:: Sign, "Sign DER fail");
 
@@ -142,7 +141,7 @@ sig.resize(sigLen);
 return sig;
 		}
 
-        bool Key:: VerifyDER(const uint256 & md, const bytes_t & sig) const {
+				bool Key:: VerifyDER(const uint256 & md, const bytes_t & sig) const {
 	bool result = false;
 
 ErrorChecker:: CheckLogic(_key.getKey() == nullptr, Error:: Sign, "invalid key for verify");
@@ -152,6 +151,6 @@ if (1 == ECDSA_verify(0, md.begin(), md.size(), sig.data(), sig.size(), _key.get
 }
 
 return result;
-        }
+				} */
 
-	}
+}

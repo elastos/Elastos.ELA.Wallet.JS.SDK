@@ -26,6 +26,7 @@ import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
 import { bytes_t, json, uint256, uint32_t } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
+import { Key } from "../walletcore/Key";
 import { Account, MAX_MULTISIGN_COSIGNERS, SignType as AccountSignType } from "./Account";
 
 export class SubAccount {

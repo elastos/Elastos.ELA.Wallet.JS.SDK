@@ -20,8 +20,11 @@
  * SOFTWARE.
  */
 
+import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
-import { json } from "../types";
+import { bytes_t, json } from "../types";
+import { Base58 } from "../walletcore/Base58";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 
@@ -32,100 +35,97 @@ export enum SignType {
 
 export class Account {
 	private _localstore: LocalStore;
-	//mutable HDKeychainPtr _xpub, _btcMasterPubKey;
-	//mutable int _cosignerIndex;
-	//mutable HDKeychainPtr _curMultiSigner; // multi sign current wallet signer
-	//mutable HDKeychainArray _allMultiSigners; // including _multiSigner and sorted
-	//mutable bytes_t _ownerPubKey, _requestPubKey;
+	private _xpub: HDKeychain;
+	private _btcMasterPubKey: HDKeychain;
+	private _cosignerIndex: number;
+	private _curMultiSigner: HDKeychain; // multi sign current wallet signer
+	private _allMultiSigners: HDKeychain[]; // including _multiSigner and sorted
+	private _ownerPubKey: bytes_t;
+	private _requestPubKey: bytes_t;
 
-	/*void Account::Init() const {
-		_cosignerIndex = -1;
+	private init() {
+		this._cosignerIndex = -1;
 
-		if (!_localstore->GetOwnerPubKey().empty())
-							_ownerPubKey.setHex(_localstore->GetOwnerPubKey());
-		if (!_localstore->GetRequestPubKey().empty())
-							_requestPubKey.setHex(_localstore->GetRequestPubKey());
+		if (!this._localstore.getOwnerPubKey().empty())
+			this._ownerPubKey.setHex(this._localstore.getOwnerPubKey());
+		if (!this._localstore.getRequestPubKey().empty())
+			this._requestPubKey.setHex(this._localstore.getRequestPubKey());
 
-		bytes_t bytes;
+		let bytes: bytes_t; // TODO: alloc
 
-		const std::vector<PublicKeyRing> &xpubRing = _localstore->GetPublicKeyRing();
-		for (int i = 0; i < (int)xpubRing.size() - 1; ++i) {
-			for (int j = i + 1; j < xpubRing.size(); ++j) {
+		let xpubRing = this._localstore.getPublicKeyRing();
+		for (let i = 0; i < xpubRing.size() - 1; ++i) {
+			for (let j = i + 1; j < xpubRing.size(); ++j) {
 				if (xpubRing[i].GetxPubKey() == xpubRing[j].GetxPubKey()) {
-					ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub in PublicKeyRing");
+					ErrorChecker.ThrowParamException(Error.Code.PubKeyFormat, "Contain same xpub in PublicKeyRing");
 				}
 			}
 		}
 
-					if (!_localstore->GetxPubKey().empty()) {
-							ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetxPubKey(), bytes),
-																			 Error::PubKeyFormat, "xpub decode error");
-							_xpub = HDKeychainPtr(new HDKeychain(CTElastos, bytes));
-					} else {
-							_xpub = nullptr;
-							Log::warn("xpub is empty");
-					}
+		if (!this._localstore.getxPubKey().empty()) {
+			ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getxPubKey(), bytes),
+				Error.Code.PubKeyFormat, "xpub decode error");
+			this._xpub = new HDKeychain(CTElastos, bytes);
+		} else {
+			this._xpub = null;
+			Log.warn("xpub is empty");
+		}
 
-					if (!_localstore->GetxPubKeyBitcoin().empty()) {
-							ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetxPubKeyBitcoin(), bytes),
-																			 Error::PubKeyFormat, "xpubkeyBitcoin decode error");
-							_btcMasterPubKey = HDKeychainPtr(new HDKeychain(CTBitcoin, bytes));
-					} else {
-							_btcMasterPubKey = nullptr;
-							Log::warn("btcMasterPubKey is empty");
-					}
+		/* TODO if (!this._localstore.getxPubKeyBitcoin().empty()) {
+			ErrorChecker:: CheckParam(!Base58:: CheckDecode(_localstore -> GetxPubKeyBitcoin(), bytes),
+				Error:: PubKeyFormat, "xpubkeyBitcoin decode error");
+				this._btcMasterPubKey = HDKeychainPtr(new HDKeychain(CTBitcoin, bytes));
+		} else {
+			this._btcMasterPubKey = nullptr;
+			Log:: warn("btcMasterPubKey is empty");
+		} */
 
-					if (!_localstore->GetxPubKeyHDPM().empty()) {
-							ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetxPubKeyHDPM(), bytes),
-																			 Error::PubKeyFormat, "xpubHDPM decode error");
-							_curMultiSigner = HDKeychainPtr(new HDKeychain(CTElastos, bytes));
-					} else {
-							Log::warn("xpubHDPM is empty");
-					}
+		if (!this._localstore.getxPubKeyHDPM().empty()) {
+			ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getxPubKeyHDPM(), bytes),
+				Error.Code.PubKeyFormat, "xpubHDPM decode error");
+			this._curMultiSigner = new HDKeychain(CTElastos, bytes);
+		} else {
+			Log.warn("xpubHDPM is empty");
+		}
 
-
-		if (_localstore->GetN() > 1) {
-			if (_localstore->DerivationStrategy() == "BIP44") {
-				_curMultiSigner = _xpub;
-				for (size_t i = 0; i < _localstore->GetPublicKeyRing().size(); ++i) {
+		if (this._localstore.getN() > 1) {
+			if (this._localstore.derivationStrategy() == "BIP44") {
+				this._curMultiSigner = _xpub;
+				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
 					bytes_t xpubBytes;
-					ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetPublicKeyRing()[i].GetxPubKey(), xpubBytes),
-											 Error::PubKeyFormat, "xpub decode error");
-					HDKeychainPtr xpub(new HDKeychain(CTElastos, xpubBytes));
-					_allMultiSigners.push_back(xpub);
+					ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), xpubBytes),
+						Error.Code.PubKeyFormat, "xpub decode error");
+					let xpub = new HDKeychain(CTElastos, xpubBytes);
+					this._allMultiSigners.push_back(xpub);
 				}
-			} else if (_localstore->DerivationStrategy() == "BIP45") {
-				HDKeychainArray sortedSigners;
-				for (size_t i = 0; i < _localstore->GetPublicKeyRing().size(); ++i) {
-					ErrorChecker::CheckLogic(
-						!Base58::CheckDecode(_localstore->GetPublicKeyRing()[i].GetxPubKey(), bytes),
-						Error::PubKeyFormat, "xpub HDPM decode error");
-					HDKeychainPtr xpub(new HDKeychain(CTElastos, bytes));
-					sortedSigners.push_back(xpub);
+			} else if (this._localstore.derivationStrategy() == "BIP45") {
+				let sortedSigners: HDKeychain[] = [];
+				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
+					ErrorChecker.CheckLogic(
+						!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), bytes),
+						Error.Code.PubKeyFormat, "xpub HDPM decode error");
+					let xpub = new HDKeychain(CTElastos, bytes);
+					sortedSigners.push(xpub);
 				}
 
-				std::sort(sortedSigners.begin(), sortedSigners.end(),
-							[](const HDKeychainPtr &a, const HDKeychainPtr &b) {
-								return a->pubkey().getHex() < b->pubkey().getHex();
-							});
+				sortedSigners.sort((a, b) => {
+					// WAS return a -> pubkey().getHex() < b -> pubkey().getHex();
+					return a.pubkey().getHex().localCompare(b.pubkey().getHex());
+				})
 
-				for (size_t i = 0; i < sortedSigners.size(); ++i) {
-					HDKeychainPtr tmp(new HDKeychain(sortedSigners[i]->getChild((uint32_t) i)));
-					if (_curMultiSigner && _cosignerIndex == -1 && *_curMultiSigner == *sortedSigners[i]) {
-						_curMultiSigner = tmp;
-						_cosignerIndex = (int)i;
+				for (let i = 0; i < sortedSigners.length; ++i) {
+					let tmp = new HDKeychain(sortedSigners[i].getChild(i));
+					if (this._curMultiSigner && this._cosignerIndex == -1 && * _curMultiSigner == * sortedSigners[i]) {
+						this._curMultiSigner = tmp;
+						this._cosignerIndex = i;
 					}
-					_allMultiSigners.push_back(tmp);
+					this._allMultiSigners.push_back(tmp);
 				}
 			}
 		}
 	}
 
-	Account::~Account() {
-
-	}
-
-	Account::Account(const LocalStorePtr &store) :
+	/*Account::Account(const LocalStorePtr &store) :
 		_localstore(store) {
 		Init();
 	}
@@ -424,32 +424,32 @@ export class Account {
 		_localstore->SetRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
 
 		Init();
+	}*/
+
+	public RequestPubKey(): bytes_t {
+		return this._requestPubKey;
 	}
 
-	bytes_t Account::RequestPubKey() const {
-		return _requestPubKey;
-	}
-
-	HDKeychainPtr Account::RootKey(const std::string &payPasswd) const {
-		if (_localstore->Readonly()) {
-			ErrorChecker::ThrowLogicException(Error::Key, "Readonly wallet without prv key");
+	public rootKey(payPasswd: string): HDKeychain {
+		if (this._localstore.readonly()) {
+			ErrorChecker.ThrowLogicException(Error.Code.Key, "Readonly wallet without prv key");
 		}
 
-					if (_localstore->GetxPubKeyBitcoin().empty()) {
-							RegenerateKey(payPasswd);
-							Init();
-					}
+		if (this._localstore.getxPubKeyBitcoin().empty()) {
+			this.regenerateKey(payPasswd);
+			this.init();
+		}
 
-		bytes_t extkey = AES::DecryptCCM(_localstore->GetxPrivKey(), payPasswd);
+		let extkey: bytes_t = AES.DecryptCCM(this._localstore.getxPrivKey(), payPasswd);
 
-		HDKeychainPtr key(new HDKeychain(CTElastos, extkey));
+		let key = new HDKeychain(CTElastos, extkey);
 
 		extkey.clean();
 
 		return key;
 	}
 
-	Key Account::RequestPrivKey(const std::string &payPassword) const {
+	/*Key Account::RequestPrivKey(const std::string &payPassword) const {
 		if (_localstore->Readonly()) {
 			ErrorChecker::ThrowLogicException(Error::Key, "Readonly wallet without prv key");
 		}

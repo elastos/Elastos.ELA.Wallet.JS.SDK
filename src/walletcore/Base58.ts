@@ -6,6 +6,8 @@
 //
 // Converted from C++ to Typescript by the Elastos Foundation
 
+import BigNumber from "bignumber.js";
+import { getBNBytes } from "../common/bnutils";
 import { ByteStream } from "../common/bytestream";
 import { bytes_t } from "../types";
 import { SHA256 } from "./sha256";
@@ -29,10 +31,9 @@ export class Base58 {
 	 * @param numeral ASCII string
 	 * @param zeroSymbol Searched character
 	 */
-	public static countLeading0sInString(numeral: string, zeroSymbol: number): number {
+	public static countLeading0sInString(numeral: string, zeroSymbol: string): number {
 		let i = 0;
-		let buf = Buffer.from(numeral, "ascii");
-		for (; (i < buf.length) && (buf[i] == zeroSymbol); i++);
+		for (; (i < numeral.length) && (numeral[i] == zeroSymbol); i++);
 		return i;
 	}
 
@@ -62,43 +63,45 @@ export class Base58 {
 
 		data.writeBytes(checksum);                                             // append checksum
 
-		return Base58.Encode(data);
+		return Base58.encode(data);
 	}
 
-	/*	bool Base58:: CheckDecode(const std:: string & base58check, bytes_t & payload, unsigned int & version) {
-	const char * pchars = DEFAULT_BASE58_CHARS;
-			BigInt bn(base58check, 58, pchars);                                // convert from base58
-			uchar_vector bytes = bn.getBytes();
-	if (bytes.size() < 4) return false;                                     // not enough bytes
-			uchar_vector checksum = uchar_vector(bytes.end() - 4, bytes.end());
-	bytes.assign(bytes.begin(), bytes.end() - 4);                           // split string into payload part and checksum part
-			uchar_vector leading0s(countLeading0s(base58check, pchars[0]), 0); // prepend leading 0's
-	bytes = leading0s + bytes;
-			uchar_vector hashBytes = sha256_2(bytes);
-	hashBytes.assign(hashBytes.begin(), hashBytes.begin() + 4);
-	if (hashBytes != checksum) return false;                                // verify checksum
-	version = bytes[0];
-	payload.assign(bytes.begin() + 1, bytes.end());
-	return true;
+	public checkDecode(base58check: string, payload: bytes_t, version: number = undefined): boolean {
+		const pchars = DEFAULT_BASE58_CHARS;
+
+		// Custom BigNumber constructor with custom alphabet
+		let Base58BigNumber = BigNumber.clone({
+			ALPHABET: pchars
+		})
+
+		let bn = new Base58BigNumber(base58check, 58); // convert from base58
+		let bytes = getBNBytes(bn);
+		if (bytes.length < 4)
+			return false; // not enough bytes
+
+		let checksum = bytes.subarray(bytes.length);
+		bytes = bytes.subarray(0, bytes.length - 4);  // split string into payload part and checksum part
+
+		let leading0s = Buffer.alloc(Base58.countLeading0sInString(base58check, pchars[0]), 0); // prepend leading 0's
+		bytes = Buffer.concat([leading0s, bytes]);
+
+		let hashBytes = SHA256.hashTwice(bytes);
+		hashBytes = hashBytes.subarray(0, 4);
+		if (hashBytes != checksum)
+			return false;
+
+		if (version != undefined) {  // verify checksum
+			version = bytes[0];
+			payload.set(bytes.subarray(1, bytes.length));
+		}
+		else {
+			payload.set(bytes);
+		}
+
+		return true;
 	}
 
-		bool Base58:: CheckDecode(const std:: string & base58check, bytes_t & payload) {
-	const char * pchars = DEFAULT_BASE58_CHARS;
-			BigInt bn(base58check, 58, pchars);                                // convert from base58
-			uchar_vector bytes = bn.getBytes();
-	if (bytes.size() < 4) return false;                                     // not enough bytes
-			uchar_vector checksum = uchar_vector(bytes.end() - 4, bytes.end());
-	bytes.assign(bytes.begin(), bytes.end() - 4);                           // split string into payload part and checksum part
-			uchar_vector leading0s(countLeading0s(base58check, pchars[0]), 0); // prepend leading 0's
-	bytes = leading0s + bytes;
-			uchar_vector hashBytes = sha256_2(bytes);
-	hashBytes.assign(hashBytes.begin(), hashBytes.begin() + 4);
-	if (hashBytes != checksum) return false;                                // verify checksum
-	payload.assign(bytes.begin(), bytes.end());
-	return true;
-	}
-
-	std::string Base58:: Encode(const bytes_t & payload) {
+	/*std::string Base58:: Encode(const bytes_t & payload) {
 	const char * pchars = DEFAULT_BASE58_CHARS;
 	#if 0
 			BigInt bn(payload);
