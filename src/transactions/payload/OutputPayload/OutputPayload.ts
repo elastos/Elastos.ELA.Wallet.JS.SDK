@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { ELAMessage } from "../../../../wallet-sdk/spvmigration/ts/ELAMessage";
-import { bytes_t, json } from "../../../../wallet-sdk/spvmigration/ts/types";
 import { ByteStream } from "../../../common/bytestream";
 import { JsonSerializer } from "../../../common/JsonSerializer";
+import { ELAMessage } from "../../../ELAMessage";
+import { bytes_t, json } from "../../../types";
 
 export abstract class OutputPayload extends ELAMessage implements JsonSerializer {
 	public getData(): bytes_t {

@@ -23,8 +23,9 @@
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
-import { bytes_t, json } from "../types";
+import { bytes_t } from "../types";
 import { Base58 } from "../walletcore/Base58";
+import { HDKeychain } from "../walletcore/HDKeychain";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 
@@ -467,49 +468,48 @@ export class Account {
 		bytes.clean();
 
 		return key;
+	}*/
+
+	public masterPubKey(): HDKeychain {
+		return this._xpub;
 	}
 
-	HDKeychainPtr Account::MasterPubKey() const {
-		return _xpub;
-	}
+	/*HDKeychainPtr Account::BitcoinMasterPubKey() const {
+			return _btcMasterPubKey;
+	}*/
 
-			HDKeychainPtr Account::BitcoinMasterPubKey() const {
-					return _btcMasterPubKey;
-			}
-
-	std::string Account::GetxPrvKeyString(const std::string &payPasswd) const {
-		if (_localstore->Readonly()) {
-			ErrorChecker::ThrowLogicException(Error::UnsupportOperation, "Readonly wallet can not export private key");
+	public getxPrvKeyString(payPasswd: string): string {
+		if (this._localstore.readonly()) {
+			ErrorChecker.ThrowLogicException(Error.Code.UnsupportOperation, "Readonly wallet can not export private key");
 		}
 
-					if (_localstore->GetxPubKeyBitcoin().empty()) {
-							RegenerateKey(payPasswd);
-							Init();
-					}
+		if (this._localstore.getxPubKeyBitcoin().empty()) {
+			this.regenerateKey(payPasswd);
+			this.init();
+		}
 
-		bytes_t bytes = AES::DecryptCCM(_localstore->GetxPrivKey(), payPasswd);
-		return Base58::CheckEncode(bytes);
+		let bytes: bytes_t = AES.DecryptCCM(this._localstore.getxPrivKey(), payPasswd);
+		return Base58.checkEncode(bytes);
 	}
 
-	std::string Account::MasterPubKeyString() const {
-		return _localstore->GetxPubKey();
+	public masterPubKeyString(): string {
+		return this._localstore.getxPubKey();
 	}
 
-	std::string Account::MasterPubKeyHDPMString() const {
-		return _localstore->GetxPubKeyHDPM();
+	public masterPubKeyHDPMString(): string {
+		return this._localstore.getxPubKeyHDPM();
 	}
 
-	std::vector<PublicKeyRing> Account::MasterPubKeyRing() const {
-		return _localstore->GetPublicKeyRing();
+	/* public masterPubKeyRing(): PublicKeyRing[] {
+		return this._localstore.getPublicKeyRing();
+	} */
+
+	public ownerPubKey(): bytes_t {
+		ErrorChecker.CheckLogic(!this._ownerPubKey, Error.Code.Key, "This account unsupport owner public key");
+		return this._ownerPubKey;
 	}
 
-	bytes_t Account::OwnerPubKey() const {
-		ErrorChecker::CheckLogic(_ownerPubKey.empty(), Error::Key, "This account unsupport owner public key");
-
-		return _ownerPubKey;
-	}
-
-	void Account::ChangePassword(const std::string &oldPasswd, const std::string &newPasswd) {
+	/*void Account::ChangePassword(const std::string &oldPasswd, const std::string &newPasswd) {
 		if (!_localstore->Readonly()) {
 			ErrorChecker::CheckPassword(newPasswd, "New");
 

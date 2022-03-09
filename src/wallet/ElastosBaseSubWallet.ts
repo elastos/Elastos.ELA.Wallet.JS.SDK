@@ -3,10 +3,11 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import { TransactionOutput } from "../transactions/TransactionOutput";
-import { bytes_t, json, uint32_t, uint64_t } from "../types";
+import { bytes_t, json, JSONArray, uint16_t, uint256, uint32_t, uint64_t } from "../types";
 import { Address } from "../walletcore/Address";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { SubWallet } from "./SubWallet";
+import { UTXO, UTXOSet } from "./UTXO";
 import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./WalletCommon";
 
 /*
@@ -84,7 +85,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
 
         let addressStrings: string[] = [];
         for (let address of addresses)
-            addressStrings.push(address.String());
+            addressStrings.push(address.string());
 
         //ArgInfo("r => {}", j.dump());
 
@@ -106,7 +107,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         return j;
     }
 
-    public createTransaction(inputsJson: json, outputsJson: json, fee: string, memo: string): json {
+    public createTransaction(inputsJson: JSONArray, outputsJson: JSONArray, fee: string, memo: string): json {
         //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         //ArgInfo("inputs: {}", inputsJson.dump());
         //ArgInfo("outputs: {}", outputsJson.dump());
@@ -115,11 +116,11 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
 
         let wallet = this._walletManager.getWallet();
 
-        UTXOSet utxos;
+        let utxos = new UTXOSet();
         this.UTXOFromJson(utxos, inputsJson);
 
-        OutputArray outputs;
-        this.OutputsFromJson(outputs, outputsJson);
+        let outputs: TransactionOutput[] = [];
+        this.outputsFromJson(outputs, outputsJson);
 
         let feeAmount = new BigNumber(fee);
 
@@ -207,14 +208,14 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
     // TODO: result as return value
     protected encodeTx(result: json, tx: Transaction) {
         let stream = new ByteStream();
-        tx.Serialize(stream);
-        const bytes_t & hex = stream.GetBytes();
+        tx.serialize(stream);
+        const hex = stream.getBytes();
 
         result["Algorithm"] = "base64";
-        result["ID"] = tx.getHash().GetHex().substr(0, 8);
-        result["Data"] = hex.getBase64();
-        result["ChainID"] = this.GetChainID();
-        result["Fee"] = tx.GetFee();
+        result["ID"] = tx.getHash().toString(16).substr(0, 8);
+        result["Data"] = hex.toString("base64");
+        result["ChainID"] = this.getChainID();
+        result["Fee"] = tx.getFee().toNumber();
     }
 
     // TODO: replace json with structured type
@@ -252,55 +253,55 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
 
         let rawHex: bytes_t;
         if (algorithm == "base64") {
-            rawHex.setBase64(data);
+            rawHex = Buffer.from(data, "base64");
         } else {
             ErrorChecker.CheckCondition(true, Error.Code.InvalidArgument, "Decode tx with unknown algorithm");
         }
 
         let stream = new ByteStream(rawHex);
         ErrorChecker.CheckParam(!tx.deserialize(stream), Error.Code.InvalidArgument, "Invalid input: deserialize fail");
-        tx.SetFee(fee);
+        tx.setFee(fee);
 
         //SPVLOG_DEBUG("decoded tx: {}", tx->ToJson().dump(4));
         return tx;
     }
 
-    /*bool ElastosBaseSubWallet::UTXOFromJson(UTXOSet &utxo, const nlohmann::json &j) const {
-        for (nlohmann::json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
-            if (!(*it).contains("TxHash") ||
-                !(*it).contains("Index") ||
-                !(*it).contains("Address") ||
-                !(*it).contains("Amount")) {
-                ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid inputs");
+    protected UTXOFromJson(utxo: UTXOSet, j: JSONArray): boolean {
+        for (let utxoJson of j) {
+            utxoJson = utxoJson as json;
+            if (!("TxHash" in utxoJson) ||
+                !("Index" in utxoJson) ||
+                !("Address" in utxoJson) ||
+                !("Amount" in utxoJson)) {
+                ErrorChecker.ThrowParamException(Error.Code.InvalidArgument, "invalid inputs");
             }
 
-            uint256 hash;
-            hash.SetHex((*it)["TxHash"].get<std::string>());
-            uint16_t n = (*it)["Index"].get<uint16_t>();
+            let hash: uint256 = new BigNumber(utxoJson["TxHash"] as string, 16);
+            let n: uint16_t = utxoJson["Index"] as uint16_t;
 
-            Address address((*it)["Address"].get<std::string>());
-            ErrorChecker::CheckParam(!address.Valid(), Error::InvalidArgument, "invalid address of inputs");
+            let address = Address.newFromAddressString(utxoJson["Address"] as string);
+            ErrorChecker.CheckParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of inputs");
 
-            BigInt amount;
-            amount.setDec((*it)["Amount"].get<std::string>());
-            ErrorChecker::CheckParam(amount < 0, Error::InvalidArgument, "invalid amount of inputs");
+            let amount = new BigNumber(utxoJson["Amount"] as string); // Base 10
+            ErrorChecker.CheckParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of inputs");
 
-            utxo.insert(UTXOPtr(new UTXO(hash, n, address, amount)));
+            utxo.push(UTXO.newFromParams(hash, n, address, amount));
         }
+        utxo.sortUTXOs();
+
         return true;
-    }*/
+    }
 
-    private OutputsFromJson(outputs: TransactionOutput[], j: json): json {
-        for (nlohmann:: json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
-            BigInt amount;
-            amount.setDec((* it)["Amount"].get < std:: string > ());
-            ErrorChecker.CheckParam(amount < 0, Error.Code.InvalidArgument, "invalid amount of outputs");
+    private outputsFromJson(outputs: TransactionOutput[], outputsJson: JSONArray): boolean {
+        for (let outputJson of outputsJson) {
+            let amount = new BigNumber(outputJson["Amount"] as string);
+            ErrorChecker.CheckParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of outputs");
 
-            Address address((* it)["Address"].get < std:: string > ());
-            ErrorChecker.CheckParam(!address.Valid(), Error:: InvalidArgument, "invalid address of outputs");
+            let address = Address.newFromAddressString(outputJson["Address"] as string);
+            ErrorChecker.CheckParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of outputs");
 
-            let output = new TransactionOutput(amount, address);
-            outputs.push_back(output);
+            let output = TransactionOutput.newFromParams(amount, address);
+            outputs.push(output);
         }
         return true;
     }

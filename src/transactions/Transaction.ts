@@ -6,7 +6,8 @@ import BigNumber from "bignumber.js";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
-import { INT32_MAX, json, JSONArray, size_t, time_t, uint256, uint32_t, uint64_t, uint8_t } from "../types";
+import { INT32_MAX, json, JSONArray, size_t, time_t, UINT16_MAX, uint256, uint32_t, uint64_t, uint8_t } from "../types";
+import { SHA256 } from "../walletcore/sha256";
 import { Attribute } from "./Attribute";
 import { CoinBase } from "./payload/CoinBase";
 import { Payload } from "./payload/Payload";
@@ -61,13 +62,6 @@ export enum TxVersion {
 	V09 = 0x09,
 }
 
-// TODO: remove all those Ptr
-//type WalletPtr = Wallet;
-type OutputArray = TransactionOutput[];
-type InputArray = TransactionInput[];
-type ProgramArray = Program[];
-type AttributeArray = Attribute[];
-
 const DEFAULT_PAYLOAD_TYPE = TransactionType.transferAsset;
 const TX_LOCKTIME = 0x00000000;
 const TX_UNCONFIRMED = INT32_MAX;   // block height indicating transaction is unconfirmed
@@ -84,10 +78,10 @@ export class Transaction {
 	protected _payloadVersion: uint8_t;
 	protected _fee: uint64_t;
 	protected _payload: Payload;
-	protected _outputs: OutputArray;
-	protected _inputs: InputArray;
-	protected _attributes: AttributeArray;
-	protected _programs: ProgramArray;
+	protected _outputs: TransactionOutput[];
+	protected _inputs: TransactionInput[];
+	protected _attributes: Attribute[];
+	protected _programs: Program[];
 
 	/* Transaction::Transaction() :
 			_version(TxVersion::Default),
@@ -138,7 +132,7 @@ export class Transaction {
 		transaction._payloadVersion = orig._payloadVersion;
 		transaction._fee = orig._fee;
 
-		transaction._payload = transaction.InitPayload(orig._type);
+		transaction._payload = transaction.initPayload(orig._type);
 
 		transaction._payload = orig._payload;
 
@@ -260,10 +254,10 @@ export class Transaction {
 		return {crcProposal, crcProposalReview, crcProposalTracking, crcAppropriation, crcProposalWithdraw};
 	}
 */
-	private Reinit() {
-		this.Cleanup();
+	private reinit() {
+		this.cleanup();
 		this._type = DEFAULT_PAYLOAD_TYPE;
-		this._payload = this.InitPayload(this._type);
+		this._payload = this.initPayload(this._type);
 
 		this._version = TxVersion.Default;
 		this._lockTime = TX_LOCKTIME;
@@ -272,15 +266,15 @@ export class Transaction {
 		this._fee = new BigNumber(0);
 	}
 
-	public GetOutputs(): TransactionOutput[] {
+	public getOutputs(): TransactionOutput[] {
 		return this._outputs;
 	}
 
-	public SetOutputs(outputs: OutputArray) {
+	public setOutputs(outputs: TransactionOutput[]) {
 		this._outputs = outputs;
 	}
 
-	public AddOutput(output: TransactionOutput) {
+	public addOutput(output: TransactionOutput) {
 		this._outputs.push(output);
 	}
 
@@ -303,7 +297,7 @@ export class Transaction {
 			return _inputs;
 		}*/
 
-	public AddInput(Input: TransactionInput) {
+	public addInput(Input: TransactionInput) {
 		this._inputs.push(Input);
 	}
 
@@ -343,7 +337,7 @@ export class Transaction {
 			_timestamp = t;
 		}*/
 
-	public EstimateSize(): size_t {
+	public estimateSize(): size_t {
 		let i: size_t, txSize = 0;
 		let stream = new ByteStream();
 
@@ -379,7 +373,7 @@ export class Transaction {
 
 	public getSignedInfo(): JSONArray {
 		let info = [];
-		let md: uint256 = this.GetShaData();
+		let md: uint256 = this.getShaData();
 
 		for (let i = 0; i < this._programs.length; ++i) {
 			info.push(this._programs[i].getSignedInfo(md));
@@ -394,7 +388,7 @@ export class Transaction {
 		if (this._programs.length == 0)
 			return false;
 
-		let md: uint256 = this.GetShaData();
+		let md: uint256 = this.getShaData();
 
 		for (let i = 0; i < this._programs.length; ++i) {
 			if (!this._programs[i].verifySignature(md))
@@ -404,15 +398,15 @@ export class Transaction {
 		return true;
 	}
 
-	public IsCoinBase(): boolean {
+	public isCoinBase(): boolean {
 		return this._type == TransactionType.coinBase;
 	}
 
-	public IsUnconfirmed(): boolean {
+	public isUnconfirmed(): boolean {
 		return this._blockHeight == TX_UNCONFIRMED;
 	}
 
-	public IsValid(): boolean {
+	public isValid(): boolean {
 		if (!this.isSigned()) {
 			Log.error("verify tx signature fail");
 			return false;
@@ -436,7 +430,7 @@ export class Transaction {
 		}
 
 		for (let i = 0; i < this._outputs.length; ++i) {
-			if (!this._outputs[i].IsValid()) {
+			if (!this._outputs[i].isValid()) {
 				Log.error("tx output is invalid");
 				return false;
 			}
@@ -526,126 +520,131 @@ export class Transaction {
 		ostream.writeUInt32(this._lockTime);
 	}
 
-	/*bool Transaction::DeserializeType(const ByteStream &istream) {
-		uint8_t flagByte = 0;
-		if (!istream.ReadByte(flagByte)) {
-			Log::error("deserialize flag byte error");
+	private deserializeType(istream: ByteStream): boolean {
+		let flagByte = istream.readByte();
+		if (flagByte === null) {
+			Log.error("deserialize flag byte error");
 			return false;
 		}
 
-		if (flagByte >= TxVersion::V09) {
-			_version = static_cast<TxVersion>(flagByte);
-			if (!istream.ReadByte(_type)) {
-				Log::error("deserialize type error");
+		if (flagByte >= TxVersion.V09) {
+			this._version = flagByte;
+			this._type = istream.readByte();
+			if (this._type === null) {
+				Log.error("deserialize type error");
 				return false;
 			}
 		} else {
-			_version = TxVersion::Default;
-			_type = flagByte;
+			this._version = TxVersion.Default;
+			this._type = flagByte;
 		}
 		return true;
 	}
 
-	bool Transaction::Deserialize(const ByteStream &istream) {
-		Reinit();
+	public deserialize(istream: ByteStream): boolean {
+		this.reinit();
 
-		if (!DeserializeType(istream)) {
+		if (!this.deserializeType(istream)) {
 			return false;
 		}
 
-		if (!istream.ReadByte(_payloadVersion))
+		this._payloadVersion = istream.readByte();
+		if (this._payloadVersion === null)
 			return false;
 
-		_payload = InitPayload(_type);
+		this._payload = this.initPayload(this._type);
 
-		if (_payload == nullptr) {
-			Log::error("new _payload with _type={} when deserialize error", _type);
+		if (this._payload === null) {
+			Log.error(`new _payload with _type=${this._type} when deserialize error`);
 			return false;
 		}
-		if (!_payload->Deserialize(istream, _payloadVersion))
+		if (!this._payload.deserialize(istream, this._payloadVersion))
 			return false;
 
-		uint64_t attributeLength = 0;
-		if (!istream.ReadVarUint(attributeLength))
+		let attributeLength = istream.readVarUInt();
+		if (attributeLength === null)
 			return false;
 
-		for (size_t i = 0; i < attributeLength; i++) {
-			AttributePtr attribute(new Attribute());
-			if (!attribute->Deserialize(istream)) {
-				Log::error("deserialize tx attribute[{}] error", i);
+		this._attributes = [];
+		for (let i = 0; i < attributeLength.toNumber(); i++) {
+			let attribute = new Attribute();
+			if (!attribute.deserialize(istream)) {
+				Log.error("deserialize tx attribute[{}] error", i);
 				return false;
 			}
-			_attributes.push_back(attribute);
+			this._attributes.push(attribute);
 		}
 
-		uint64_t inCount = 0;
-		if (!istream.ReadVarUint(inCount)) {
-			Log::error("deserialize tx inCount error");
+		let inCount = istream.readVarUInt();
+		if (inCount === null) {
+			Log.error("deserialize tx inCount error");
 			return false;
 		}
 
-		_inputs.reserve(inCount);
-		for (size_t i = 0; i < inCount; i++) {
-			InputPtr input(new TransactionInput());
-			if (!input->Deserialize(istream)) {
-				Log::error("deserialize tx input [{}] error", i);
+		this._inputs = [];
+		for (let i = 0; i < inCount.toNumber(); i++) {
+			let input = new TransactionInput();
+			if (!input.deserialize(istream)) {
+				Log.error("deserialize tx input [{}] error", i);
 				return false;
 			}
-			_inputs.push_back(input);
+			this._inputs.push(input);
 		}
 
-		uint64_t outputLength = 0;
-		if (!istream.ReadVarUint(outputLength)) {
-			Log::error("deserialize tx output len error");
+		let outputLength = istream.readVarUInt();
+		if (outputLength === null) {
+			Log.error("deserialize tx output len error");
 			return false;
 		}
 
-		if (outputLength > UINT16_MAX) {
-			Log::error("deserialize tx: too much outputs: {}", outputLength);
+		if (outputLength.gt(UINT16_MAX)) {
+			Log.error("deserialize tx: too much outputs: {}", outputLength);
 			return false;
 		}
 
-		_outputs.reserve(outputLength);
-		for (size_t i = 0; i < outputLength; i++) {
-			OutputPtr output(new TransactionOutput());
-			if (!output->Deserialize(istream, _version)) {
-				Log::error("deserialize tx output[{}] error", i);
+		this._outputs = [];
+		for (let i = 0; i < outputLength.toNumber(); i++) {
+			let output = new TransactionOutput();
+			if (!output.deserialize(istream, this._version)) {
+				Log.error("deserialize tx output[{}] error", i);
 				return false;
 			}
 
-			_outputs.push_back(output);
+			this._outputs.push(output);
 		}
 
-		if (!istream.ReadUint32(_lockTime)) {
-			Log::error("deserialize tx lock time error");
+		this._lockTime = istream.readUInt32();
+		if (this._lockTime === null) {
+			Log.error("deserialize tx lock time error");
 			return false;
 		}
 
-		uint64_t programLength = 0;
-		if (!istream.ReadVarUint(programLength)) {
-			Log::error("deserialize tx program length error");
+		let programLength = istream.readVarUInt();
+		if (programLength === null) {
+			Log.error("deserialize tx program length error");
 			return false;
 		}
 
-		for (size_t i = 0; i < programLength; i++) {
-			ProgramPtr program(new Program());
-			if (!program->Deserialize(istream)) {
-				Log::error("deserialize program[{}] error", i);
+		this._programs = [];
+		for (let i = 0; i < programLength.toNumber(); i++) {
+			let program = new Program();
+			if (!program.deserialize(istream)) {
+				Log.error("deserialize program[{}] error", i);
 				return false;
 			}
-			_programs.push_back(program);
+			this._programs.push(program);
 		}
 
-#if 0
-		ByteStream stream;
-		SerializeUnsigned(stream);
-		_txHash = sha256_2(stream.GetBytes());
-#endif
+		/* #if 0
+				ByteStream stream;
+				SerializeUnsigned(stream);
+				_txHash = sha256_2(stream.GetBytes());
+		#endif */
 
 		return true;
-	}*/
+	}
 
-	public ToJson(): json {
+	public toJson(): json {
 		return {
 			IsRegistered: this._isRegistered,
 			TxHash: this.getHash().toString(16),
@@ -653,19 +652,19 @@ export class Transaction {
 			LockTime: this._lockTime,
 			BlockHeight: this._blockHeight,
 			Timestamp: this._timestamp,
-			Inputs: this._inputs,
+			Inputs: this._inputs.map(i => i.toJson()),
 			Type: this._type,
 			PayloadVersion: this._payloadVersion,
 			PayLoad: this._payload.toJson(this._payloadVersion),
-			Attributes: this._attributes,
-			Programs: this._programs,
-			Outputs: this._outputs,
-			Fee: this._fee
+			Attributes: this._attributes.map(a => a.toJson()),
+			Programs: this._programs.map(p => p.toJson()),
+			Outputs: this._outputs.map(o => o.toJson()),
+			Fee: this._fee.toNumber()
 		};
 	}
 
-	public FromJson(j: json) {
-		this.Reinit();
+	public fromJson(j: json) {
+		this.reinit();
 
 		try {
 			this._isRegistered = j["IsRegistered"] as boolean;
@@ -674,10 +673,10 @@ export class Transaction {
 			this._lockTime = j["LockTime"] as uint32_t;
 			this._blockHeight = j["BlockHeight"] as uint32_t;
 			this._timestamp = j["Timestamp"] as uint32_t
-			this._inputs = j["Inputs"].get<InputArray>();
+			this._inputs = (j["Inputs"] as JSONArray).map(i => new TransactionInput().fromJson(i as json));
 			this._type = j["Type"] as uint8_t;
 			this._payloadVersion = j["PayloadVersion"] as number;
-			this._payload = this.InitPayload(this._type);
+			this._payload = this.initPayload(this._type);
 
 			if (this._payload === null) {
 				Log.error("_payload is nullptr when convert from json");
@@ -685,10 +684,10 @@ export class Transaction {
 				this._payload.fromJson(j["PayLoad"] as json, this._payloadVersion);
 			}
 
-			this._attributes = j["Attributes"].get<AttributeArray>();
-			this._programs = j["Programs"].get<ProgramArray>();
-			this._outputs = j["Outputs"].get<OutputArray>();
-			this._fee = j["Fee"] as uint64_t;
+			this._attributes = (j["Attributes"] as JSONArray).map(a => new Attribute().fromJson(a as json));
+			this._programs = (j["Programs"] as JSONArray).map(p => new Program().fromJson(p as json));
+			this._outputs = (j["Outputs"] as JSONArray).map(o => new TransactionOutput().fromJson(o as json));
+			this._fee = new BigNumber(j["Fee"] as number);
 
 			this._txHash = new BigNumber(j["TxHash"] as string, 16);
 		} catch (e) {
@@ -696,17 +695,17 @@ export class Transaction {
 		}
 	}
 
-	public CalculateFee(feePerKb: uint64_t): uint64_t {
-		return ((this.EstimateSize() + 999) / 1000) * feePerKb;
+	public calculateFee(feePerKb: uint64_t): uint64_t {
+		return new BigNumber((this.estimateSize() + 999) / 1000).multipliedBy(feePerKb);
 	}
 
-	GetShaData(): uint256 {
+	getShaData(): uint256 {
 		let stream = new ByteStream();
-		this.SerializeUnsigned(stream);
+		this.serializeUnsigned(stream);
 		return new BigNumber(SHA256.encodeToString(stream.getBytes())); // WAS uint256(sha256(stream.GetBytes()));
 	}
 
-	public InitPayload(type: uint8_t): Payload {
+	public initPayload(type: uint8_t): Payload {
 		let payload: Payload = null;
 
 		if (type == TransactionType.coinBase) {
@@ -761,7 +760,7 @@ export class Transaction {
 		return payload;
 	}
 
-	private Cleanup() {
+	private cleanup() {
 		this._inputs = [];
 		this._outputs = [];
 		this._attributes = [];
@@ -769,38 +768,38 @@ export class Transaction {
 		// TODO - WHERE IS THIS Payload.reset() IN C++? this._payload.reset();
 	}
 
-	public GetPayloadVersion(): uint8_t {
+	public getPayloadVersion(): uint8_t {
 		return this._payloadVersion;
 	}
 
-	public SetPayloadVersion(version: uint8_t) {
+	public setPayloadVersion(version: uint8_t) {
 		this._payloadVersion = version;
 	}
 
-	public GetFee(): uint64_t {
+	public getFee(): uint64_t {
 		return this._fee;
 	}
 
-	public SetFee(f: uint64_t) {
+	public setFee(f: uint64_t) {
 		this._fee = f;
 	}
 
-	public IsEqual(tx: Transaction): boolean {
+	public isEqual(tx: Transaction): boolean {
 		return this.getHash() == tx.getHash();
 	}
 
-	public GetConfirms(walletBlockHeight: uint32_t): uint32_t {
+	public getConfirms(walletBlockHeight: uint32_t): uint32_t {
 		if (this._blockHeight == TX_UNCONFIRMED)
 			return 0;
 
 		return walletBlockHeight >= this._blockHeight ? walletBlockHeight - this._blockHeight + 1 : 0;
 	}
 
-	GetConfirmStatus(walletBlockHeight: uint32_t): string {
-		let confirm = this.GetConfirms(walletBlockHeight);
+	public getConfirmStatus(walletBlockHeight: uint32_t): string {
+		let confirm = this.getConfirms(walletBlockHeight);
 
 		let status: string;
-		if (this.IsCoinBase()) {
+		if (this.isCoinBase()) {
 			status = confirm <= 100 ? "Pending" : "Confirmed";
 		} else {
 			status = confirm < 2 ? "Pending" : "Confirmed";

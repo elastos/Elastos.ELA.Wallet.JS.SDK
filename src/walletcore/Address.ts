@@ -101,7 +101,7 @@ export class Address {
 		operator=(address);
 	}
 */
-	public Valid(): boolean {
+	public valid(): boolean {
 		return this._isValid;
 	}
 
@@ -109,15 +109,15 @@ export class Address {
 		return _isValid && _programHash.prefix() == PrefixIDChain;
 	}*/
 
-	public String(): string {
+	public string(): string {
 		return Base58.checkEncode(this._programHash.bytes());
 	}
 
-	public ProgramHash(): uint168 {
+	public programHash(): uint168 {
 		return this._programHash;
 	}
 
-	SetProgramHash(programHash: uint168) {
+	setProgramHash(programHash: uint168) {
 		this._programHash = programHash;
 		this.checkValid();
 	}
@@ -149,7 +149,7 @@ export class Address {
 		return type;
 	}
 
-	public SetRedeemScript(prefix: Prefix, code: bytes_t) {
+	public setRedeemScript(prefix: Prefix, code: bytes_t) {
 		this._code = code;
 		this.generateProgramHash(prefix);
 		this.checkValid();
@@ -185,7 +185,7 @@ export class Address {
 
 	public equals(address: Address | string): boolean {
 		if (typeof address === "string")
-			return this._isValid && this.String() === address;
+			return this._isValid && this.string() === address;
 		else
 			return this._isValid == address._isValid && this._programHash == address._programHash;
 	}

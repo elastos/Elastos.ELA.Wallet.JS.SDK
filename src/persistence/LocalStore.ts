@@ -3,6 +3,7 @@
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { json, JSONArray } from "../types";
 import { CoinInfo } from "../walletcore/CoinInfo";
+import { PublicKeyRing } from "../walletcore/publickeyring";
 import { WalletStorage } from "./WalletStorage";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json";
@@ -26,7 +27,7 @@ export class LocalStore {
 	private _ownerPubKey: string;
 	private _derivationStrategy: string;
 
-	// TODO private _publicKeyRing: PublicKeyRing[];
+	private _publicKeyRing: PublicKeyRing[];
 
 	// Multisign - number of requested signatures
 	private _m: number;
@@ -60,7 +61,7 @@ export class LocalStore {
 		j["xPubKeyHDPM"] = this._xPubKeyHDPM;
 		j["requestPrivKey"] = this._requestPrivKey;
 		j["requestPubKey"] = this._requestPubKey;
-		// TODO j["publicKeyRing"] = this._publicKeyRing;
+		j["publicKeyRing"] = this._publicKeyRing.map(pkr => pkr.toJson());
 		j["m"] = this._m;
 		j["n"] = this._n;
 		j["mnemonicHasPassphrase"] = this._mnemonicHasPassphrase;
@@ -90,7 +91,7 @@ export class LocalStore {
 			this._xPubKey = j["xPubKey"] as string;
 			this._requestPrivKey = j["requestPrivKey"] as string;
 			this._requestPubKey = j["requestPubKey"] as string;
-			// TODO this._publicKeyRing = j["publicKeyRing"].get < std:: vector < PublicKeyRing >> ();
+			this._publicKeyRing = (j["publicKeyRing"] as JSONArray).map(pkr => new PublicKeyRing().fromJson(pkr as json));
 			this._m = j["m"] as number;
 			this._n = j["n"] as number;
 			this._mnemonicHasPassphrase = j["mnemonicHasPassphrase"] as boolean;
@@ -255,42 +256,17 @@ export class LocalStore {
 	} */
 
 	public load(): boolean {
-		/* TODO fs::path filepath = _path;
-		filepath /= LOCAL_STORE_FILE;
-		if (!fs:: exists(filepath)) {
-			filepath = _path;
-			filepath /= MASTER_WALLET_STORE_FILE;
-			if (!fs:: exists(filepath)) {
-				ErrorChecker:: ThrowLogicException(Error:: MasterWalletNotExist, "master wallet " +
-					filepath.parent_path().filename().string() + " not exist");
-			}
-		}
+		let j = this._walletStorage.loadStore();
 
-		std::ifstream is(filepath.string());
-		nlohmann::json j;
-		is >> j;
+		ErrorChecker.CheckLogic(!j || j === {}, Error.Code.InvalidLocalStore, "local store file is empty");
 
-		ErrorChecker:: CheckLogic(j.is_null() || j.empty(), Error:: InvalidLocalStore, "local store file is empty");
+		this.fromJson(j);
 
-		FromJson(j);
- */
 		return true;
 	}
 
 	public save() {
-
-		/* TODO nlohmann::json j = ToJson();
-
-		if (!j.is_null() && !j.empty() && !_path.empty()) {
-			boost:: filesystem::path path = _path;
-			if (!boost:: filesystem:: exists(path))
-			boost:: filesystem:: create_directory(path);
-
-			path /= LOCAL_STORE_FILE;
-			std::ofstream o(path.string());
-			o << j;
-			o.flush();
-		} */
+		this._walletStorage.saveStore(this.toJson());
 	}
 
 	/* void LocalStore:: Remove() {
@@ -388,17 +364,17 @@ export class LocalStore {
 		this._derivationStrategy = strategy;
 	}
 
-	/* const std:: vector<PublicKeyRing> & LocalStore:: GetPublicKeyRing() const {
+	public getPublicKeyRing(): PublicKeyRing[] {
 		return this._publicKeyRing;
-				}
+	}
 
-				public AddPublicKeyRing(const PublicKeyRing & ring) {
-	this._publicKeyRing.push_back(ring);
-}
+	public addPublicKeyRing(ring: PublicKeyRing) {
+		this._publicKeyRing.push(ring);
+	}
 
-		public SetPublicKeyRing(const std:: vector<PublicKeyRing> & pubKeyRing) {
-	this._publicKeyRing = pubKeyRing;
-} */
+	public setPublicKeyRing(pubKeyRing: PublicKeyRing[]) {
+		this._publicKeyRing = pubKeyRing;
+	}
 
 	getM(): number {
 		return this._m;
@@ -448,62 +424,56 @@ export class LocalStore {
 		this._subWalletsInfoList.push(info);
 	}
 
-	/*void LocalStore:: RemoveSubWalletInfo(const std:: string & chainID) {
-		for (std:: vector<CoinInfoPtr>:: iterator it = _subWalletsInfoList.begin(); it != _subWalletsInfoList.end(); ++it) {
-			if (chainID == (* it) -> GetChainID()) {
-				_subWalletsInfoList.erase(it);
-				break;
-			}
-		}
+	public removeSubWalletInfo(chainID: string) {
+		this._subWalletsInfoList = this._subWalletsInfoList.filter(ci => ci.getChainID() !== chainID);
 	}
 
-	void LocalStore:: SetSubWalletInfoList(const std:: vector<CoinInfoPtr> & infoList) {
-		_subWalletsInfoList = infoList;
+	public setSubWalletInfoList(infoList: CoinInfo[]) {
+		this._subWalletsInfoList = infoList;
 	}
 
-	void LocalStore:: ClearSubWalletInfoList() {
-		_subWalletsInfoList.clear();
+	public clearSubWalletInfoList() {
+		this._subWalletsInfoList = [];
 	}
 
-	void LocalStore:: SetSeed(const std:: string & seed) {
-		_seed = seed;
+	public setSeed(seed: string) {
+		this._seed = seed;
 	}
 
-	const std:: string & LocalStore:: GetSeed() const {
-		return _seed;
-			}
-
-	void LocalStore:: SetETHSCPrimaryPubKey(const std:: string & pubkey) {
-		_ethscPrimaryPubKey = pubkey;
+	public getSeed(): string {
+		return this._seed;
 	}
 
-	const std:: string & LocalStore:: GetETHSCPrimaryPubKey() const {
-		return _ethscPrimaryPubKey;
-			}
-
-	void LocalStore:: SetxPubKeyBitcoin(const std:: string & xpub) {
-		_xPubKeyBitcoin = xpub;
+	public setETHSCPrimaryPubKey(pubkey: string) {
+		this._ethscPrimaryPubKey = pubkey;
 	}
 
-	const std:: string & LocalStore:: GetxPubKeyBitcoin() const {
-		return _xPubKeyBitcoin;
-					}
-
-	void LocalStore:: SetSinglePrivateKey(const std:: string & prvkey) {
-		_singlePrivateKey = prvkey;
+	public getETHSCPrimaryPubKey(): string {
+		return this._ethscPrimaryPubKey;
 	}
 
-	const std:: string & LocalStore:: GetSinglePrivateKey() const {
-		return _singlePrivateKey;
-			}
-
-	void LocalStore:: SetRipplePrimaryPubKey(const std:: string & pubkey) {
-		_ripplePrimaryPubKey = pubkey;
+	/* public setxPubKeyBitcoin(xpub: string) {
+		this._xPubKeyBitcoin = xpub;
 	}
 
-	const std:: string & LocalStore:: GetRipplePrimaryPubKey() const {
-		return _ripplePrimaryPubKey;
-			}
+	public getxPubKeyBitcoin(): string {
+		return this._xPubKeyBitcoin;
+	} */
 
-		} */
+	public setSinglePrivateKey(prvkey: string) {
+		this._singlePrivateKey = prvkey;
+	}
+
+	public getSinglePrivateKey(): string {
+		return this._singlePrivateKey;
+	}
+
+	/*public setRipplePrimaryPubKey(pubkey: string) {
+		this._ripplePrimaryPubKey = pubkey;
+	}
+
+			public const std:: string & LocalStore:: GetRipplePrimaryPubKey() const {
+			return _ripplePrimaryPubKey;
+				}
+			}  */
 }

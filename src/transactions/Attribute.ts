@@ -2,11 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { ELAMessage } from "../../wallet-sdk/spvmigration/ts/ELAMessage";
-import { bytes_t, json, size_t } from "../../wallet-sdk/spvmigration/ts/types";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
+import { ELAMessage } from "../ELAMessage";
+import { bytes_t, json, size_t } from "../types";
 
 export enum Usage {
 	Nonce = 0x00,
@@ -97,9 +97,10 @@ export class Attribute extends ELAMessage implements JsonSerializer {
 		}
 	}
 
-	public fromJson(j: json) {
+	public fromJson(j: json): Attribute {
 		this._usage = j["Usage"] as Usage;
 		this._data = Buffer.from(j["Data"] as string, "hex");
+		return this;
 	}
 
 	public equals(a: Attribute): boolean {

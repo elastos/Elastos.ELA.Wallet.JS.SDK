@@ -2,25 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 
 import BigNumber from "bignumber.js";
-import { ELAMessage } from "../../wallet-sdk/spvmigration/ts/ELAMessage";
-import { json, size_t, uint16_t, uint256, uint32_t } from "../../wallet-sdk/spvmigration/ts/types";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
+import { ELAMessage } from "../ELAMessage";
+import { json, size_t, uint16_t, uint256, uint32_t } from "../types";
 
 export type InputPtr = TransactionInput;
 export type InputArray = InputPtr[];
 
 export class TransactionInput extends ELAMessage implements JsonSerializer {
 	private _txHash: uint256;
-	private _index: uint16_t;
-	private _sequence: uint32_t;
+	private _index: uint16_t = 0;
+	private _sequence: uint32_t = 0;
 
-	/*	TransactionInput::TransactionInput() :
-			_index(0),
-			_sequence(0) {
-		}
-
+	/*
 		TransactionInput::TransactionInput(const TransactionInput &input) {
 			this->operator=(input);
 		}*/
@@ -37,31 +33,31 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 		return transactionInput;
 	}
 
-	public TxHash(): uint256 {
+	public txHash(): uint256 {
 		return this._txHash;
 	}
 
-	public SetTxHash(hash: uint256) {
+	public setTxHash(hash: uint256) {
 		this._txHash = hash;
 	}
 
-	public Index(): uint16_t {
+	public index(): uint16_t {
 		return this._index;
 	}
 
-	public SetIndex(index: uint16_t) {
+	public setIndex(index: uint16_t) {
 		this._index = index;
 	}
 
-	Sequence(): uint32_t {
+	public sequence(): uint32_t {
 		return this._sequence;
 	}
 
-	public SetSequence(sequence: uint32_t) {
+	public setSequence(sequence: uint32_t) {
 		this._sequence = sequence;
 	}
 
-	public GetSize(): size_t {
+	public getSize(): size_t {
 		// WAS return this._txHash.size() + sizeof(_index) + sizeof(_sequence);
 		return 32 + 2 + 4; // uint256 + uint16 + uint32
 	}
@@ -124,9 +120,10 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 		};
 	}
 
-	public fromJson(j: json) {
+	public fromJson(j: json): TransactionInput {
 		this._txHash = new BigNumber(j["TxHash"] as any); // WAS uint256(j["TxHash"].get<std::string>());
 		this._index = j["Index"] as uint16_t; // WAS j["Index"].get<uint16_t>();
 		this._sequence = j["Sequence"] as uint32_t; // WAS j["Sequence"].get<uint32_t>();
+		return this;
 	}
 }

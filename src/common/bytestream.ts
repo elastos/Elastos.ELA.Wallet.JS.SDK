@@ -99,15 +99,20 @@ export class ByteStream {
         this.buffer[this.position++] = b;
     }
 
-    public readUInt8(index: number = null): number {
-        if (index == null) {
+    public readUInt8(index: number = null): number | null {
+        if (index == null)
             index = this.position;
-            this.position += 1;
-        }
-        if (this.buffer.length < index + 1) {
-            return 0;
-        }
+
+        if (this.buffer.length < index + 1)
+            return null;
+
+        this.position += 1;
+
         return this.buffer[index];
+    }
+
+    public readByte(): uint8_t {
+        return this.readUInt8();
     }
 
     public writeUInt16(num: number) {
@@ -211,11 +216,22 @@ export class ByteStream {
         this.writeBytes(bytes);
     }
 
-    // TODO: C++ version can ready bytes or various uint sizes. Let's try to focus bytes for bytes and
+    // TODO: C++ version can read bytes or various uint sizes. Let's try to focus bytes for bytes and
     // use other methods for uints
     public readVarBytes(bytes: bytes_t): boolean {
         let length = this.readVarUInt().toNumber(); // length is never a large number
         return this.readBytes(bytes, length);
+    }
+
+    /**
+     * @param bytes Output buffer. If not enough space, more space will be allocated
+     * @param length Number of bytes to read
+     */
+    public readBytes(bytes: bytes_t, length: size_t): boolean {
+        // TODO: alloc buffer "bytes" ?
+        for (let i = 0; i < length; i++)
+            bytes[i] = this.buffer[this.position++];
+        return true;
     }
 
     /**

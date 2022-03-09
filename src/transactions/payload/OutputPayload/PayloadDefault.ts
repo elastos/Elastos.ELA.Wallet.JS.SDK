@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { json, size_t } from "../../../../wallet-sdk/spvmigration/ts/types";
 import { ByteStream } from "../../../common/bytestream";
+import { json, size_t } from "../../../types";
 import { OutputPayload } from "./OutputPayload";
 
 export class PayloadDefault extends OutputPayload {

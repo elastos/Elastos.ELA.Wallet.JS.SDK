@@ -14,6 +14,14 @@ export const getBNHexBytes = (bn: BigNumber): Buffer => {
 }
 
 /**
+ * TODO: VERIFY
+ * Convert a hex string in a buffer into a big number
+ */
+export const newBNFromHexBytes = (bytes: Buffer): BigNumber => {
+  return new BigNumber(bytes.toString("hex"));
+}
+
+/**
  * TODO - VERIFY
  * Returns the Buffer representing the big number in memory.
  * (standard integer encoding such as 0xABCD with 'AB' being one byte).
@@ -31,4 +39,11 @@ export const getBNBytes = (bn: BigNumber): Buffer => {
 export const getBNsize = (bn: BigNumber): number => {
   let bnBytes = getBNBytes(bn);
   return bnBytes.length;
+}
+
+/**
+ * Rebuilds a big number from a buffer that represents a long decimal number.
+ */
+export const newBNFromBuffer = (buffer: Buffer): BigNumber => {
+
 }

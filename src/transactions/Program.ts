@@ -215,9 +215,10 @@ export class Program extends ELAMessage implements JsonSerializer {
 		}
 	}
 
-	public fromJson(j: json) {
+	public fromJson(j: json): Program {
 		this._parameter = Buffer.from(j["Parameter"] as string, "hex");
 		this._code = Buffer.from(j["Code"] as string, "hex");
+		return this;
 	}
 
 	public equals(p: Program): boolean {

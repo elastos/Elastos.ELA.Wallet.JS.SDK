@@ -26,6 +26,7 @@ import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
 import { bytes_t, json, uint256, uint32_t } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
+import { HDKeychain, SEQUENCE_EXTERNAL_CHAIN, SEQUENCE_INTERNAL_CHAIN } from "../walletcore/HDKeychain";
 import { Key } from "../walletcore/Key";
 import { Account, MAX_MULTISIGN_COSIGNERS, SignType as AccountSignType } from "./Account";
 
@@ -53,13 +54,13 @@ export class SubAccount {
         }
     }
 
-    public GetBasicInfo(): json {
+    public getBasicInfo(): json {
         return {
             Account: this._parent.getBasicInfo()
         }
     }
 
-    public IsSingleAddress(): boolean {
+    public isSingleAddress(): boolean {
         return this._parent.singleAddress();
     }
 
@@ -351,7 +352,7 @@ export class SubAccount {
             }
         }
 
-        Log.error("Can't found code and path for address {}", addr.String());
+        Log.error("Can't found code and path for address {}", addr.string());
 
         return false;
     }

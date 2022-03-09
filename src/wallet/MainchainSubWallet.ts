@@ -22,10 +22,12 @@ import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
  * SOFTWARE.
  */
 
+export const DEPOSIT_MIN_ELA = 5000;
+
 // TODO: Migrate all COMMENTS from the C++ IMainchainSubWallet interface here.
 export class MainchainSubWallet extends ElastosBaseSubWallet {
 
-	/* #define DEPOSIT_MIN_ELA 5000
+	/*
 
 			MainchainSubWallet::MainchainSubWallet(const CoinInfoPtr &info,
 													 const ChainConfigPtr &config,

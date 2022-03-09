@@ -68,7 +68,7 @@ export class UTXO {
 	}
 
 	public EqualsInput(input: TransactionInput): boolean { // WAS Equal(InputPtr)
-		return this._hash == input.TxHash() && this._n == input.Index();
+		return this._hash == input.txHash() && this._n == input.index();
 	}
 
 	public Equals(hash: uint256, index: uint16_t): boolean { // WAS Equals

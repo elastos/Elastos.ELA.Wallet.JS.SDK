@@ -52,16 +52,16 @@ export class Wallet extends Lockable {
 		tx.addAttribute(new Attribute(Usage.Nonce, Buffer.from(randomInteger(0xFFFFFFFF).toString(10))));
 
 		for (let o of outputs)
-			totalOutputAmount = totalOutputAmount.plus(o.Amount());
+			totalOutputAmount = totalOutputAmount.plus(o.amount());
 
 		if (outputs)
-			tx.SetOutputs(outputs);
+			tx.setOutputs(outputs);
 
 		//await this.GetLock().runExclusive(() => {
 		// TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
 		for (let u of utxo) {
 			let code: bytes_t;
-			tx.AddInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
+			tx.addInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
 			if (!this._subAccount.GetCode(u.GetAddress(), code)) {
 				//GetLock().unlock();
 				ErrorChecker.ThrowParamException(Error.Code.Address, "Can't found code and path for input");
@@ -85,13 +85,13 @@ export class Wallet extends Lockable {
 				this._subAccount.GetAddresses(addresses, 0, 1, false);
 				changeAddress = addresses[0];
 			}
-			ErrorChecker.CheckParam(!changeAddress.Valid(), Error.Code.Address, "invalid change address");
-			tx.AddOutput(TransactionOutput.newFromParams(changeAmount, changeAddress));
+			ErrorChecker.CheckParam(!changeAddress.valid(), Error.Code.Address, "invalid change address");
+			tx.addOutput(TransactionOutput.newFromParams(changeAmount, changeAddress));
 		}
 
-		ErrorChecker.CheckLogic(tx.GetOutputs().length == 0, Error.Code.InvalidArgument, "outputs empty or input amount not enough");
+		ErrorChecker.CheckLogic(tx.getOutputs().length == 0, Error.Code.InvalidArgument, "outputs empty or input amount not enough");
 
-		tx.SetFee(fee); // WAS tx.SetFee(fee.getUint64());
+		tx.setFee(fee); // WAS tx.SetFee(fee.getUint64());
 		if (this._chainID == CHAINID_MAINCHAIN)
 			tx.setVersion(TxVersion.V09);
 
