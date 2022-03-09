@@ -63,10 +63,10 @@ export class Base58 {
 
 		data.writeBytes(checksum);                                             // append checksum
 
-		return Base58.encode(data);
+		return Base58.encode(data.getBytes());
 	}
 
-	public checkDecode(base58check: string, payload: bytes_t, version: number = undefined): boolean {
+	public static checkDecode(base58check: string, payload: bytes_t, version: number = undefined): boolean {
 		const pchars = DEFAULT_BASE58_CHARS;
 
 		// Custom BigNumber constructor with custom alphabet
@@ -101,62 +101,71 @@ export class Base58 {
 		return true;
 	}
 
-	/*std::string Base58:: Encode(const bytes_t & payload) {
-	const char * pchars = DEFAULT_BASE58_CHARS;
-	#if 0
-			BigInt bn(payload);
-	std::string base58 = bn.getInBase(58, pchars);
-	std::string leading0s(countLeading0s(payload), pchars[0]);
-	return leading0s + base58;
-	#else
-			size_t i, j, len, zcount = 0;
-			size_t dataLen = payload.size();
+	protected static encode(payload: bytes_t): string {
+		const pchars = DEFAULT_BASE58_CHARS;
 
-	while (zcount < dataLen && payload[zcount] == 0) zcount++; // count leading zeroes
+		/* #if 0
+				BigInt bn(payload);
+		std::string base58 = bn.getInBase(58, pchars);
+		std::string leading0s(countLeading0s(payload), pchars[0]);
+		return leading0s + base58;
+		#else */
 
-			uint8_t buf[(dataLen - zcount) * 138 / 100 + 1]; // log(256)/log(58), rounded up
+		let i = 0, j = 0, len = 0, zcount = 0;
+		let dataLen = payload.length;
 
-	memset(buf, 0, sizeof(buf));
+		while (zcount < dataLen && payload[zcount] == 0) zcount++; // count leading zeroes
 
-	for (i = zcount; i < dataLen; i++) {
-				uint32_t carry = payload[i];
+		let bufLen = (dataLen - zcount) * 138 / 100 + 1; // log(256)/log(58), rounded up
+		let buf = Buffer.alloc(bufLen, 0);
 
-		for (j = sizeof(buf); j > 0; j--) {
-			carry += (uint32_t)buf[j - 1] << 8;
-			buf[j - 1] = carry % 58;
-			carry /= 58;
+		for (i = zcount; i < dataLen; i++) {
+			let carry = payload[i];
+
+			for (j = bufLen; j > 0; j--) {
+				// TODO: CHECK THIS CODE MIGRATION!
+				carry += 0xFFFFFFFF & (buf[j - 1] << 8); // WAS (uint32_t)buf[j - 1] << 8;
+				buf[j - 1] = carry % 58;
+				carry /= 58;
+			}
 		}
+
+		i = 0;
+		while (i < bufLen && buf[i] == 0) i++; // skip leading zeroes
+		len = (zcount + bufLen - i) + 1;
+
+		let str = "";
+		while (zcount-- > 0)
+			str += pchars[0];
+
+		while (i < bufLen)
+			str += pchars[buf[i++]];
+
+		return str;
+		//#endif
 	}
 
-	i = 0;
-	while (i < sizeof(buf) && buf[i] == 0) i++; // skip leading zeroes
-	len = (zcount + sizeof(buf) - i) + 1;
+	protected static decode(base58: string): bytes_t {
+		// Custom BigNumber constructor with custom alphabet
+		let Base58BigNumber = BigNumber.clone({
+			ALPHABET: DEFAULT_BASE58_CHARS
+		})
 
-	std::string str;
-	while (zcount-- > 0) str.push_back(pchars[0]);
-	while (i < sizeof(buf)) str.push_back(pchars[buf[i++]]);
-
-	return str;
-	#endif
+		let bn = new Base58BigNumber(base58, 58); // convert from base58
+		return getBNBytes(bn);
 	}
 
-		bytes_t Base58:: Decode(const std:: string & base58) {
-	const char * pchars = DEFAULT_BASE58_CHARS;
-			BigInt bn(base58, 58, pchars);
-	return bn.getBytes();
-	}
-
-		bool Base58:: Valid(const std:: string & base58check) {
-	const char * pchars = DEFAULT_BASE58_CHARS;
-			BigInt bn(base58check, 58, pchars);                                // convert from base58
-			uchar_vector bytes = bn.getBytes();
-			uchar_vector checksum = uchar_vector(bytes.end() - 4, bytes.end());
-	bytes.assign(bytes.begin(), bytes.end() - 4);                           // split string into payload part and checksum part
-			uchar_vector leading0s(countLeading0s(base58check, pchars[0]), 0); // prepend leading 0's
-	bytes = leading0s + bytes;
-			uchar_vector hashBytes = sha256_2(bytes);
-	hashBytes.assign(hashBytes.begin(), hashBytes.begin() + 4);
-	return (hashBytes == checksum);
-	} */
+	/* static bool Base58:: Valid(const std:: string & base58check) {
+const char * pchars = DEFAULT_BASE58_CHARS;
+		BigInt bn(base58check, 58, pchars);                                // convert from base58
+		uchar_vector bytes = bn.getBytes();
+		uchar_vector checksum = uchar_vector(bytes.end() - 4, bytes.end());
+bytes.assign(bytes.begin(), bytes.end() - 4);                           // split string into payload part and checksum part
+		uchar_vector leading0s(countLeading0s(base58check, pchars[0]), 0); // prepend leading 0's
+bytes = leading0s + bytes;
+		uchar_vector hashBytes = sha256_2(bytes);
+hashBytes.assign(hashBytes.begin(), hashBytes.begin() + 4);
+return (hashBytes == checksum);
+} */
 
 }

@@ -504,7 +504,7 @@ export class Transaction {
 
 		ostream.writeByte(this._payloadVersion);
 
-		ErrorChecker.CheckCondition(this._payload == null, Error.Code.Transaction, "payload should not be null");
+		ErrorChecker.checkCondition(this._payload == null, Error.Code.Transaction, "payload should not be null");
 
 		this._payload.serialize(ostream, this._payloadVersion);
 
@@ -691,7 +691,7 @@ export class Transaction {
 
 			this._txHash = new BigNumber(j["TxHash"] as string, 16);
 		} catch (e) {
-			ErrorChecker.ThrowLogicException(Error.Code.JsonFormatError, "tx from json: " + e);
+			ErrorChecker.throwLogicException(Error.Code.JsonFormatError, "tx from json: " + e);
 		}
 	}
 

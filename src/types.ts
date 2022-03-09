@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 
 // TODO: this file is mostly a temporary file, clean it up, split.
 
+export const UINT8_MAX = 0xff;
 export const UINT16_MAX = 0xffff;
 export const UINT32_MAX = 0xffffffff;
 export const INT32_MAX = 2147483647;

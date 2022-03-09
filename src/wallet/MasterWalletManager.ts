@@ -22,10 +22,10 @@
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
-import { Log } from "../common/Log";
 import { Config, CONFIG_MAINNET, CONFIG_PRVNET, CONFIG_REGTEST, CONFIG_TESTNET } from "../Config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json } from "../types";
+import { ExtKeyVersionMap } from "../walletcore/HDKeychain";
 import { MasterWallet } from "./MasterWallet";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json" // TODO: move to store
@@ -44,8 +44,9 @@ export class MasterWalletManager {
 
 	constructor(
 		storage: WalletStorage,
-				/* const std::string &rootPath */, netType: string,
-		config: json, dataPath: string) {
+		/* const std::string &rootPath; */
+		netType: string,
+		config: json/* , dataPath: string */) {
 		// TODO _rootPath(rootPath),
 		// TODO _dataPath(dataPath),
 		this._lock = new Lockable();
@@ -58,12 +59,12 @@ export class MasterWalletManager {
 
 		// TODO Log.registerMultiLogger(_dataPath);
 
-		Log.setLevel(spdlog:: level:: level_enum(SPVLOG_LEVEL));
-		Log.info("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
+		// TODO Log.setLevel(spdlog:: level:: level_enum(SPVLOG_LEVEL));
+		// TODO Log.info("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
 
 		if (netType != CONFIG_MAINNET && netType != CONFIG_TESTNET &&
 			netType != CONFIG_REGTEST && netType != CONFIG_PRVNET) {
-			ErrorChecker.ThrowParamException(Error.Code.InvalidArgument, "invalid NetType");
+			ErrorChecker.throwParamException(Error.Code.InvalidArgument, "invalid NetType");
 		}
 
 		this._config = Config.newFromParams(netType, config);
@@ -591,48 +592,48 @@ export class MasterWalletManager {
 			}
 
 			return _masterWalletMap[masterWalletID] != nullptr;
+		}*/
+
+	public getMasterWallet(const std:: string &masterWalletID): MasterWallet {
+		//ArgInfo("{}", GetFunName());
+		//ArgInfo("masterWalletID: {}", masterWalletID);
+
+		boost:: mutex::scoped_lock scoped_lock(_lock -> GetLock());
+
+		if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
+			_masterWalletMap[masterWalletID] != nullptr) {
+			return _masterWalletMap[masterWalletID];
 		}
 
-		IMasterWallet *MasterWalletManager::GetMasterWallet(const std::string &masterWalletID) const {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
+		return LoadMasterWallet(masterWalletID);
+	}
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+	/*void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {
 
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
-				_masterWalletMap[masterWalletID] != nullptr) {
-				return _masterWalletMap[masterWalletID];
-			}
+		MasterWallet *masterWallet = static_cast<MasterWallet *>(wallet);
 
-			return LoadMasterWallet(masterWalletID);
+		bool hasRedundant = false;
+		std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(),
+						[masterWallet, &hasRedundant](const MasterWalletMap::value_type &item) {
+							if (item.second != nullptr) {
+								const MasterWallet *createdWallet = static_cast<const MasterWallet *>(item.second);
+								if (!hasRedundant)
+									hasRedundant = masterWallet->IsEqual(*createdWallet);
+							}
+						});
+
+		if (hasRedundant) {
+			Log::info("{} Destroying redundant wallet", masterWallet->GetWalletID());
+
+			masterWallet->CloseAllSubWallets();
+							Log::info("Clearing local", masterWallet->GetID());
+							masterWallet->RemoveLocalStore();
+
+			delete masterWallet;
+			masterWallet = nullptr;
 		}
 
-		void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {
-
-			MasterWallet *masterWallet = static_cast<MasterWallet *>(wallet);
-
-			bool hasRedundant = false;
-			std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(),
-							[masterWallet, &hasRedundant](const MasterWalletMap::value_type &item) {
-								if (item.second != nullptr) {
-									const MasterWallet *createdWallet = static_cast<const MasterWallet *>(item.second);
-									if (!hasRedundant)
-										hasRedundant = masterWallet->IsEqual(*createdWallet);
-								}
-							});
-
-			if (hasRedundant) {
-				Log::info("{} Destroying redundant wallet", masterWallet->GetWalletID());
-
-				masterWallet->CloseAllSubWallets();
-								Log::info("Clearing local", masterWallet->GetID());
-								masterWallet->RemoveLocalStore();
-
-				delete masterWallet;
-				masterWallet = nullptr;
-			}
-
-			ErrorChecker::CheckCondition(hasRedundant, Error::CreateMasterWalletError,
-										 "Master wallet already exist.");
-		} */
+		ErrorChecker::CheckCondition(hasRedundant, Error::CreateMasterWalletError,
+									 "Master wallet already exist.");
+	} */
 }

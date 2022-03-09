@@ -217,7 +217,7 @@ export class LocalStore {
 				}
 			} */
 		} catch (e) {
-			ErrorChecker.ThrowLogicException(Error.Code.InvalidLocalStore, "Invalid localstore: " + e);
+			ErrorChecker.throwLogicException(Error.Code.InvalidLocalStore, "Invalid localstore: " + e);
 		}
 	}
 
@@ -258,7 +258,7 @@ export class LocalStore {
 	public load(): boolean {
 		let j = this._walletStorage.loadStore();
 
-		ErrorChecker.CheckLogic(!j || j === {}, Error.Code.InvalidLocalStore, "local store file is empty");
+		ErrorChecker.checkLogic(!j || j === {}, Error.Code.InvalidLocalStore, "local store file is empty");
 
 		this.fromJson(j);
 

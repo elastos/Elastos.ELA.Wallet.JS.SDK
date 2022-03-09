@@ -24,7 +24,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
 import { bytes_t } from "../types";
-import { Base58 } from "../walletcore/Base58";
+import { Base58 } from "../walletcore/base58";
 import { HDKeychain } from "../walletcore/HDKeychain";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
@@ -58,13 +58,13 @@ export class Account {
 		for (let i = 0; i < xpubRing.size() - 1; ++i) {
 			for (let j = i + 1; j < xpubRing.size(); ++j) {
 				if (xpubRing[i].GetxPubKey() == xpubRing[j].GetxPubKey()) {
-					ErrorChecker.ThrowParamException(Error.Code.PubKeyFormat, "Contain same xpub in PublicKeyRing");
+					ErrorChecker.throwParamException(Error.Code.PubKeyFormat, "Contain same xpub in PublicKeyRing");
 				}
 			}
 		}
 
 		if (!this._localstore.getxPubKey().empty()) {
-			ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getxPubKey(), bytes),
+			ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getxPubKey(), bytes),
 				Error.Code.PubKeyFormat, "xpub decode error");
 			this._xpub = new HDKeychain(CTElastos, bytes);
 		} else {
@@ -82,7 +82,7 @@ export class Account {
 		} */
 
 		if (!this._localstore.getxPubKeyHDPM().empty()) {
-			ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getxPubKeyHDPM(), bytes),
+			ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getxPubKeyHDPM(), bytes),
 				Error.Code.PubKeyFormat, "xpubHDPM decode error");
 			this._curMultiSigner = new HDKeychain(CTElastos, bytes);
 		} else {
@@ -94,7 +94,7 @@ export class Account {
 				this._curMultiSigner = _xpub;
 				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
 					bytes_t xpubBytes;
-					ErrorChecker.CheckParam(!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), xpubBytes),
+					ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), xpubBytes),
 						Error.Code.PubKeyFormat, "xpub decode error");
 					let xpub = new HDKeychain(CTElastos, xpubBytes);
 					this._allMultiSigners.push_back(xpub);
@@ -102,7 +102,7 @@ export class Account {
 			} else if (this._localstore.derivationStrategy() == "BIP45") {
 				let sortedSigners: HDKeychain[] = [];
 				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
-					ErrorChecker.CheckLogic(
+					ErrorChecker.checkLogic(
 						!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), bytes),
 						Error.Code.PubKeyFormat, "xpub HDPM decode error");
 					let xpub = new HDKeychain(CTElastos, bytes);
@@ -433,7 +433,7 @@ export class Account {
 
 	public rootKey(payPasswd: string): HDKeychain {
 		if (this._localstore.readonly()) {
-			ErrorChecker.ThrowLogicException(Error.Code.Key, "Readonly wallet without prv key");
+			ErrorChecker.throwLogicException(Error.Code.Key, "Readonly wallet without prv key");
 		}
 
 		if (this._localstore.getxPubKeyBitcoin().empty()) {
@@ -480,7 +480,7 @@ export class Account {
 
 	public getxPrvKeyString(payPasswd: string): string {
 		if (this._localstore.readonly()) {
-			ErrorChecker.ThrowLogicException(Error.Code.UnsupportOperation, "Readonly wallet can not export private key");
+			ErrorChecker.throwLogicException(Error.Code.UnsupportOperation, "Readonly wallet can not export private key");
 		}
 
 		if (this._localstore.getxPubKeyBitcoin().empty()) {
@@ -505,7 +505,7 @@ export class Account {
 	} */
 
 	public ownerPubKey(): bytes_t {
-		ErrorChecker.CheckLogic(!this._ownerPubKey, Error.Code.Key, "This account unsupport owner public key");
+		ErrorChecker.checkLogic(!this._ownerPubKey, Error.Code.Key, "This account unsupport owner public key");
 		return this._ownerPubKey;
 	}
 

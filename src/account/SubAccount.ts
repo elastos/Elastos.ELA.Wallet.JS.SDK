@@ -243,26 +243,26 @@ export class SubAccount {
         let signature: bytes_t;
         let stream = new ByteStream();
 
-        ErrorChecker.CheckParam(this._parent.readonly(), Error.Code.Sign, "Readonly wallet can not sign tx");
-        ErrorChecker.CheckParam(tx.isSigned(), Error.Code.AlreadySigned, "Transaction signed");
-        ErrorChecker.CheckParam(!tx.getPrograms(), Error.Code.InvalidTransaction, "Invalid transaction program");
+        ErrorChecker.checkParam(this._parent.readonly(), Error.Code.Sign, "Readonly wallet can not sign tx");
+        ErrorChecker.checkParam(tx.isSigned(), Error.Code.AlreadySigned, "Transaction signed");
+        ErrorChecker.checkParam(!tx.getPrograms(), Error.Code.InvalidTransaction, "Invalid transaction program");
 
         let md: uint256 = tx.getShaData();
 
         let programs = tx.getPrograms();
         for (let i = 0; i < programs.length; ++i) {
-            std:: vector < bytes_t > publicKeys;
+            let publicKeys: bytes_t[] = [];
             let type: SignType = programs[i].decodePublicKey(publicKeys);
-            ErrorChecker.CheckLogic(type != SignType.SignTypeMultiSign && type != SignType.SignTypeStandard, Error.Code.InvalidArgument, "Invalid redeem script");
+            ErrorChecker.checkLogic(type != SignType.SignTypeMultiSign && type != SignType.SignTypeStandard, Error.Code.InvalidArgument, "Invalid redeem script");
 
             let found = this.findPrivateKey(key, type, publicKeys, payPasswd);
-            ErrorChecker.CheckLogic(!found, Error.Code.PrivateKeyNotFound, "Private key not found");
+            ErrorChecker.checkLogic(!found, Error.Code.PrivateKeyNotFound, "Private key not found");
 
             stream.reset();
             if (programs[i].getParameter().length > 0) {
                 let verifyStream = new ByteStream(programs[i].getParameter());
                 while (verifyStream.readVarBytes(signature)) {
-                    ErrorChecker.CheckLogic(key.Verify(md, signature), Error.Code.AlreadySigned, "Already signed");
+                    ErrorChecker.checkLogic(key.verify(md, signature), Error.Code.AlreadySigned, "Already signed");
                 }
                 stream.writeBytes(programs[i].getParameter());
             }
@@ -305,25 +305,25 @@ export class SubAccount {
         return _parent->RootKey(payPasswd)->getChild("44'/0'/0'/0/0");
     }
 */
-    GetCode(addr: Address, code: bytes_t): boolean {
+    getCode(addr: Address, code: bytes_t): boolean {
         let index: uint32_t;
         let pubKey: bytes_t;
 
-        if (this.IsProducerDepositAddress(addr)) {
+        if (this.isProducerDepositAddress(addr)) {
             // "44'/0'/1'/0/0";
-            code = _depositAddress.RedeemScript();
+            code = this._depositAddress.redeemScript();
             return true;
         }
 
-        if (this.IsOwnerAddress(addr)) {
+        if (this.isOwnerAddress(addr)) {
             // "44'/0'/1'/0/0";
-            code = _ownerAddress.RedeemScript();
+            code = this._ownerAddress.redeemScript();
             return true;
         }
 
-        if (this.IsCRDepositAddress(addr)) {
+        if (this.isCRDepositAddress(addr)) {
             // "44'/0'/0'/0/0";
-            code = _crDepositAddress.RedeemScript();
+            code = this._crDepositAddress.redeemScript();
             return true;
         }
 
@@ -334,31 +334,30 @@ export class SubAccount {
                     return true;
                 }
 
-                if (this._parent.getSignType() != IAccount.MultiSign) {
+                if (this._parent.getSignType() != AccountSignType.MultiSign) {
                     let cid = Address.newFromAddress(chainAddr[index - 1]);
-                    cid.ChangePrefix(PrefixIDChain);
+                    cid.changePrefix(PrefixIDChain);
                     if (addr == cid) {
-                        code = cid.RedeemScript();
+                        code = cid.redeemScript();
                         return true;
                     }
 
                     let did = Address.newFromAddress(cid);
-                    did.ConvertToDID();
+                    did.convertToDID();
                     if (addr == did) {
-                        code = did.RedeemScript();
+                        code = did.redeemScript();
                         return true;
                     }
                 }
             }
         }
 
-        Log.error("Can't found code and path for address {}", addr.string());
+        Log.error("Can't find code and path for address:", addr.string());
 
         return false;
     }
-    /*
-        AccountPtr SubAccount::Parent() const {
-            return _parent;
-        }
-    */
+
+    public parent(): Account {
+        return this._parent;
+    }
 }

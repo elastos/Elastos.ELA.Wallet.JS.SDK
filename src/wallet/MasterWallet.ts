@@ -186,35 +186,35 @@ export class MasterWallet {
 		return null;
 	}
 
-	/*ISubWallet *MasterWallet::CreateSubWallet(const std::string &chainID) {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("chainID: {}", chainID);
+	public createSubWallet(chainID: string): SubWallet {
+		//ArgInfo("{} {}", _id, GetFunName());
+		//ArgInfo("chainID: {}", chainID);
 
-		ErrorChecker::CheckParamNotEmpty(chainID, "Chain ID");
-		ErrorChecker::CheckParam(chainID.size() > 128, Error::InvalidArgument, "Chain ID sould less than 128");
+		ErrorChecker:: CheckParamNotEmpty(chainID, "Chain ID");
+		ErrorChecker:: CheckParam(chainID.size() > 128, Error:: InvalidArgument, "Chain ID sould less than 128");
 
 		if (_createdWallets.find(chainID) != _createdWallets.end()) {
-			ISubWallet *subWallet = _createdWallets[chainID];
+			ISubWallet * subWallet = _createdWallets[chainID];
 			ArgInfo("r => already created");
 			return subWallet;
 		}
 
-		ChainConfigPtr chainConfig = _config->GetChainConfig(chainID);
-		ErrorChecker::CheckLogic(chainConfig == nullptr, Error::InvalidArgument, "Unsupport chain ID: " + chainID);
+		ChainConfigPtr chainConfig = _config -> GetChainConfig(chainID);
+		ErrorChecker:: CheckLogic(chainConfig == nullptr, Error:: InvalidArgument, "Unsupport chain ID: " + chainID);
 
 		CoinInfoPtr info(new CoinInfo());
 
-		info->SetChainID(chainID);
+		info -> SetChainID(chainID);
 
-		ISubWallet *subWallet = SubWalletFactoryMethod(info, chainConfig, this, _config->GetNetType());
+		ISubWallet * subWallet = SubWalletFactoryMethod(info, chainConfig, this, _config -> GetNetType());
 		_createdWallets[chainID] = subWallet;
-		_account->AddSubWalletInfoList(info);
-		_account->Save();
+		_account -> AddSubWalletInfoList(info);
+		_account -> Save();
 
 		return subWallet;
 	}
 
-	bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
+	/*bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
 		ArgInfo("{} {}", _id, GetFunName());
 		ArgInfo("mnemonic: *");
 		ArgInfo("passphrase: *");

@@ -6,8 +6,8 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { uint168 } from "../common/uint168";
-import { bytes_t, uint8_t } from "../types";
-import { Base58 } from "./Base58";
+import { bytes_t, UINT8_MAX, uint8_t } from "../types";
+import { Base58 } from "./base58";
 import { SHA256 } from "./sha256";
 
 export const ELA_SIDECHAIN_DESTROY_ADDR = "1111111111111111111114oLvT2";
@@ -153,35 +153,36 @@ export class Address {
 		this._code = code;
 		this.generateProgramHash(prefix);
 		this.checkValid();
-		ErrorChecker.CheckCondition(!this._isValid, Error.Code.InvalidArgument, "redeemscript is invalid");
+		ErrorChecker.checkCondition(!this._isValid, Error.Code.InvalidArgument, "redeemscript is invalid");
 	}
 
-	/*bool Address::ChangePrefix(Prefix prefix) {
-		ErrorChecker::CheckCondition(!_isValid, Error::Address, "can't change prefix with invalid addr");
-		SignType oldSignType = SignType(_code.back());
-		if (oldSignType == SignTypeMultiSign || PrefixToSignType(prefix) == SignTypeMultiSign)
-			ErrorChecker::ThrowLogicException(Error::Address, "can't change to or from multi-sign prefix");
+	public changePrefix(prefix: Prefix): boolean {
+		ErrorChecker.checkCondition(!this._isValid, Error.Code.Address, "can't change prefix with invalid addr");
+		let oldSignType = this._code[this._code.length - 1] as SignType;
+		if (oldSignType == SignType.SignTypeMultiSign || this.prefixToSignType(prefix) == SignType.SignTypeMultiSign)
+			ErrorChecker.throwLogicException(Error.Code.Address, "can't change to or from multi-sign prefix");
 
-		GenerateProgramHash(prefix);
+		this.generateProgramHash(prefix);
 		return true;
 	}
 
-	void Address::ConvertToDID() {
+	/*void Address::ConvertToDID() {
 		if (!_code.empty() && _programHash.prefix() == PrefixIDChain) {
 			_code.back() = SignTypeDID;
 			GenerateProgramHash(PrefixIDChain);
 		}
+	}*/
+
+	public redeemScript(): bytes_t {
+		if (this._code.length === 0)
+			ErrorChecker.throwLogicException(Error.Code.Address, "can't call redeemScript, code not set");
+
+		return this._code;
 	}
 
-	const bytes_t &Address::RedeemScript() const {
-		assert(!_code.empty());
-		return _code;
-	}
-
-	bool Address::operator<(const Address &address) const {
+	/* bool Address::operator<(const Address &address) const {
 		return _programHash < address._programHash;
-	}
-*/
+	} */
 
 	public equals(address: Address | string): boolean {
 		if (typeof address === "string")
@@ -199,7 +200,7 @@ export class Address {
 		}*/
 
 	generateCode(prefix: Prefix, pubkeys: bytes_t[], m: uint8_t, did: boolean) {
-		ErrorChecker.CheckLogic(m > pubkeys.length || m == 0, Error.Code.MultiSignersCount, "Invalid m");
+		ErrorChecker.checkLogic(m > pubkeys.length || m == 0, Error.Code.MultiSignersCount, "Invalid m");
 
 		let bytes = new ByteStream();
 		if (m == 1 && pubkeys.length == 1) {
@@ -210,9 +211,8 @@ export class Address {
 			else
 				bytes.writeUInt8(this.prefixToSignType(prefix));
 		} else {
-			// TODO: CANT UNDERSTAND THIS CODE: pubkeys.size() > sizeof(uint8_t) - OP_1 ... sizeof(uint8_t) should be 1...
-			ErrorChecker.CheckCondition(pubkeys.size() > sizeof(uint8_t) - OP_1, Error.Code.MultiSignersCount,
-				"Signers should less than 205.");
+			ErrorChecker.checkCondition(pubkeys.length >= UINT8_MAX - OP_1, Error.Code.MultiSignersCount,
+				`Signers should less than ${UINT8_MAX - OP_1}.`);
 
 			let sortedSigners: bytes_t[] = Array.from(pubkeys);
 			sortedSigners.sort((a, b) => {

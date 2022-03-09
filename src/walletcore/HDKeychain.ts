@@ -30,18 +30,33 @@ const BigInt Elastos_CURVE_ORDER(Elastos_CURVE_ORDER_BYTES); */
 const BITCOIN_HD_PRIVATE_VERSION: uint32_t = 0x0488ade4;
 const BITCOIN_HD_PUBLIC_VERSION: uint32_t = 0x0488b21e;
 
-/* std:: map<std:: string, std:: map<std:: string, std:: map < std:: string, uint32_t >>> ExtKeyVersionMap = {
-{ "bip32", {{ "mainnet", { { "pub", 0x0488B21E }, { "prv", 0x0488ADE4 } } },
-{ "testnet", { { "pub", 0x043587CF }, { "prv", 0x04358394 } }
+type ExtKeyVersionMapNetwork = {
+	[network: string]: {
+		prv: number;
+		pub: number;
+	}
 }
-												}},
-{ "bip84", {{ "mainnet", { { "pub", 0x04b24746 }, { "prv", 0x04b2430c } } },
-{ "testnet", { { "pub", 0x045f1cf6 }, { "prv", 0x045f18bc } }}
-												}},
-{ "bip49", {{ "mainnet", { { "pub", 0x049d7cb2 }, { "prv", 0x049d7878 } } },
-{ "testnet", { { "pub", 0x044a5262 }, { "prv", 0x044a4e28 } }}
-												}}
-			}; */
+
+type ExtKeyVersionMapStandard = {
+	[standard: string]: ExtKeyVersionMapNetwork
+}
+
+export const ExtKeyVersionMap: ExtKeyVersionMapStandard[] = [
+	{
+		"bip32": {
+			"mainnet": { "pub": 0x0488B21E, "prv": 0x0488ADE4 },
+			"testnet": { "pub": 0x043587CF, "prv": 0x04358394 }
+		},
+		"bip84": {
+			"mainnet": { "pub": 0x04b24746, "prv": 0x04b2430c },
+			"testnet": { "pub": 0x045f1cf6, "prv": 0x045f18bc }
+		},
+		"bip49": {
+			"mainnet": { "pub": 0x049d7cb2, "prv": 0x049d7878 },
+			"testnet": { "pub": 0x044a5262, "prv": 0x044a4e28 }
+		}
+	}
+];
 
 export class HDSeed {
 	private seed_: bytes_t;

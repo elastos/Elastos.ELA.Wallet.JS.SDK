@@ -78,7 +78,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         //ArgInfo("count: {}", count);
         //ArgInfo("internal: {}", internal);
 
-        ErrorChecker.CheckParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
+        ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
 
         let addresses: Address[] = [];
         this._walletManager.getWallet().getAddresses(addresses, index, count, internal);
@@ -98,7 +98,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         //ArgInfo("count: {}", count);
         //ArgInfo("internal: {}", internal);
 
-        ErrorChecker.CheckParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
+        ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
 
         nlohmann::json j;
         this._walletManager.getWallet().getPublickeys(j, index, count, internal);
@@ -223,7 +223,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         if (!("Algorithm" in encodedTx) ||
             !("Data" in encodedTx) ||
             !("ChainID" in encodedTx)) {
-            ErrorChecker.ThrowParamException(Error.Code.InvalidArgument, "Invalid input");
+            ErrorChecker.throwParamException(Error.Code.InvalidArgument, "Invalid input");
         }
 
         let algorithm: string, data: string, chainID: string;
@@ -236,11 +236,11 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
             if ("Fee" in encodedTx)
                 fee = new BigNumber(encodedTx["Fee"] as string); // WAS encodedTx["Fee"].get<uint64_t>();
         } catch (e) {
-            ErrorChecker.ThrowParamException(Error.Code.InvalidArgument, "Invalid input: " + e);
+            ErrorChecker.throwParamException(Error.Code.InvalidArgument, "Invalid input: " + e);
         }
 
         if (chainID != this.getChainID()) {
-            ErrorChecker.ThrowParamException(Error.Code.InvalidArgument,
+            ErrorChecker.throwParamException(Error.Code.InvalidArgument,
                 "Invalid input: tx is not belongs to current subwallet");
         }
 
@@ -255,11 +255,11 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         if (algorithm == "base64") {
             rawHex = Buffer.from(data, "base64");
         } else {
-            ErrorChecker.CheckCondition(true, Error.Code.InvalidArgument, "Decode tx with unknown algorithm");
+            ErrorChecker.checkCondition(true, Error.Code.InvalidArgument, "Decode tx with unknown algorithm");
         }
 
         let stream = new ByteStream(rawHex);
-        ErrorChecker.CheckParam(!tx.deserialize(stream), Error.Code.InvalidArgument, "Invalid input: deserialize fail");
+        ErrorChecker.checkParam(!tx.deserialize(stream), Error.Code.InvalidArgument, "Invalid input: deserialize fail");
         tx.setFee(fee);
 
         //SPVLOG_DEBUG("decoded tx: {}", tx->ToJson().dump(4));
@@ -273,17 +273,17 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
                 !("Index" in utxoJson) ||
                 !("Address" in utxoJson) ||
                 !("Amount" in utxoJson)) {
-                ErrorChecker.ThrowParamException(Error.Code.InvalidArgument, "invalid inputs");
+                ErrorChecker.throwParamException(Error.Code.InvalidArgument, "invalid inputs");
             }
 
             let hash: uint256 = new BigNumber(utxoJson["TxHash"] as string, 16);
             let n: uint16_t = utxoJson["Index"] as uint16_t;
 
             let address = Address.newFromAddressString(utxoJson["Address"] as string);
-            ErrorChecker.CheckParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of inputs");
+            ErrorChecker.checkParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of inputs");
 
             let amount = new BigNumber(utxoJson["Amount"] as string); // Base 10
-            ErrorChecker.CheckParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of inputs");
+            ErrorChecker.checkParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of inputs");
 
             utxo.push(UTXO.newFromParams(hash, n, address, amount));
         }
@@ -295,10 +295,10 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
     private outputsFromJson(outputs: TransactionOutput[], outputsJson: JSONArray): boolean {
         for (let outputJson of outputsJson) {
             let amount = new BigNumber(outputJson["Amount"] as string);
-            ErrorChecker.CheckParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of outputs");
+            ErrorChecker.checkParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of outputs");
 
             let address = Address.newFromAddressString(outputJson["Address"] as string);
-            ErrorChecker.CheckParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of outputs");
+            ErrorChecker.checkParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of outputs");
 
             let output = TransactionOutput.newFromParams(amount, address);
             outputs.push(output);

@@ -62,9 +62,9 @@ export class Wallet extends Lockable {
 		for (let u of utxo) {
 			let code: bytes_t;
 			tx.addInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
-			if (!this._subAccount.GetCode(u.GetAddress(), code)) {
+			if (!this._subAccount.getCode(u.GetAddress(), code)) {
 				//GetLock().unlock();
-				ErrorChecker.ThrowParamException(Error.Code.Address, "Can't found code and path for input");
+				ErrorChecker.throwParamException(Error.Code.Address, "Can't found code and path for input");
 			}
 			tx.addUniqueProgram(Program.newFromParams(code, Buffer.alloc(0)));
 
@@ -73,7 +73,7 @@ export class Wallet extends Lockable {
 		//});
 
 		if (totalInputAmount.lt(totalOutputAmount.plus(fee))) {
-			ErrorChecker.ThrowLogicException(Error.Code.BalanceNotEnough, "Available balance is not enough");
+			ErrorChecker.throwLogicException(Error.Code.BalanceNotEnough, "Available balance is not enough");
 		} else if (totalInputAmount.gt(totalOutputAmount.plus(fee))) {
 			// change
 			let changeAmount: BigNumber = totalInputAmount.minus(totalOutputAmount).minus(fee);
@@ -85,11 +85,11 @@ export class Wallet extends Lockable {
 				this._subAccount.GetAddresses(addresses, 0, 1, false);
 				changeAddress = addresses[0];
 			}
-			ErrorChecker.CheckParam(!changeAddress.valid(), Error.Code.Address, "invalid change address");
+			ErrorChecker.checkParam(!changeAddress.valid(), Error.Code.Address, "invalid change address");
 			tx.addOutput(TransactionOutput.newFromParams(changeAmount, changeAddress));
 		}
 
-		ErrorChecker.CheckLogic(tx.getOutputs().length == 0, Error.Code.InvalidArgument, "outputs empty or input amount not enough");
+		ErrorChecker.checkLogic(tx.getOutputs().length == 0, Error.Code.InvalidArgument, "outputs empty or input amount not enough");
 
 		tx.setFee(fee); // WAS tx.SetFee(fee.getUint64());
 		if (this._chainID == CHAINID_MAINCHAIN)
@@ -98,62 +98,61 @@ export class Wallet extends Lockable {
 		return tx;
 	}
 
-	/*  void Wallet::GetPublickeys(nlohmann::json &pubkeys, uint32_t index, size_t count, bool internal) const {
-			 boost::mutex::scoped_lock scopedLock(lock);
-			 _subAccount->GetPublickeys(pubkeys, index, count, internal);
-	 }
+	/*public getPublickeys(nlohmann::json &pubkeys, uint32_t index, size_t count, bool internal) {
+		 this._subAccount.getPublickeys(pubkeys, index, count, internal);
+ }
 
-	 void Wallet::GetAddresses(AddressArray &addresses, uint32_t index, uint32_t count, bool internal) const {
-			 boost::mutex::scoped_lock scopedLock(lock);
-			 _subAccount->GetAddresses(addresses, index, count, internal);
+ void Wallet::GetAddresses(AddressArray &addresses, uint32_t index, uint32_t count, bool internal) const {
+		 boost::mutex::scoped_lock scopedLock(lock);
+		 _subAccount->GetAddresses(addresses, index, count, internal);
 }
 
 void Wallet::GetCID(AddressArray &cid, uint32_t index, size_t count, bool internal) const {
- boost::mutex::scoped_lock scopedLock(lock);
-			 _subAccount->GetCID(cid, index, count, false);
+boost::mutex::scoped_lock scopedLock(lock);
+		 _subAccount->GetCID(cid, index, count, false);
 }
 
 AddressPtr Wallet::GetOwnerDepositAddress() const {
- boost::mutex::scoped_lock scopedLock(lock);
- return AddressPtr(new Address(PrefixDeposit, _subAccount->OwnerPubKey()));
+boost::mutex::scoped_lock scopedLock(lock);
+return AddressPtr(new Address(PrefixDeposit, _subAccount->OwnerPubKey()));
 }
 
 AddressPtr Wallet::GetCROwnerDepositAddress() const {
- boost::mutex::scoped_lock scopedLock(lock);
- return AddressPtr(new Address(PrefixDeposit, _subAccount->DIDPubKey()));
+boost::mutex::scoped_lock scopedLock(lock);
+return AddressPtr(new Address(PrefixDeposit, _subAccount->DIDPubKey()));
 }
 
 AddressPtr Wallet::GetOwnerAddress() const {
- boost::mutex::scoped_lock scopedLock(lock);
- return AddressPtr(new Address(PrefixStandard, _subAccount->OwnerPubKey()));
+boost::mutex::scoped_lock scopedLock(lock);
+return AddressPtr(new Address(PrefixStandard, _subAccount->OwnerPubKey()));
 }
 
-AddressArray Wallet::GetAllSpecialAddresses() const {
- AddressArray result;
- boost::mutex::scoped_lock scopedLock(lock);
- if (_subAccount->Parent()->GetSignType() != Account::MultiSign) {
-	 // Owner address
-	 result.push_back(Address(PrefixStandard, _subAccount->OwnerPubKey()));
-	 // Owner deposit address
-	 result.push_back(Address(PrefixDeposit, _subAccount->OwnerPubKey()));
-	 // CR Owner deposit address
-	 result.push_back(Address(PrefixDeposit, _subAccount->DIDPubKey()));
- }
+/*AddressArray Wallet::GetAllSpecialAddresses() const {
+AddressArray result;
+boost::mutex::scoped_lock scopedLock(lock);
+if (_subAccount->Parent()->GetSignType() != Account::MultiSign) {
+ // Owner address
+ result.push_back(Address(PrefixStandard, _subAccount->OwnerPubKey()));
+ // Owner deposit address
+ result.push_back(Address(PrefixDeposit, _subAccount->OwnerPubKey()));
+ // CR Owner deposit address
+ result.push_back(Address(PrefixDeposit, _subAccount->DIDPubKey()));
+}
 
- return result;
+return result;
 }
 
 bytes_t Wallet::GetOwnerPublilcKey() const {
- boost::mutex::scoped_lock scopedLock(lock);
- return _subAccount->OwnerPubKey();
+boost::mutex::scoped_lock scopedLock(lock);
+return _subAccount->OwnerPubKey();
 }
 
 bool Wallet::IsDepositAddress(const Address &addr) const {
- boost::mutex::scoped_lock scopedLock(lock);
+boost::mutex::scoped_lock scopedLock(lock);
 
- if (_subAccount->IsProducerDepositAddress(addr))
-	 return true;
- return _subAccount->IsCRDepositAddress(addr);
+if (_subAccount->IsProducerDepositAddress(addr))
+ return true;
+return _subAccount->IsCRDepositAddress(addr);
 }*/
 
 	public GetBasicInfo(): json {

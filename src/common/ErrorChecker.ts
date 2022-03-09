@@ -111,7 +111,7 @@ export namespace Exception {
 }
 
 export class ErrorChecker {
-	private static MakeErrorJson(err: Error.Code, msg: string, data?: BigNumber): Error {
+	private static makeErrorJson(err: Error.Code, msg: string, data?: BigNumber): Error {
 		return {
 			Code: err,
 			Message: msg,
@@ -119,16 +119,16 @@ export class ErrorChecker {
 		};
 	}
 
-	public static ThrowParamException(err: Error.Code, msg: string) {
-		this.CheckParam(true, err, msg);
+	public static throwParamException(err: Error.Code, msg: string) {
+		this.checkParam(true, err, msg);
 	}
 
-	public static ThrowLogicException(err: Error.Code, msg: string) {
-		this.CheckLogic(true, err, msg);
+	public static throwLogicException(err: Error.Code, msg: string) {
+		this.checkLogic(true, err, msg);
 	}
 
-	public static CheckParam(condition: boolean, err: Error.Code, msg: string) {
-		this.CheckCondition(condition, err, msg, Exception.Type.InvalidArgument);
+	public static checkParam(condition: boolean, err: Error.Code, msg: string) {
+		this.checkCondition(condition, err, msg, Exception.Type.InvalidArgument);
 	}
 
 	/*void ErrorChecker::CheckBigIntAmount(const std::string &amount) {
@@ -136,13 +136,13 @@ export class ErrorChecker {
 			CheckCondition(!isdigit(amount[i]), Error::InvalidArgument, "invalid bigint amount: " + amount);
 	}
 */
-	public static CheckLogic(condition: boolean, err: Error.Code, msg: string) {
-		this.CheckCondition(condition, err, msg, Exception.Type.LogicError);
+	public static checkLogic(condition: boolean, err: Error.Code, msg: string) {
+		this.checkCondition(condition, err, msg, Exception.Type.LogicError);
 	}
 
-	public static CheckCondition(condition: boolean, err: Error.Code, msg: string, type: Exception.Type = Exception.Type.LogicError, enableLog = true) {
+	public static checkCondition(condition: boolean, err: Error.Code, msg: string, type: Exception.Type = Exception.Type.LogicError, enableLog = true) {
 		if (condition) {
-			let errJson = this.MakeErrorJson(err, msg);
+			let errJson = this.makeErrorJson(err, msg);
 
 			if (enableLog)
 				Log.error(errJson);
