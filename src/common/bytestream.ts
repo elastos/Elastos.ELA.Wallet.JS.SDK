@@ -239,6 +239,8 @@ export class ByteStream {
      * depending on its value.
      *
      * 64 bits number max.
+     *
+     * @return the number of written bytes.
      */
     public writeVarUInt(len: number | BigNumber): size_t {
         if (!(len instanceof BigNumber))
@@ -279,9 +281,21 @@ export class ByteStream {
         }
     }
 
-    /* void ByteStream:: WriteVarString(const std:: string & str) {
-    WriteVarBytes(str.c_str(), str.length());
-    } */
+    public writeVarString(str: string) {
+        this.writeVarBytes(Buffer.from(str, "utf8"));
+    }
+
+    /**
+     * Reads a size-prefixed string in a buffer without knowing its size.
+     * The number of bytes to read is stored in that prefix.
+     */
+    public readVarString(): string | null {
+        let bytes = Buffer.alloc(0);
+        if (!this.readVarBytes(bytes)) {
+            return null;
+        }
+        return bytes.toString();
+    }
 
     public writeAsciiString(str: string) {
         let len = str.length;

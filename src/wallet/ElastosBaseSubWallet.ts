@@ -1,13 +1,19 @@
 import BigNumber from "bignumber.js";
+import { SubAccount } from "../account/SubAccount";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { ChainConfig } from "../config";
+import { TransferAsset } from "../transactions/payload/TransferAsset";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import { TransactionOutput } from "../transactions/TransactionOutput";
 import { bytes_t, json, JSONArray, uint16_t, uint256, uint32_t, uint64_t } from "../types";
 import { Address } from "../walletcore/Address";
+import { CoinInfo } from "../walletcore/CoinInfo";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
+import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
 import { UTXO, UTXOSet } from "./UTXO";
+import { Wallet } from "./Wallet";
 import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./WalletCommon";
 
 /*
@@ -32,29 +38,41 @@ import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./Wallet
  * SOFTWARE.
  */
 
-type WalletManagerPtr = SpvService;
+//type WalletManagerPtr = SpvService;
 
 export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWallet {
-    protected _walletManager: WalletManagerPtr;
+    // protected _walletManager: WalletManagerPtr;
+    private _wallet: Wallet; // WAS: _walletManager: WalletManagerPtr - removed the SPVService, directly call the wallet object insteead
 
-    /* ElastosBaseSubWallet::ElastosBaseSubWallet(
-            const CoinInfoPtr &info,
-            const ChainConfigPtr &config,
-            MasterWallet *parent,
-            const std::string &netType) :
-            SubWallet(info, config, parent) {
+    constructor(
+        info: CoinInfo,
+        config: ChainConfig,
+        parent: MasterWallet,
+        netType: string) {
 
-        ErrorChecker::CheckParam(_parent->GetAccount()->MasterPubKeyHDPMString().empty(), Error::UnsupportOperation, "unsupport to create elastos based wallet");
-        boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
-        subWalletDBPath /= _info->GetChainID() + ".db";
+        super(info, config, parent);
 
-        SubAccountPtr subAccount = SubAccountPtr(new SubAccount(_parent->GetAccount()));
-        _walletManager = WalletManagerPtr(
-                new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
-                               _config, netType));
+        ErrorChecker.checkParam(this._parent.getAccount().masterPubKeyHDPMString().empty(), Error.Code.UnsupportOperation, "unsupport to create elastos based wallet");
+        // TODO boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
+        // TODO subWalletDBPath /= _info->GetChainID() + ".db";
+
+        /* TODO - replace the spvservice
+         _walletManager = WalletManagerPtr(
+                 new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
+                                _config, netType)); */
+
+        let chainID = info.getChainID();
+        if (chainID != CHAINID_MAINCHAIN &&
+            chainID != CHAINID_IDCHAIN &&
+            chainID != CHAINID_TOKENCHAIN) {
+            ErrorChecker.throwParamException(Error.Code.InvalidChainID, "invalid chain ID");
+        }
+
+        let subAccount = new SubAccount(parent.getAccount());
+        this._wallet = new Wallet(this._parent.getID(), chainID, subAccount);
     }
 
-    const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
+    /*const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
         return _walletManager;
     }
 
@@ -67,9 +85,13 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
         return {
-            Info: this._walletManager.getWallet().getBasicInfo(),
+            Info: this.getWallet().getBasicInfo(),
             ChainID: this._info.getChainID()
         };
+    }
+
+    protected getWallet(): Wallet {
+        return this._wallet;
     }
 
     public getAddresses(index: uint32_t, count: uint32_t, internal: boolean): string[] {
@@ -81,7 +103,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
 
         let addresses: Address[] = [];
-        this._walletManager.getWallet().getAddresses(addresses, index, count, internal);
+        this.getWallet().getAddresses(addresses, index, count, internal);
 
         let addressStrings: string[] = [];
         for (let address of addresses)
@@ -101,7 +123,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
 
         nlohmann::json j;
-        this._walletManager.getWallet().getPublickeys(j, index, count, internal);
+        this.getWallet().getPublickeys(j, index, count, internal);
 
         //ArgInfo("r => {}", j.dump());
         return j;
@@ -114,7 +136,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         //ArgInfo("fee: {}", fee);
         //ArgInfo("memo: {}", memo);
 
-        let wallet = this._walletManager.getWallet();
+        let wallet = this.getWallet();
 
         let utxos = new UTXOSet();
         this.UTXOFromJson(utxos, inputsJson);
@@ -139,9 +161,9 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
 
-        let txn = this.DecodeTx(tx);
+        let txn = this.decodeTx(tx);
 
-        this._walletManager.GetWallet().SignTransaction(txn, payPassword);
+        this.getWallet().signTransaction(txn, payPassword);
 
         let result: json;
         this.encodeTx(result, txn);
@@ -176,22 +198,22 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
 
         ArgInfo("r => {}", r);
         return r;
-    }
+    }*/
 
-    nlohmann::json ElastosBaseSubWallet::GetTransactionSignedInfo(const nlohmann::json &encodedTx) const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("tx: {}", encodedTx.dump());
+    public getTransactionSignedInfo(encodedTx: json) {
+        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+        //ArgInfo("tx: {}", encodedTx.dump());
 
-        TransactionPtr tx = DecodeTx(encodedTx);
+        let tx = this.decodeTx(encodedTx);
 
-        nlohmann::json info = tx->GetSignedInfo();
+        let info = tx.getSignedInfo();
 
-        ArgInfo("r => {}", info.dump());
+        //ArgInfo("r => {}", info.dump());
 
         return info;
     }
 
-    std::string ElastosBaseSubWallet::ConvertToRawTransaction(const nlohmann::json &tx) {
+    /*std::string ElastosBaseSubWallet::ConvertToRawTransaction(const nlohmann::json &tx) {
         ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
 
@@ -219,7 +241,7 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
     }
 
     // TODO: replace json with structured type
-    protected DecodeTx(encodedTx: json): Transaction {
+    protected decodeTx(encodedTx: json): Transaction {
         if (!("Algorithm" in encodedTx) ||
             !("Data" in encodedTx) ||
             !("ChainID" in encodedTx)) {

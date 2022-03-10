@@ -13,7 +13,7 @@ import { Program } from "../transactions/Program";
 import { Transaction, TxVersion } from "../transactions/Transaction";
 import { TransactionInput } from "../transactions/TransactionInput";
 import { OutputArray, TransactionOutput } from "../transactions/TransactionOutput";
-import { bytes_t, json, uint8_t } from "../types";
+import { bytes_t, json, size_t, uint32_t, uint8_t } from "../types";
 import { Address, AddressArray } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
@@ -82,7 +82,7 @@ export class Wallet extends Lockable {
 				changeAddress = utxo[0].GetAddress();
 			} else {
 				let addresses: AddressArray;
-				this._subAccount.GetAddresses(addresses, 0, 1, false);
+				this._subAccount.getAddresses(addresses, 0, 1, false);
 				changeAddress = addresses[0];
 			}
 			ErrorChecker.checkParam(!changeAddress.valid(), Error.Code.Address, "invalid change address");
@@ -98,73 +98,71 @@ export class Wallet extends Lockable {
 		return tx;
 	}
 
-	/*public getPublickeys(nlohmann::json &pubkeys, uint32_t index, size_t count, bool internal) {
-		 this._subAccount.getPublickeys(pubkeys, index, count, internal);
- }
+	public getPublickeys(pubkeys: json, index: uint32_t, count: size_t, internal: boolean) {
+		this._subAccount.getPublickeys(pubkeys, index, count, internal);
+	}
 
- void Wallet::GetAddresses(AddressArray &addresses, uint32_t index, uint32_t count, bool internal) const {
-		 boost::mutex::scoped_lock scopedLock(lock);
-		 _subAccount->GetAddresses(addresses, index, count, internal);
-}
+	public getAddresses(addresses: Address[], index: uint32_t, count: uint32_t, internal: boolean) {
+		this._subAccount.getAddresses(addresses, index, count, internal);
+	}
 
-void Wallet::GetCID(AddressArray &cid, uint32_t index, size_t count, bool internal) const {
-boost::mutex::scoped_lock scopedLock(lock);
-		 _subAccount->GetCID(cid, index, count, false);
-}
+	/*void Wallet::GetCID(AddressArray &cid, uint32_t index, size_t count, bool internal) const {
+	boost::mutex::scoped_lock scopedLock(lock);
+			 _subAccount->GetCID(cid, index, count, false);
+	}
 
-AddressPtr Wallet::GetOwnerDepositAddress() const {
-boost::mutex::scoped_lock scopedLock(lock);
-return AddressPtr(new Address(PrefixDeposit, _subAccount->OwnerPubKey()));
-}
+	AddressPtr Wallet::GetOwnerDepositAddress() const {
+	boost::mutex::scoped_lock scopedLock(lock);
+	return AddressPtr(new Address(PrefixDeposit, _subAccount->OwnerPubKey()));
+	}
 
-AddressPtr Wallet::GetCROwnerDepositAddress() const {
-boost::mutex::scoped_lock scopedLock(lock);
-return AddressPtr(new Address(PrefixDeposit, _subAccount->DIDPubKey()));
-}
+	AddressPtr Wallet::GetCROwnerDepositAddress() const {
+	boost::mutex::scoped_lock scopedLock(lock);
+	return AddressPtr(new Address(PrefixDeposit, _subAccount->DIDPubKey()));
+	}
 
-AddressPtr Wallet::GetOwnerAddress() const {
-boost::mutex::scoped_lock scopedLock(lock);
-return AddressPtr(new Address(PrefixStandard, _subAccount->OwnerPubKey()));
-}
+	AddressPtr Wallet::GetOwnerAddress() const {
+	boost::mutex::scoped_lock scopedLock(lock);
+	return AddressPtr(new Address(PrefixStandard, _subAccount->OwnerPubKey()));
+	}
 
-/*AddressArray Wallet::GetAllSpecialAddresses() const {
-AddressArray result;
-boost::mutex::scoped_lock scopedLock(lock);
-if (_subAccount->Parent()->GetSignType() != Account::MultiSign) {
- // Owner address
- result.push_back(Address(PrefixStandard, _subAccount->OwnerPubKey()));
- // Owner deposit address
- result.push_back(Address(PrefixDeposit, _subAccount->OwnerPubKey()));
- // CR Owner deposit address
- result.push_back(Address(PrefixDeposit, _subAccount->DIDPubKey()));
-}
+	/*AddressArray Wallet::GetAllSpecialAddresses() const {
+	AddressArray result;
+	boost::mutex::scoped_lock scopedLock(lock);
+	if (_subAccount->Parent()->GetSignType() != Account::MultiSign) {
+	 // Owner address
+	 result.push_back(Address(PrefixStandard, _subAccount->OwnerPubKey()));
+	 // Owner deposit address
+	 result.push_back(Address(PrefixDeposit, _subAccount->OwnerPubKey()));
+	 // CR Owner deposit address
+	 result.push_back(Address(PrefixDeposit, _subAccount->DIDPubKey()));
+	}
 
-return result;
-}
+	return result;
+	}
 
-bytes_t Wallet::GetOwnerPublilcKey() const {
-boost::mutex::scoped_lock scopedLock(lock);
-return _subAccount->OwnerPubKey();
-}
+	bytes_t Wallet::GetOwnerPublilcKey() const {
+	boost::mutex::scoped_lock scopedLock(lock);
+	return _subAccount->OwnerPubKey();
+	}
 
-bool Wallet::IsDepositAddress(const Address &addr) const {
-boost::mutex::scoped_lock scopedLock(lock);
+	bool Wallet::IsDepositAddress(const Address &addr) const {
+	boost::mutex::scoped_lock scopedLock(lock);
 
-if (_subAccount->IsProducerDepositAddress(addr))
- return true;
-return _subAccount->IsCRDepositAddress(addr);
-}*/
+	if (_subAccount->IsProducerDepositAddress(addr))
+	 return true;
+	return _subAccount->IsCRDepositAddress(addr);
+	}*/
 
-	public GetBasicInfo(): json {
+	public getBasicInfo(): json {
 		return this._subAccount.getBasicInfo();
 	}
 
-	public GetWalletID(): string {
+	public getWalletID(): string {
 		return this._walletID;
 	}
 
 	public signTransaction(tx: Transaction, payPassword: string) {
-		//boost::mutex::scoped_lock scopedLock(lock);
 		this._subAccount.signTransaction(tx, payPassword);
 	}
 

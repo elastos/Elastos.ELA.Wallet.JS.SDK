@@ -47,7 +47,7 @@ export class LocalStore {
 	//private _ripplePrimaryPubKey: string;
 
 	// for btc
-	//private  _xPubKeyBitcoin: string;
+	private _xPubKeyBitcoin: string;
 
 	private _subWalletsInfoList: CoinInfo[];
 	//private _path: string; // rootPath + masterWalletID
@@ -452,13 +452,13 @@ export class LocalStore {
 		return this._ethscPrimaryPubKey;
 	}
 
-	/* public setxPubKeyBitcoin(xpub: string) {
+	public setxPubKeyBitcoin(xpub: string) {
 		this._xPubKeyBitcoin = xpub;
 	}
 
 	public getxPubKeyBitcoin(): string {
 		return this._xPubKeyBitcoin;
-	} */
+	}
 
 	public setSinglePrivateKey(prvkey: string) {
 		this._singlePrivateKey = prvkey;

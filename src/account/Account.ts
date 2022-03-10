@@ -23,8 +23,10 @@
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
-import { bytes_t } from "../types";
+import { bytes_t, json } from "../types";
 import { Base58 } from "../walletcore/base58";
+import { CoinInfo } from "../walletcore/CoinInfo";
+import { CoinType } from "../walletcore/cointype";
 import { HDKeychain } from "../walletcore/HDKeychain";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
@@ -47,26 +49,27 @@ export class Account {
 	private init() {
 		this._cosignerIndex = -1;
 
-		if (!this._localstore.getOwnerPubKey().empty())
-			this._ownerPubKey.setHex(this._localstore.getOwnerPubKey());
-		if (!this._localstore.getRequestPubKey().empty())
-			this._requestPubKey.setHex(this._localstore.getRequestPubKey());
+		if (this._localstore.getOwnerPubKey())
+			this._ownerPubKey = Buffer.from(this._localstore.getOwnerPubKey(), "hex");
+
+		if (this._localstore.getRequestPubKey())
+			this._requestPubKey = Buffer.from(this._localstore.getRequestPubKey(), "hex");
 
 		let bytes: bytes_t; // TODO: alloc
 
 		let xpubRing = this._localstore.getPublicKeyRing();
-		for (let i = 0; i < xpubRing.size() - 1; ++i) {
-			for (let j = i + 1; j < xpubRing.size(); ++j) {
-				if (xpubRing[i].GetxPubKey() == xpubRing[j].GetxPubKey()) {
+		for (let i = 0; i < xpubRing.length - 1; ++i) {
+			for (let j = i + 1; j < xpubRing.length; ++j) {
+				if (xpubRing[i].getxPubKey() == xpubRing[j].getxPubKey()) {
 					ErrorChecker.throwParamException(Error.Code.PubKeyFormat, "Contain same xpub in PublicKeyRing");
 				}
 			}
 		}
 
-		if (!this._localstore.getxPubKey().empty()) {
+		if (this._localstore.getxPubKey()) {
 			ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getxPubKey(), bytes),
 				Error.Code.PubKeyFormat, "xpub decode error");
-			this._xpub = new HDKeychain(CTElastos, bytes);
+			this._xpub = new HDKeychain(CoinType.CTElastos, bytes);
 		} else {
 			this._xpub = null;
 			Log.warn("xpub is empty");
@@ -81,31 +84,31 @@ export class Account {
 			Log:: warn("btcMasterPubKey is empty");
 		} */
 
-		if (!this._localstore.getxPubKeyHDPM().empty()) {
+		if (this._localstore.getxPubKeyHDPM()) {
 			ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getxPubKeyHDPM(), bytes),
 				Error.Code.PubKeyFormat, "xpubHDPM decode error");
-			this._curMultiSigner = new HDKeychain(CTElastos, bytes);
+			this._curMultiSigner = new HDKeychain(CoinType.CTElastos, bytes);
 		} else {
 			Log.warn("xpubHDPM is empty");
 		}
 
 		if (this._localstore.getN() > 1) {
 			if (this._localstore.derivationStrategy() == "BIP44") {
-				this._curMultiSigner = _xpub;
-				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
+				this._curMultiSigner = this._xpub;
+				for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i) {
 					bytes_t xpubBytes;
-					ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), xpubBytes),
+					ErrorChecker.checkParam(!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].getxPubKey(), xpubBytes),
 						Error.Code.PubKeyFormat, "xpub decode error");
-					let xpub = new HDKeychain(CTElastos, xpubBytes);
-					this._allMultiSigners.push_back(xpub);
+					let xpub = new HDKeychain(CoinType.CTElastos, xpubBytes);
+					this._allMultiSigners.push(xpub);
 				}
 			} else if (this._localstore.derivationStrategy() == "BIP45") {
 				let sortedSigners: HDKeychain[] = [];
-				for (let i = 0; i < this._localstore.getPublicKeyRing().size(); ++i) {
+				for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i) {
 					ErrorChecker.checkLogic(
-						!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].GetxPubKey(), bytes),
+						!Base58.checkDecode(this._localstore.getPublicKeyRing()[i].getxPubKey(), bytes),
 						Error.Code.PubKeyFormat, "xpub HDPM decode error");
-					let xpub = new HDKeychain(CTElastos, bytes);
+					let xpub = new HDKeychain(CoinType.CTElastos, bytes);
 					sortedSigners.push(xpub);
 				}
 
@@ -120,7 +123,7 @@ export class Account {
 						this._curMultiSigner = tmp;
 						this._cosignerIndex = i;
 					}
-					this._allMultiSigners.push_back(tmp);
+					this._allMultiSigners.push(tmp);
 				}
 			}
 		}
@@ -645,38 +648,38 @@ export class Account {
 		j["publicKeyRing"] = jCosigners;
 
 		return j;
+	}*/
+
+	public multiSignSigner(): HDKeychain {
+		ErrorChecker.checkLogic(!this._xpub, Error.Code.Key, "Read-only wallet do not contain current multisigner");
+		return this._curMultiSigner;
 	}
 
-	HDKeychainPtr Account::MultiSignSigner() const {
-		ErrorChecker::CheckLogic(!_xpub, Error::Key, "Read-only wallet do not contain current multisigner");
-		return _curMultiSigner;
+	public multiSignCosigner(): HDKeychain[] {
+		return this._allMultiSigners;
 	}
 
-	HDKeychainArray Account::MultiSignCosigner() const {
-		return _allMultiSigners;
+	public cosignerIndex(): number {
+		return this._cosignerIndex;
 	}
 
-	int Account::CosignerIndex() const {
-		return _cosignerIndex;
+	public subWalletInfoList(): CoinInfo[] {
+		return this._localstore.getSubWalletInfoList();
 	}
 
-	std::vector<CoinInfoPtr> Account::SubWalletInfoList() const {
-		return _localstore->GetSubWalletInfoList();
+	public addSubWalletInfoList(info: CoinInfo) {
+		this._localstore.addSubWalletInfoList(info);
 	}
 
-	void Account::AddSubWalletInfoList(const CoinInfoPtr &info) {
-		_localstore->AddSubWalletInfoList(info);
+	public setSubWalletInfoList(info: CoinInfo[]) {
+		this._localstore.setSubWalletInfoList(info);
 	}
 
-	void Account::SetSubWalletInfoList(const std::vector<CoinInfoPtr> &info) {
-		_localstore->SetSubWalletInfoList(info);
+	public removeSubWalletInfo(chainID: string) {
+		this._localstore.removeSubWalletInfo(chainID);
 	}
 
-	void Account::RemoveSubWalletInfo(const std::string &chainID) {
-		_localstore->RemoveSubWalletInfo(chainID);
-	}
-
-	KeyStore Account::ExportKeystore(const std::string &payPasswd) const {
+	/*KeyStore Account::ExportKeystore(const std::string &payPasswd) const {
 					if (!_localstore->Readonly() && _localstore->GetxPubKeyBitcoin().empty()) {
 							RegenerateKey(payPasswd);
 							Init();

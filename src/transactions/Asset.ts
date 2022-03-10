@@ -3,24 +3,26 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import BigNumber from "bignumber.js";
-import { ELAMessage } from "../../wallet-sdk/spvmigration/ts/ELAMessage";
-import { uint256, uint8_t } from "../../wallet-sdk/spvmigration/ts/types";
+import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
+import { Log } from "../common/Log";
+import { ELAMessage } from "../ELAMessage";
+import { json, size_t, uint256, uint8_t } from "../types";
+import { SHA256 } from "../walletcore/sha256";
 
-const TOKEN_ASSET_PRECISION = "1000000000000000000";
+export const TOKEN_ASSET_PRECISION = "1000000000000000000";
 
 export enum AssetType {
 	Token = 0x00,
 	Share = 0x01,
-};
+}
 
 export enum AssetRecordType {
 	Unspent = 0x00,
 	Balance = 0x01,
-};
+}
 
-const MaxPrecision: uint8_t = 18;
-
+export const MaxPrecision: uint8_t = 18;
 
 export class Asset extends ELAMessage implements JsonSerializer {
 	private _name: string;
@@ -39,7 +41,7 @@ export class Asset extends ELAMessage implements JsonSerializer {
 		this._precision = 8;
 		this._assetType = AssetType.Token;
 		this._recordType = AssetRecordType.Unspent;
-		this._hash = Asset.GetELAAssetID();
+		this._hash = Asset.getELAAssetID();
 	}
 
 	public static newFromParams(name: string, desc: string, precision: uint8_t, assetType: AssetType, recordType: AssetRecordType): Asset {
@@ -67,115 +69,118 @@ export class Asset extends ELAMessage implements JsonSerializer {
 		return newAsset;
 	}
 
-	/*size_t Asset::EstimateSize() const {
-		size_t size = 0;
-		ByteStream stream;
+	public estimateSize(): size_t {
+		let size: size_t = 0;
+		let stream = new ByteStream();
 
-		size += stream.WriteVarUint(_name.size());
-		size += _name.size();
-		size += stream.WriteVarUint(_description.size());
-		size += _description.size();
+		size += stream.writeVarUInt(this._name.length);
+		size += this._name.length;
+		size += stream.writeVarUInt(this._description.length);
+		size += this._description.length;
 		size += 3;
 
 		return size;
 	}
 
-	 void Asset::Serialize(ByteStream &stream) const {
-		stream.WriteVarString(_name);
-		stream.WriteVarString(_description);
-		stream.WriteBytes(&_precision, 1);
-		stream.WriteBytes(&_assetType, 1);
-		stream.WriteBytes(&_recordType, 1);
+	public serialize(stream: ByteStream) {
+		stream.writeVarString(this._name);
+		stream.writeVarString(this._description);
+		stream.writeByte(this._precision);
+		stream.writeByte(this._assetType);
+		stream.writeByte(this._recordType);
 	}
 
-	bool Asset::Deserialize(const ByteStream &stream) {
-		if (!stream.ReadVarString(_name)) {
-			Log::error("Asset payload deserialize name fail");
+	public deserialize(stream: ByteStream): boolean {
+		this._name = stream.readVarString();
+		if (!this._name) {
+			Log.error("Asset payload deserialize name fail");
 			return false;
 		}
 
-		if (!stream.ReadVarString(_description)) {
-			Log::error("Asset payload deserialize description fail");
+		this._description = stream.readVarString();
+		if (!this._description) {
+			Log.error("Asset payload deserialize description fail");
 			return false;
 		}
 
-		if (!stream.ReadBytes(&_precision, 1)) {
-			Log::error("Asset payload deserialize precision fail");
+		this._precision = stream.readUInt8();
+		if (this._precision === null) {
+			Log.error("Asset payload deserialize precision fail");
 			return false;
 		}
 
-		if (!stream.ReadBytes(&_assetType, 1)) {
-			Log::error("Asset payload deserialize asset type fail");
+		this._assetType = stream.readUInt8();
+		if (this._assetType === null) {
+			Log.error("Asset payload deserialize asset type fail");
 			return false;
 		}
 
-		if (!stream.ReadBytes(&_recordType, 1)) {
-			Log::error("Asset payload deserialize record type fail");
+		this._recordType = stream.readUInt8();
+		if (this._recordType === null) {
+			Log.error("Asset payload deserialize record type fail");
 			return false;
 		}
 
-		if (_name == "ELA") {
-			_hash = Asset::GetELAAssetID();
+		if (this._name == "ELA") {
+			this._hash = Asset.getELAAssetID();
 		} else {
-			_hash = 0;
-			GetHash();
+			this._hash = new BigNumber(0);
+			this.getHash();
 		}
 
 		return true;
 	}
 
-	nlohmann::json Asset::ToJson() const {
-		nlohmann::json j;
-
-		j["Name"] = _name;
-		j["Description"] = _description;
-		j["Precision"] = _precision;
-		j["AssetType"] = _assetType;
-		j["RecordType"] = _recordType;
-
-		return j;
+	public toJson(): json {
+		return {
+			Name: this._name,
+			Description: this._description,
+			Precision: this._precision,
+			AssetType: this._assetType,
+			RecordType: this._recordType
+		};
 	}
 
-	void Asset::FromJson(const nlohmann::json &j) {
-		_name = j["Name"].get<std::string>();
-		_description = j["Description"].get<std::string>();
-		_precision = j["Precision"].get<uint8_t>();
-		_assetType = j["AssetType"].get<AssetType>();
-		_recordType = j["RecordType"].get<AssetRecordType>();
+	public fromJson(j: json) {
+		this._name = j["Name"] as string;
+		this._description = j["Description"] as string;
+		this._precision = j["Precision"] as number;
+		this._assetType = j["AssetType"] as number;
+		this._recordType = j["RecordType"] as number;
 
-		if (_name == "ELA") {
-			_hash = Asset::GetELAAssetID();
+		if (this._name == "ELA") {
+			this._hash = Asset.getELAAssetID();
 		} else {
-			_hash = 0;
-			GetHash();
+			this._hash = new BigNumber(0);
+			this.getHash();
 		}
-	}*/
+	}
 
-	public static GetELAAssetID(): uint256 {
+	public static getELAAssetID(): uint256 {
 		if (Asset._elaAsset === null) {
 			Asset._elaAsset = new BigNumber("a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0", 16);
 		}
 		return Asset._elaAsset;
 	}
 
-	/*const uint256 &Asset::GetHash() const {
-		if (_hash == 0) {
-			ByteStream stream;
-			Serialize(stream);
-			_hash = sha256_2(stream.GetBytes());
+	public getHash(): uint256 {
+		if (this._hash.eq(0)) {
+			let stream = new ByteStream();
+			this.serialize(stream);
+			this._hash = new BigNumber(SHA256.hashTwice(stream.getBytes()).toString("hex"));
 		}
-		return _hash;
+		return this._hash;
 	}
 
-	void Asset::SetHash(const uint256 &hash) {
-		_hash = hash;
+	public setHash(hash: uint256) {
+		this._hash = hash;
 	}
 
-	bool Asset::operator==(const Asset &asset) const {
-		return _name == asset._name &&
-				 _description == asset._description &&
-				 _precision == asset._precision &&
-				 _assetType == asset._assetType &&
-				 _recordType == asset._recordType;
-	} */
+	public equals(asset: Asset): boolean {
+		return this._name == asset._name &&
+			this._description == asset._description &&
+			this._precision == asset._precision &&
+			this._assetType == asset._assetType &&
+			this._recordType == asset._recordType;
+	}
 }

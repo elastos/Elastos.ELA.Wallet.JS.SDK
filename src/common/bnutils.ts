@@ -45,5 +45,6 @@ export const getBNsize = (bn: BigNumber): number => {
  * Rebuilds a big number from a buffer that represents a long decimal number.
  */
 export const newBNFromBuffer = (buffer: Buffer): BigNumber => {
-
+  let bytestream = new ByteStream(buffer);
+  return bytestream.readUIntOfBytesAsBN(buffer.length);
 }

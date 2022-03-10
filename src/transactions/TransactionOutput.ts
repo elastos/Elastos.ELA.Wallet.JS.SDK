@@ -57,7 +57,7 @@ export class TransactionOutput implements JsonSerializer {
 		return transactionOutput;
 	}
 
-	public static newFromParams(a: BigNumber, addr: Address, assetID: uint256 = Asset.GetELAAssetID(), type: Type = Type.Default, payload: OutputPayload = null): TransactionOutput {
+	public static newFromParams(a: BigNumber, addr: Address, assetID: uint256 = Asset.getELAAssetID(), type: Type = Type.Default, payload: OutputPayload = null): TransactionOutput {
 		let txOutput = new TransactionOutput();
 		txOutput._outputLock = 0;
 		txOutput._outputType = type;
@@ -91,7 +91,7 @@ export class TransactionOutput implements JsonSerializer {
 		let stream = new ByteStream();
 
 		size += getBNsize(this._assetID); // WAS this._assetID.size();
-		if (this._assetID == Asset.GetELAAssetID()) {
+		if (this._assetID == Asset.getELAAssetID()) {
 			size += 8; // WAS sizeof(uint64_t);
 		} else {
 			let amountBytes: bytes_t = getBNHexBytes(this._amount); // WAS this._amount.getHexBytes();
@@ -108,7 +108,7 @@ export class TransactionOutput implements JsonSerializer {
 	public serialize(ostream: ByteStream, txVersion: uint8_t) {
 		ostream.writeBytes(getBNBytes(this._assetID));
 
-		if (this._assetID == Asset.GetELAAssetID()) {
+		if (this._assetID == Asset.getELAAssetID()) {
 			//let bytes: bytes_t = getBNHexBytes(this._amount); // WAS this._amount.getHexBytes(true);
 			//let amount: uint64_t = Buffer.alloc(sizeof_uint64_t());
 			//memcpy(& amount, & bytes[0], Math.min(bytes.length, sizeof_uint64_t()));
@@ -135,7 +135,7 @@ export class TransactionOutput implements JsonSerializer {
 			return false;
 		}
 
-		if (this._assetID.eq(Asset.GetELAAssetID())) {
+		if (this._assetID.eq(Asset.getELAAssetID())) {
 			this._amount = istream.readUIntOfBytesAsBN(sizeof_uint64_t()); // WAS this._amount.setHexBytes(bytes_t(& amount, sizeof(amount)), true);
 			if (this._amount === null) {
 				Log.error("deserialize output amount error");

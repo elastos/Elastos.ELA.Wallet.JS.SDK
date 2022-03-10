@@ -24,14 +24,14 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
-import { bytes_t, json, uint256, uint32_t } from "../types";
-import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
+import { bytes_t, json, size_t, uint256, uint32_t } from "../types";
+import { Address, Prefix, SignType } from "../walletcore/Address";
 import { HDKeychain, SEQUENCE_EXTERNAL_CHAIN, SEQUENCE_INTERNAL_CHAIN } from "../walletcore/HDKeychain";
 import { Key } from "../walletcore/Key";
 import { Account, MAX_MULTISIGN_COSIGNERS, SignType as AccountSignType } from "./Account";
 
 export class SubAccount {
-    private _chainAddressCached: Map<uint32_t, AddressArray> = new Map();
+    private _chainAddressCached: Map<uint32_t, Address[]> = new Map();
     private _depositAddress: Address;
     private _ownerAddress: Address;
     private _crDepositAddress: Address;
@@ -76,9 +76,9 @@ export class SubAccount {
          return _crDepositAddress.Valid() && _crDepositAddress == address;
      }
 
-     void SubAccount::GetCID(AddressArray &cids, uint32_t index, size_t count, bool internal) const {
+     void SubAccount::GetCID(Address[] &cids, uint32_t index, size_t count, bool internal) const {
          if (_parent->GetSignType() != IAccount::MultiSign) {
-             AddressArray addresses;
+             Address[] addresses;
              GetAddresses(addresses, index, count, internal);
 
              for (Address addr : addresses) {
@@ -87,104 +87,108 @@ export class SubAccount {
                  cids.push_back(cid);
              }
          }
-     }
-
-     void SubAccount::GetPublickeys(nlohmann::json &jout, uint32_t index, size_t count, bool internal) const {
-         if (_parent->SingleAddress()) {
-             index = 0;
-             count = 1;
-             internal = false;
-         }
-
-         uint32_t chain = internal ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
-         if (_parent->GetSignType() == Account::MultiSign) {
-             std::vector<HDKeychain> allKeychains;
-             HDKeychain mineKeychain;
-
-             if (count > 0) {
-                 for (const HDKeychainPtr &keychain : _parent->MultiSignCosigner())
-                     allKeychains.push_back(keychain->getChild(chain));
-                 mineKeychain = _parent->MultiSignSigner()->getChild(chain);
-             }
-
-             if (allKeychains.empty()) {
-                 count = 0;
-                 Log::error("keychains is empty when derivate address");
-             }
-
-             jout["m"] = _parent->GetM();
-             nlohmann::json jpubkeys;
-             while (count--) {
-                 std::vector<std::string> pubkeys;
-                 nlohmann::json j;
-                 for (const HDKeychain &signer : allKeychains)
-                     pubkeys.push_back(signer.getChild(index).pubkey().getHex());
-
-                 j["me"] = mineKeychain.getChild(index).pubkey().getHex();
-                 j["all"] = pubkeys;
-                 jpubkeys.push_back(j);
-                 index++;
-             }
-             jout["pubkeys"] = jpubkeys;
-         } else {
-             HDKeychain keychain = _parent->MasterPubKey()->getChild(chain);
-
-             while (count--)
-                 jout.push_back(keychain.getChild(index++).pubkey().getHex());
-         }
      }*/
 
-    public GetAddresses(addresses: AddressArray /* (out TODO) */, index: uint32_t, count: uint32_t, internal: boolean) {
+    public getPublickeys(jout: json, index: uint32_t, count: size_t, internal: boolean) {
         if (this._parent.singleAddress()) {
             index = 0;
             count = 1;
             internal = false;
         }
 
-        /*
+        /* 
         TODO
 
-        let chain: uint32_t = internal ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
-        AddressArray &addrChain = _chainAddressCached[chain];
-        uint32_t derivateCount = (index + count > addrChain.size()) ? (index + count - addrChain.size()) : 0;
-
+        uint32_t chain = internal ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
         if (_parent->GetSignType() == Account::MultiSign) {
-            std::vector<HDKeychain> keychains;
+            std::vector<HDKeychain> allKeychains;
+            HDKeychain mineKeychain;
 
-            if (derivateCount > 0)
+            if (count > 0) {
                 for (const HDKeychainPtr &keychain : _parent->MultiSignCosigner())
-                    keychains.push_back(keychain->getChild(chain));
+                    allKeychains.push_back(keychain->getChild(chain));
+                mineKeychain = _parent->MultiSignSigner()->getChild(chain);
+            }
 
-            if (keychains.empty()) {
-                derivateCount = 0;
+            if (allKeychains.empty()) {
+                count = 0;
                 Log::error("keychains is empty when derivate address");
             }
 
-            while (derivateCount--) {
-                std::vector<bytes_t> pubkeys;
-                for (const HDKeychain &signer : keychains)
-                    pubkeys.push_back(signer.getChild(addrChain.size()).pubkey());
+            jout["m"] = _parent->GetM();
+            nlohmann::json jpubkeys;
+            while (count--) {
+                std::vector<std::string> pubkeys;
+                nlohmann::json j;
+                for (const HDKeychain &signer : allKeychains)
+                    pubkeys.push_back(signer.getChild(index).pubkey().getHex());
 
-                Address addr(PrefixMultiSign, pubkeys, _parent->GetM());
-                if (!addr.Valid()) {
-                    Log::error("derivate invalid multi-sig address");
-                    break;
-                }
-                addrChain.push_back(addr);
+                j["me"] = mineKeychain.getChild(index).pubkey().getHex();
+                j["all"] = pubkeys;
+                jpubkeys.push_back(j);
+                index++;
             }
+            jout["pubkeys"] = jpubkeys;
         } else {
             HDKeychain keychain = _parent->MasterPubKey()->getChild(chain);
 
+            while (count--)
+                jout.push_back(keychain.getChild(index++).pubkey().getHex());
+        } */
+    }
+
+    public getAddresses(addresses: Address[] /* (out TODO) */, index: uint32_t, count: uint32_t, internal: boolean) {
+        if (this._parent.singleAddress()) {
+            index = 0;
+            count = 1;
+            internal = false;
+        }
+
+        let chain: uint32_t = internal ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
+        let addrChain = this._chainAddressCached.get(chain);
+        let derivateCount = (index + count > addrChain.length) ? (index + count - addrChain.length) : 0;
+
+        if (this._parent.getSignType() == AccountSignType.MultiSign) {
+            let keychains: HDKeychain[] = [];
+
+            if (derivateCount > 0)
+                for (let keychain of this._parent.multiSignCosigner())
+                    keychains.push(keychain.getChild(chain));
+
+            if (keychains.length === 0) {
+                derivateCount = 0;
+                Log.error("keychains is empty when derivate address");
+            }
+
             while (derivateCount--) {
-                Address addr(PrefixStandard, keychain.getChild(addrChain.size()).pubkey());
-                if (!addr.Valid()) {
-                    Log::error("derivate invalid address");
+                let pubkeys: bytes_t[] = [];
+                for (let signer of keychains)
+                    pubkeys.push(signer.getChild(addrChain.length).pubkey());
+
+                let addr = Address.newWithPubKeys(Prefix.PrefixMultiSign, pubkeys, this._parent.getM());
+                if (!addr.valid()) {
+                    Log.error("derivate invalid multi-sig address");
                     break;
                 }
-                addrChain.push_back(addr);
+                addrChain.push(addr);
+            }
+        } else {
+            let keychain = this._parent.masterPubKey().getChild(chain);
+
+            while (derivateCount--) {
+                let addr = Address.newWithPubKey(Prefix.PrefixStandard, keychain.getChild(addrChain.length).pubkey());
+                if (!addr.valid()) {
+                    Log.error("derivate invalid address");
+                    break;
+                }
+                addrChain.push(addr);
             }
         }
-        addresses.assign(addrChain.begin() + index, addrChain.begin() + index + count); */
+
+        addresses.length = 0;
+        for (let i = index; i < index + count; i++)
+            addresses.push(addrChain[i]);
+        // WAS addresses.assign(addrChain.begin() + index, addrChain.begin() + index + count);
     }
 
     /*bytes_t SubAccount::OwnerPubKey() const {
@@ -277,7 +281,7 @@ export class SubAccount {
         if (_parent->GetSignType() != IAccount::MultiSign) {
             for (auto it = _chainAddressCached.begin(); it != _chainAddressCached.end(); ++it) {
                 uint32_t chain = it->first;
-                AddressArray &chainAddr = it->second;
+                Address[] &chainAddr = it->second;
                 for (uint32_t i = 0; i < chainAddr.size(); ++i) {
                     Address cid(chainAddr[i]);
                     cid.ChangePrefix(PrefixIDChain);

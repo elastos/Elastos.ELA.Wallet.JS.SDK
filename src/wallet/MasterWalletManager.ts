@@ -25,15 +25,17 @@ import { Lockable } from "../common/Lockable";
 import { Config, CONFIG_MAINNET, CONFIG_PRVNET, CONFIG_REGTEST, CONFIG_TESTNET } from "../Config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json } from "../types";
-import { ExtKeyVersionMap } from "../walletcore/HDKeychain";
+import { ExtKeyVersionMap, HDKeychain } from "../walletcore/HDKeychain";
 import { MasterWallet } from "./MasterWallet";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json" // TODO: move to store
 const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
 
-type MasterWalletMap = {
+/* type MasterWalletMap = {
 	[walletID: string]: MasterWallet
-}
+} */
+
+type MasterWalletMap = Map<string, MasterWallet>;
 
 export class MasterWalletManager {
 	protected _lock: Lockable;
@@ -73,12 +75,13 @@ export class MasterWalletManager {
 		} else {
 			HDKeychain.setVersions(ExtKeyVersionMap["bip32"]["testnet"]["prv"], ExtKeyVersionMap["bip32"]["testnet"]["pub"]);
 
+			/* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
 			this._dataPath = this._dataPath + "/" + this._config.getNetType();
 			if (!boost:: filesystem:: exists(_dataPath))
-			boost:: filesystem:: create_directory(_dataPath);
+				boost:: filesystem:: create_directory(_dataPath); */
 		}
 
-		this.LoadMasterWalletID();
+		this.loadMasterWalletID();
 	}
 
 	/*MasterWalletManager::~MasterWalletManager() {
@@ -103,7 +106,7 @@ export class MasterWalletManager {
 		_lock = nullptr;
 	}*/
 
-	private LoadMasterWalletID() {
+	private loadMasterWalletID() {
 		boost:: filesystem::path rootpath(_dataPath);
 		for (directory_iterator it(rootpath); it != directory_iterator(); ++it) {
 
@@ -114,7 +117,7 @@ export class MasterWalletManager {
 
 			std::string masterWalletID = temp.filename().string();
 			if (exists((* it) / LOCAL_STORE_FILE) || exists((* it) / MASTER_WALLET_STORE_FILE)) {
-				_masterWalletMap[masterWalletID] = nullptr;
+				_masterWalletMap[masterWalletID] = null;
 			}
 		}
 	}
@@ -594,13 +597,11 @@ export class MasterWalletManager {
 			return _masterWalletMap[masterWalletID] != nullptr;
 		}*/
 
-	public getMasterWallet(const std:: string &masterWalletID): MasterWallet {
+	public getMasterWallet(masterWalletID: string): MasterWallet {
 		//ArgInfo("{}", GetFunName());
 		//ArgInfo("masterWalletID: {}", masterWalletID);
 
-		boost:: mutex::scoped_lock scoped_lock(_lock -> GetLock());
-
-		if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
+		if (this._masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
 			_masterWalletMap[masterWalletID] != nullptr) {
 			return _masterWalletMap[masterWalletID];
 		}

@@ -389,106 +389,106 @@ export class MasterWallet {
 
 	std::string MasterWallet::GetDataPath() const {
 		return _account->GetDataPath();
+	}*/
+
+	public getAccount(): Account {
+		return this._account;
 	}
 
-	AccountPtr MasterWallet::GetAccount() const {
-		return _account;
-	}
+	/*	bool MasterWallet::IsAddressValid(const std::string &address) const {
+			ArgInfo("{} {}", _id, GetFunName());
+			ArgInfo("addr: {}", address);
 
-	bool MasterWallet::IsAddressValid(const std::string &address) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("addr: {}", address);
+			bool valid = Address(address).Valid();
+			if (!valid) {
+				valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
+			}
 
-		bool valid = Address(address).Valid();
-		if (!valid) {
-			valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
+			ArgInfo("r => {}", valid);
+			return valid;
 		}
 
-		ArgInfo("r => {}", valid);
-		return valid;
-	}
+		bool MasterWallet::IsSubWalletAddressValid(const std::string &chainID, const std::string &address) const {
+			ArgInfo("{} {}", _id, GetFunName());
+			ArgInfo("chainID: {}", chainID);
+			ArgInfo("address: {}", address);
 
-	bool MasterWallet::IsSubWalletAddressValid(const std::string &chainID, const std::string &address) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("chainID: {}", chainID);
-		ArgInfo("address: {}", address);
+						bool valid = false;
+						if (chainID == CHAINID_MAINCHAIN || chainID == CHAINID_IDCHAIN || chainID == CHAINID_TOKENCHAIN) {
+								valid = Address(address).Valid();
+						} else if (chainID == "BTC") {
+								BRAddressParams addrParams;
+								if (_config->GetNetType() == CONFIG_MAINNET) {
+										addrParams = BITCOIN_ADDRESS_PARAMS;
+								} else {
+										addrParams = BITCOIN_TEST_ADDRESS_PARAMS;
+								}
+								valid = BRAddressIsValid(addrParams, address.c_str());
+						} else if (chainID.find("ETH") != std::string::npos) {
+								valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
+						}
 
-					bool valid = false;
-					if (chainID == CHAINID_MAINCHAIN || chainID == CHAINID_IDCHAIN || chainID == CHAINID_TOKENCHAIN) {
-							valid = Address(address).Valid();
-					} else if (chainID == "BTC") {
-							BRAddressParams addrParams;
-							if (_config->GetNetType() == CONFIG_MAINNET) {
-									addrParams = BITCOIN_ADDRESS_PARAMS;
-							} else {
-									addrParams = BITCOIN_TEST_ADDRESS_PARAMS;
-							}
-							valid = BRAddressIsValid(addrParams, address.c_str());
-					} else if (chainID.find("ETH") != std::string::npos) {
-							valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
-					}
-
-		ArgInfo("r => {}", valid);
-		return valid;
-	}
-
-	std::vector<std::string> MasterWallet::GetSupportedChains() const {
-		ArgInfo("{} {}", _id, GetFunName());
-
-		std::vector<std::string> chainIDs = _config->GetAllChainIDs();
-
-		std::string result;
-		for (size_t i = 0; i < chainIDs.size(); ++i) {
-			result += chainIDs[i] + ", ";
+			ArgInfo("r => {}", valid);
+			return valid;
 		}
 
-		ArgInfo("r => {}", result);
-		return chainIDs;
-	}
+		std::vector<std::string> MasterWallet::GetSupportedChains() const {
+			ArgInfo("{} {}", _id, GetFunName());
 
-	void MasterWallet::ChangePassword(const std::string &oldPassword, const std::string &newPassword) {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("old: *");
-		ArgInfo("new: *");
+			std::vector<std::string> chainIDs = _config->GetAllChainIDs();
 
-		_account->ChangePassword(oldPassword, newPassword);
-	}
+			std::string result;
+			for (size_t i = 0; i < chainIDs.size(); ++i) {
+				result += chainIDs[i] + ", ";
+			}
 
-	void MasterWallet::ResetPassword(const std::string &mnemonic, const std::string &passphrase,
-									 const std::string &newPassword) {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("m: *");
-		ArgInfo("passphrase: *");
-		ArgInfo("passwd: *");
-
-		_account->ResetPassword(mnemonic, passphrase, newPassword);
-
-		ArgInfo("r => ");
-	}
-
-	nlohmann::json MasterWallet::GetBasicInfo() const {
-		ArgInfo("{} {}", _id, GetFunName());
-
-		nlohmann::json info = _account->GetBasicInfo();
-
-		ArgInfo("r => {}", info.dump());
-		return info;
-	}
-
-	bool MasterWallet::IsEqual(const MasterWallet &wallet) const {
-		return _account->Equal(wallet._account);
-	}
-
-	void MasterWallet::FlushData() {
-		for (WalletMap::const_iterator it = _createdWallets.cbegin(); it != _createdWallets.cend(); ++it) {
-			SubWallet *subWallet = dynamic_cast<SubWallet*>(it->second);
-			if (subWallet)
-				subWallet->FlushData();
+			ArgInfo("r => {}", result);
+			return chainIDs;
 		}
-	}
 
-	ChainConfigPtr MasterWallet::GetChainConfig(const std::string &chainID) const {
-		return _config->GetChainConfig(chainID);
-	} */
+		void MasterWallet::ChangePassword(const std::string &oldPassword, const std::string &newPassword) {
+			ArgInfo("{} {}", _id, GetFunName());
+			ArgInfo("old: *");
+			ArgInfo("new: *");
+
+			_account->ChangePassword(oldPassword, newPassword);
+		}
+
+		void MasterWallet::ResetPassword(const std::string &mnemonic, const std::string &passphrase,
+										 const std::string &newPassword) {
+			ArgInfo("{} {}", _id, GetFunName());
+			ArgInfo("m: *");
+			ArgInfo("passphrase: *");
+			ArgInfo("passwd: *");
+
+			_account->ResetPassword(mnemonic, passphrase, newPassword);
+
+			ArgInfo("r => ");
+		}
+
+		nlohmann::json MasterWallet::GetBasicInfo() const {
+			ArgInfo("{} {}", _id, GetFunName());
+
+			nlohmann::json info = _account->GetBasicInfo();
+
+			ArgInfo("r => {}", info.dump());
+			return info;
+		}
+
+		bool MasterWallet::IsEqual(const MasterWallet &wallet) const {
+			return _account->Equal(wallet._account);
+		}
+
+		void MasterWallet::FlushData() {
+			for (WalletMap::const_iterator it = _createdWallets.cbegin(); it != _createdWallets.cend(); ++it) {
+				SubWallet *subWallet = dynamic_cast<SubWallet*>(it->second);
+				if (subWallet)
+					subWallet->FlushData();
+			}
+		}
+
+		ChainConfigPtr MasterWallet::GetChainConfig(const std::string &chainID) const {
+			return _config->GetChainConfig(chainID);
+		} */
 
 }

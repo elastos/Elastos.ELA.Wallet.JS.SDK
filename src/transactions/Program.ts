@@ -7,6 +7,7 @@ import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
 import { bytes_t, json, size_t, uint256, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
+import { CoinType } from "../walletcore/cointype";
 import { Key } from "../walletcore/Key";
 
 export type ProgramPtr = Program;
@@ -37,7 +38,7 @@ export class Program extends ELAMessage implements JsonSerializer {
 	}
 
 	public verifySignature(md: uint256): boolean {
-		Key key;
+		let key: Key;
 		let signatureCount: uint8_t = 0;
 
 		let publicKeys: bytes_t[] = [];
@@ -52,8 +53,8 @@ export class Program extends ELAMessage implements JsonSerializer {
 		while (stream.readVarBytes(signature)) {
 			let verified = false;
 			for (let i = 0; i < publicKeys.length; ++i) {
-				key.SetPubKey(CTElastos, publicKeys[i]);
-				if (key.Verify(md, signature)) {
+				key.setPubKey(CoinType.CTElastos, publicKeys[i]);
+				if (key.verify(md, signature)) {
 					verified = true;
 					break;
 				}
@@ -90,35 +91,35 @@ export class Program extends ELAMessage implements JsonSerializer {
 
 	public getSignedInfo(md: uint256): json {
 		let info = {};
-		std:: vector < bytes_t > publicKeys;
+		let publicKeys: bytes_t[] = [];
 		let type: SignType = this.decodePublicKey(publicKeys);
 		if (type == SignType.SignTypeInvalid) {
 			Log.warn("Can not decode pubkey from program");
 			return info;
 		}
 
-		Key key;
+		let key: Key;
 		let stream = new ByteStream(this._parameter);
-		bytes_t signature;
-		let signers = {};
+		let signature: bytes_t = Buffer.alloc(0);
+		let signers: string[] = [];
 		while (stream.readVarBytes(signature)) {
-			for (size_t i = 0; i < publicKeys.size(); ++i) {
-				key.SetPubKey(CTElastos, publicKeys[i]);
-				if (key.Verify(md, signature)) {
-					signers.push_back(publicKeys[i].getHex());
+			for (let i = 0; i < publicKeys.length; ++i) {
+				key.setPubKey(CoinType.CTElastos, publicKeys[i]);
+				if (key.verify(md, signature)) {
+					signers.push(publicKeys[i].getHex());
 					break;
 				}
 			}
 		}
 
-		if (SignType(_code.back()) == SignType.SignTypeMultiSign) {
-			uint8_t m = (uint8_t)(_code[0] - OP_1 + 1);
-			uint8_t n = (uint8_t)(_code[_code.size() - 2] - OP_1 + 1);
+		if (this._code[this._code.length - 1] as SignType === SignType.SignTypeMultiSign) {
+			let m: uint8_t = this._code[0] - OP_1 + 1;
+			let n: uint8_t = this._code[this._code.length - 2] - OP_1 + 1;
 			info["SignType"] = "MultiSign";
 			info["M"] = m;
 			info["N"] = n;
 			info["Signers"] = signers;
-		} else if (SignType(_code.back()) == SignTypeStandard) {
+		} else if (this._code[this._code.length - 1] as SignType == SignType.SignTypeStandard) {
 			info["SignType"] = "Standard";
 			info["Signers"] = signers;
 		}
