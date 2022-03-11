@@ -52,8 +52,6 @@ namespace Elastos {
 				uint32_t fp() const; // fingerprint is first 32 bits of hash
 				bytes_t full_hash() const; // full_hash is ripemd160(sha256(pubkey + chain_code))
 
-				bool valid() const { return _valid; }
-
 				HDKeychain getPublic() const;
 				HDKeychain getChild(uint32_t i) const;
 				HDKeychain getChild(const std::string& path) const;

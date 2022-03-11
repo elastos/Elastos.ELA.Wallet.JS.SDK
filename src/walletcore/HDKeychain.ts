@@ -244,6 +244,10 @@ export class HDKeychain {
     );
   }
 
+  valid(): boolean {
+    return this._valid;
+  }
+
   /* 
 HDKeychain:: HDKeychain(CoinType type, const bytes_t & extkey) : _type(type) {
 FixCurveOrder();
