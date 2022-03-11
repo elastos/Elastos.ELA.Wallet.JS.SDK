@@ -114,7 +114,7 @@ export class HDKeychain {
   private _CURVE_ORDER: BigNumber;
   private _type: CoinType;
 
-  fixCurveOrder() {
+  private fixCurveOrder() {
     if (this._type == CoinType.CTElastos) {
       this._CURVE_ORDER = Elastos_CURVE_ORDER;
     } else if (this._type == CoinType.CTBitcoin) {
