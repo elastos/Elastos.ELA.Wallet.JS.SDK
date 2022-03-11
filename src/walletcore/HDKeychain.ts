@@ -114,6 +114,12 @@ export class HDKeychain {
   private _CURVE_ORDER: BigNumber;
   private _type: CoinType;
 
+  public constructor() {
+    this._type = CoinType.CTElastos;
+    this.fixCurveOrder();
+    this._valid = false;
+  }
+
   private fixCurveOrder() {
     if (this._type == CoinType.CTElastos) {
       this._CURVE_ORDER = Elastos_CURVE_ORDER;
@@ -125,12 +131,6 @@ export class HDKeychain {
   }
 
   /* 
-HDKeychain:: HDKeychain() {
-_type = CTElastos;
-FixCurveOrder();
-_valid = false;
-}
-
 HDKeychain:: HDKeychain(
 CoinType type,
 					const bytes_t & key,
