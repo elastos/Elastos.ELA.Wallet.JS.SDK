@@ -31,39 +31,39 @@ const BITCOIN_HD_PRIVATE_VERSION: uint32_t = 0x0488ade4;
 const BITCOIN_HD_PUBLIC_VERSION: uint32_t = 0x0488b21e;
 
 type ExtKeyVersionMapNetwork = {
-	[network: string]: {
-		prv: number;
-		pub: number;
-	}
-}
+  [network: string]: {
+    prv: number;
+    pub: number;
+  };
+};
 
 type ExtKeyVersionMapStandard = {
-	[standard: string]: ExtKeyVersionMapNetwork
-}
+  [standard: string]: ExtKeyVersionMapNetwork;
+};
 
 export const ExtKeyVersionMap: ExtKeyVersionMapStandard[] = [
-	{
-		"bip32": {
-			"mainnet": { "pub": 0x0488B21E, "prv": 0x0488ADE4 },
-			"testnet": { "pub": 0x043587CF, "prv": 0x04358394 }
-		},
-		"bip84": {
-			"mainnet": { "pub": 0x04b24746, "prv": 0x04b2430c },
-			"testnet": { "pub": 0x045f1cf6, "prv": 0x045f18bc }
-		},
-		"bip49": {
-			"mainnet": { "pub": 0x049d7cb2, "prv": 0x049d7878 },
-			"testnet": { "pub": 0x044a5262, "prv": 0x044a4e28 }
-		}
-	}
+  {
+    bip32: {
+      mainnet: { pub: 0x0488b21e, prv: 0x0488ade4 },
+      testnet: { pub: 0x043587cf, prv: 0x04358394 }
+    },
+    bip84: {
+      mainnet: { pub: 0x04b24746, prv: 0x04b2430c },
+      testnet: { pub: 0x045f1cf6, prv: 0x045f18bc }
+    },
+    bip49: {
+      mainnet: { pub: 0x049d7cb2, prv: 0x049d7878 },
+      testnet: { pub: 0x044a5262, prv: 0x044a4e28 }
+    }
+  }
 ];
 
 export class HDSeed {
-	private seed_: bytes_t;
-	private master_key_: bytes_t;
-	private master_chain_code_: bytes_t;
+  private seed_: bytes_t;
+  private master_key_: bytes_t;
+  private master_chain_code_: bytes_t;
 
-	/* HDSeed(const bytes_t& seed, const bytes_t& coin_seed = BITCOIN_SEED)
+  /* HDSeed(const bytes_t& seed, const bytes_t& coin_seed = BITCOIN_SEED)
 				{
 						seed_ = seed;
 					bytes_t hmac = hmac_sha512(coin_seed, seed);
@@ -77,44 +77,44 @@ export class HDSeed {
 					master_chain_code_.clean();
 				} */
 
-	public getSeed(): bytes_t {
-		return this.seed_;
-	}
+  public getSeed(): bytes_t {
+    return this.seed_;
+  }
 
-	public getMasterKey(): bytes_t {
-		return this.master_key_;
-	}
+  public getMasterKey(): bytes_t {
+    return this.master_key_;
+  }
 
-	public getMasterChainCode(): bytes_t {
-		return this.master_chain_code_;
-	}
+  public getMasterChainCode(): bytes_t {
+    return this.master_chain_code_;
+  }
 
-	public getExtendedKey(type: CoinType, bPrivate = false): bytes_t {
-		let keychain = new HDKeychain(type, master_key_, master_chain_code_);
-		if (!bPrivate) {
-			keychain = keychain.getPublic();
-		}
+  public getExtendedKey(type: CoinType, bPrivate = false): bytes_t {
+    let keychain = new HDKeychain(type, master_key_, master_chain_code_);
+    if (!bPrivate) {
+      keychain = keychain.getPublic();
+    }
 
-		return keychain.extkey();
-	}
+    return keychain.extkey();
+  }
 }
 
 export class HDKeychain {
-	private static _priv_version: uint32_t;
-	private static _pub_version: uint32_t;
+  private static _priv_version: uint32_t;
+  private static _pub_version: uint32_t;
 
-	private _version: uint32_t;
-	// TODO private unsigned char _depth;
-	private _parent_fp: uint32_t;
-	private _child_num: uint32_t;
-	private _chain_code: bytes_t; // 32 bytes
-	private _key: bytes_t;        // 33 bytes, first byte is 0x00 for private key
-	private _pubkey: bytes_t;
-	private _valid: boolean;
-	private _CURVE_ORDER: BigNumber;
-	private _type: CoinType;
+  private _version: uint32_t;
+  // TODO private unsigned char _depth;
+  private _parent_fp: uint32_t;
+  private _child_num: uint32_t;
+  private _chain_code: bytes_t; // 32 bytes
+  private _key: bytes_t; // 33 bytes, first byte is 0x00 for private key
+  private _pubkey: bytes_t;
+  private _valid: boolean;
+  private _CURVE_ORDER: BigNumber;
+  private _type: CoinType;
 
-	/* void HDKeychain:: FixCurveOrder() {
+  /* void HDKeychain:: FixCurveOrder() {
 if (_type == CoinType::CTElastos) {
 _CURVE_ORDER = Elastos_CURVE_ORDER;
 } else if (_type == CoinType::CTBitcoin) {
@@ -452,5 +452,4 @@ uint32_t HDKeychain:: _priv_version = ExtKeyVersionMap["bip32"]["mainnet"]["prv"
 uint32_t HDKeychain:: _pub_version = ExtKeyVersionMap["bip32"]["mainnet"]["pub"];//BITCOIN_HD_PUBLIC_VERSION;
 
 } */
-
 }
