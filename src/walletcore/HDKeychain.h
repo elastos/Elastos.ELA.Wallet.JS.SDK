@@ -56,7 +56,6 @@ namespace Elastos {
 				const bytes_t& pubkey() const { return _pubkey; }
 				bytes_t uncompressed_pubkey() const;
 
-				bool isPrivate() const { return (_key.size() == 33 && _key[0] == 0x00); }
 				bytes_t hash() const; // hash is ripemd160(sha256(pubkey))
 				uint32_t fp() const; // fingerprint is first 32 bits of hash
 				bytes_t full_hash() const; // full_hash is ripemd160(sha256(pubkey + chain_code))
@@ -66,17 +65,8 @@ namespace Elastos {
 				HDKeychain getPublic() const;
 				HDKeychain getChild(uint32_t i) const;
 				HDKeychain getChild(const std::string& path) const;
-			
 
 				std::string toString() const;
-
-        private:
-		    void FixCurveOrder();
-
-			private:
-			
-
-				void updatePubkey();
 		};
 
 	}

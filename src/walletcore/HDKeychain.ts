@@ -10,8 +10,9 @@
 //
 
 import BigNumber from "bignumber.js";
-import { bytes_t, uint32_t } from "../types";
+import { bytes_t, uint32_t, uchar_vector } from "../types";
 import { CoinType } from "./cointype";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
 
 export const BIP32_SEED_KEY = "Bitcoin seed";
 //const uchar_vector BITCOIN_SEED("426974636f696e2073656564"); // key = "Bitcoin seed"
@@ -120,6 +121,62 @@ export class HDKeychain {
     this._valid = false;
   }
 
+  public static newFromParams(
+    type: CoinType,
+    key: bytes_t,
+    chain_code: bytes_t,
+    child_num: uint32_t,
+    parent_fp: uint32_t,
+    depth: uint32_t
+  ) {
+    let hdKeychain = new HDKeychain();
+    hdKeychain.fixCurveOrder();
+    ErrorChecker.checkLogic(
+      chain_code.length !== 32,
+      Error.Code.Key,
+      "Invalid chain code."
+    );
+
+    hdKeychain._chain_code = chain_code;
+    hdKeychain._child_num = child_num;
+    hdKeychain._parent_fp = parent_fp;
+    // hdKeychain._depth = depth;
+
+    if (key.length === 32) {
+      // key is private
+      const n = new BigNumber(key.toString());
+      if (n.isGreaterThanOrEqualTo(hdKeychain._CURVE_ORDER) || n.isZero()) {
+        ErrorChecker.throwLogicException(Error.Code.Key, "Invalid key.");
+      }
+      // TODO:
+      // uchar_vector privkey;
+      // privkey.push_back(0x00);
+      // privkey += _key;
+      // _key = privkey;
+    } else if (key.length == 33) {
+      // key is public
+      // TODO:
+      // secp256k1_point K(type, key);
+    } else {
+      ErrorChecker.throwLogicException(Error.Code.Key, "Invalid key.");
+    }
+
+    hdKeychain._version = hdKeychain.isPrivate()
+      ? this._priv_version
+      : this._pub_version;
+
+    // TODO:
+    hdKeychain.updatePubkey();
+
+    hdKeychain._valid = true;
+    return hdKeychain;
+  }
+
+  private isPrivate(): boolean {
+    // TODO:
+    // return _key.size() == 33 && _key[0] == 0x00;
+  }
+
   private fixCurveOrder() {
     if (this._type == CoinType.CTElastos) {
       this._CURVE_ORDER = Elastos_CURVE_ORDER;
@@ -130,47 +187,18 @@ export class HDKeychain {
     }
   }
 
+  private updatePubkey() {
+    if (this.isPrivate()) {
+      // TODO:
+      // secp256k1_key curvekey;
+      // curvekey.setPrivKey(_type, bytes_t(_key.begin() + 1, _key.end()));
+      // _pubkey = curvekey.getPubKey();
+    } else {
+      this._pubkey = this._key;
+    }
+  }
+
   /* 
-HDKeychain:: HDKeychain(
-CoinType type,
-					const bytes_t & key,
-					const bytes_t & chain_code,
-uint32_t child_num,
-uint32_t parent_fp,
-uint32_t depth) :
-_type(type),
-_depth(depth),
-_parent_fp(parent_fp),
-_child_num(child_num),
-_chain_code(chain_code),
-_key(key) {
-FixCurveOrder();
-ErrorChecker:: CheckLogic(_chain_code.size() != 32, Error:: Key, "Invalid chain code.");
-
-if (_key.size() == 32) {
-		// key is private
-		BigInt n(_key);
-if (n >= _CURVE_ORDER || n.isZero()) {
-ErrorChecker:: ThrowLogicException(Error:: Key, "Invalid key.");
-}
-
-		uchar_vector privkey;
-privkey.push_back(0x00);
-privkey += _key;
-_key = privkey;
-} else if (_key.size() == 33) {
-		// key is public
-		secp256k1_point K(_type, _key);
-} else {
-ErrorChecker:: ThrowLogicException(Error:: Key, "Invalid key.");
-}
-
-_version = isPrivate() ? _priv_version : _pub_version;
-updatePubkey();
-
-_valid = true;
-}
-
 HDKeychain:: HDKeychain(CoinType type, const bytes_t & extkey) : _type(type) {
 FixCurveOrder();
 ErrorChecker:: CheckLogic(extkey.size() != 78, Error:: Key, "Invalid extended key length.");
@@ -439,15 +467,6 @@ ss << "version: " << std:: hex << _version << std:: endl
 return ss.str();
 }
 
-void HDKeychain:: updatePubkey() {
-if (isPrivate()) {
-	secp256k1_key curvekey;
-curvekey.setPrivKey(_type, bytes_t(_key.begin() + 1, _key.end()));
-_pubkey = curvekey.getPubKey();
-} else {
-_pubkey = _key;
-}
-}
 
 uint32_t HDKeychain:: _priv_version = ExtKeyVersionMap["bip32"]["mainnet"]["prv"];//BITCOIN_HD_PRIVATE_VERSION;
 uint32_t HDKeychain:: _pub_version = ExtKeyVersionMap["bip32"]["mainnet"]["pub"];//BITCOIN_HD_PUBLIC_VERSION;
