@@ -114,16 +114,17 @@ export class HDKeychain {
   private _CURVE_ORDER: BigNumber;
   private _type: CoinType;
 
-  /* void HDKeychain:: FixCurveOrder() {
-if (_type == CoinType::CTElastos) {
-_CURVE_ORDER = Elastos_CURVE_ORDER;
-} else if (_type == CoinType::CTBitcoin) {
-_CURVE_ORDER = Bitcoin_CURVE_ORDER;
-} else {
-_CURVE_ORDER = 0;
-}
-}
+  fixCurveOrder() {
+    if (this._type == CoinType.CTElastos) {
+      this._CURVE_ORDER = Elastos_CURVE_ORDER;
+    } else if (this._type == CoinType.CTBitcoin) {
+      this._CURVE_ORDER = Bitcoin_CURVE_ORDER;
+    } else {
+      this._CURVE_ORDER = new BigNumber(0);
+    }
+  }
 
+  /* 
 HDKeychain:: HDKeychain() {
 _type = CTElastos;
 FixCurveOrder();
