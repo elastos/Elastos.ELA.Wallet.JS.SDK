@@ -26,9 +26,7 @@ namespace Elastos {
 		class HDKeychain
 		{
 			public:
-				HDKeychain(CoinType type, const bytes_t& key, const bytes_t& chain_code, uint32_t child_num = 0, uint32_t parent_fp = 0, uint32_t depth = 0);
 				HDKeychain(CoinType type, const bytes_t& extkey);
-				HDKeychain(const HDKeychain& source);
 
 				~HDKeychain() { _key.clean(); _chain_code.clean(); }
 

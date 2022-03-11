@@ -165,10 +165,26 @@ export class HDKeychain {
       ? this._priv_version
       : this._pub_version;
 
-    // TODO:
     hdKeychain.updatePubkey();
 
     hdKeychain._valid = true;
+    return hdKeychain;
+  }
+
+  public static newFromHDKeychain(source: HDKeychain) {
+    let hdKeychain = new HDKeychain();
+    hdKeychain._type = source._type;
+    hdKeychain._valid = source._valid;
+    hdKeychain.fixCurveOrder();
+    if (!hdKeychain._valid) return;
+
+    hdKeychain._version = source._version;
+    // hdKeychain._depth = source._depth;
+    hdKeychain._parent_fp = source._parent_fp;
+    hdKeychain._child_num = source._child_num;
+    hdKeychain._chain_code = source._chain_code;
+    hdKeychain._key = source._key;
+    hdKeychain.updatePubkey();
     return hdKeychain;
   }
 
@@ -218,20 +234,6 @@ updatePubkey();
 _valid = true;
 }
 
-HDKeychain:: HDKeychain(const HDKeychain & source) {
-_type = source._type;
-_valid = source._valid;
-FixCurveOrder();
-if (!_valid) return;
-
-_version = source._version;
-_depth = source._depth;
-_parent_fp = source._parent_fp;
-_child_num = source._child_num;
-_chain_code = source._chain_code;
-_key = source._key;
-updatePubkey();
-}
 
 HDKeychain & HDKeychain:: operator = (const HDKeychain &rhs) {
 _valid = rhs._valid;
