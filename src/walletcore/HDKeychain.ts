@@ -214,6 +214,36 @@ export class HDKeychain {
     }
   }
 
+  copyHDKeychain(rhs: HDKeychain): HDKeychain {
+    this._valid = rhs._valid;
+    this._type = rhs._type;
+    this.fixCurveOrder();
+    if (this._valid) {
+      this._version = rhs._version;
+      this._depth = rhs._depth;
+      this._parent_fp = rhs._parent_fp;
+      this._child_num = rhs._child_num;
+      this._chain_code = rhs._chain_code;
+      this._key = rhs._key;
+      this.updatePubkey();
+    }
+    return this;
+  }
+
+  equals(rhs: HDKeychain): boolean {
+    return (
+      this._type == rhs._type &&
+      this._valid &&
+      rhs._valid &&
+      this._version == rhs._version &&
+      this._depth == rhs._depth &&
+      this._parent_fp == rhs._parent_fp &&
+      this._child_num == rhs._child_num &&
+      this._chain_code == rhs._chain_code &&
+      this._key == rhs._key
+    );
+  }
+
   /* 
 HDKeychain:: HDKeychain(CoinType type, const bytes_t & extkey) : _type(type) {
 FixCurveOrder();
@@ -232,34 +262,6 @@ _key.assign(extkey.begin() + 45, extkey.begin() + 78);
 updatePubkey();
 
 _valid = true;
-}
-
-
-HDKeychain & HDKeychain:: operator = (const HDKeychain &rhs) {
-_valid = rhs._valid;
-_type = rhs._type;
-FixCurveOrder();
-if (_valid) {
-_version = rhs._version;
-_depth = rhs._depth;
-_parent_fp = rhs._parent_fp;
-_child_num = rhs._child_num;
-_chain_code = rhs._chain_code;
-_key = rhs._key;
-updatePubkey();
-}
-return * this;
-}
-
-bool HDKeychain:: operator == (const HDKeychain & rhs) const {
-return (_type == rhs._type &&
-_valid && rhs._valid &&
-_version == rhs._version &&
-_depth == rhs._depth &&
-_parent_fp == rhs._parent_fp &&
-_child_num == rhs._child_num &&
-_chain_code == rhs._chain_code &&
-_key == rhs._key);
 }
 
 bool HDKeychain:: operator != (const HDKeychain & rhs) const {

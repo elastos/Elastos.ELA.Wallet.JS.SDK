@@ -27,15 +27,9 @@ namespace Elastos {
 		{
 			public:
 				HDKeychain(CoinType type, const bytes_t& extkey);
-
 				~HDKeychain() { _key.clean(); _chain_code.clean(); }
 
-				HDKeychain& operator=(const HDKeychain& rhs);
-
-				explicit operator bool() const { return _valid; }
-
-
-				bool operator==(const HDKeychain& rhs) const;
+				explicit operator bool() const { return _valid; }	
 				bool operator!=(const HDKeychain& rhs) const;
 
 				// Serialization
