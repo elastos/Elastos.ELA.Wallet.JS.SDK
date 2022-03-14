@@ -302,12 +302,13 @@ export class Account {
 		const encryptedethPrvKey: string = AES::EncryptCCM(ethkey.privkey(), payPasswd);
 
 		const ethscPubKey: string = ethkey.uncompressed_pubkey().getHex();
-		const ripplePubKey: string = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
+		// TODO const ripplePubKey: string = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
 
 		const encryptedMnemonic: string = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), payPasswd);
 		const encryptedxPrvKey: string = AES::EncryptCCM(rootkey.extkey(), payPasswd);
 
-		const xpubBitcoin: string = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
+		// TODO const xpubBitcoin: string = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
+
 		const xPubKey: string = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
 		const xpubHDPM: string = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
 
@@ -335,9 +336,9 @@ export class Account {
 		this._localstore.setOwnerPubKey(ownerPubKey);
 		this._localstore.setSeed(encryptedSeed);
 		this._localstore.setETHSCPrimaryPubKey(ethscPubKey);
-		this._localstore.setxPubKeyBitcoin(xpubBitcoin);
+		// TODO this._localstore.setxPubKeyBitcoin(xpubBitcoin);
 		this._localstore.setSinglePrivateKey(encryptedethPrvKey);
-		this._localstore.setRipplePrimaryPubKey(ripplePubKey);
+		// TODO this._localstore.setRipplePrimaryPubKey(ripplePubKey);
 
 		this.init();
 	}
