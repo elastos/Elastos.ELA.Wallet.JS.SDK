@@ -27,7 +27,7 @@ import { bytes_t, json } from "../types";
 import { Base58 } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { CoinType } from "../walletcore/cointype";
-import { HDKeychain } from "../walletcore/HDKeychain";
+import { HDKeychain, HDSeed } from "../walletcore/HDKeychain";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 
@@ -281,56 +281,69 @@ export class Account {
 
 		Init();
 	}
+*/
 
-	Account::Account(const std::string &path, const std::string &mnemonic, const std::string &passphrase,
-					 const std::string &payPasswd, bool singleAddress) {
-		uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
-					HDSeed hdseed(seed.bytes());
-		HDKeychain rootkey(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-					HDKeychain stdrootkey(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
-					HDKeychain ethkey = stdrootkey.getChild("44'/60'/0'/0/0");
 
-		std::string encryptedSeed = AES::EncryptCCM(bytes_t(seed.begin(), seed.size()), payPasswd);
-		std::string encryptedethPrvKey = AES::EncryptCCM(ethkey.privkey(), payPasswd);
-					std::string ethscPubKey = ethkey.uncompressed_pubkey().getHex();
-					std::string ripplePubKey = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
-		std::string encryptedMnemonic = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), payPasswd);
-		std::string encryptedxPrvKey = AES::EncryptCCM(rootkey.extkey(), payPasswd);
+	constructor (
+		path: string,
+		mnemonic: string,
+		passphrase: string,
+		payPasswd: string,
+		singleAddress: boolean
+	) {
+		const seed: uint512 = Mnemonic.deriveSeed(mnemonic, passphrase);
+		const hdseed = new HDSeed(seed.bytes())
 
-					std::string xpubBitcoin = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
-		std::string xPubKey = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
-		std::string xpubHDPM = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
+		const rootkey = new HDKeychain(CTElastos, hdseed.getExtendedKey(CTElastos, true));
+		const stdrootkey = new HDKeychain(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
+		const ethkey: HDKeychain = stdrootkey.getChild("44'/60'/0'/0/0");
 
-		HDKeychain requestKey = rootkey.getChild("1'/0");
-		std::string encryptedRequestPrvKey = AES::EncryptCCM(requestKey.privkey(), payPasswd);
-		std::string requestPubKey = requestKey.pubkey().getHex();
+		const encryptedSeed: string = AES::EncryptCCM(bytes_t(seed.begin(), seed.size()), payPasswd);
+		const encryptedethPrvKey: string = AES::EncryptCCM(ethkey.privkey(), payPasswd);
 
-		std::string ownerPubKey = rootkey.getChild("44'/0'/1'/0/0").pubkey().getHex();
+		const ethscPubKey: string = ethkey.uncompressed_pubkey().getHex();
+		const ripplePubKey: string = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
 
-		_localstore = LocalStorePtr(new LocalStore(path));
-		_localstore->SetDerivationStrategy("BIP44");
-		_localstore->SetM(1);
-		_localstore->SetN(1);
-		_localstore->SetSingleAddress(singleAddress);
-		_localstore->SetReadonly(false);
-		_localstore->SetHasPassPhrase(!passphrase.empty());
-		_localstore->SetPublicKeyRing({PublicKeyRing(requestPubKey, xpubHDPM)});
-		_localstore->SetMnemonic(encryptedMnemonic);
-		_localstore->SetxPrivKey(encryptedxPrvKey);
-		_localstore->SetxPubKey(xPubKey);
-		_localstore->SetxPubKeyHDPM(xpubHDPM);
-		_localstore->SetRequestPubKey(requestPubKey);
-		_localstore->SetRequestPrivKey(encryptedRequestPrvKey);
-		_localstore->SetOwnerPubKey(ownerPubKey);
-		_localstore->SetSeed(encryptedSeed);
-		_localstore->SetETHSCPrimaryPubKey(ethscPubKey);
-					_localstore->SetxPubKeyBitcoin(xpubBitcoin);
-					_localstore->SetSinglePrivateKey(encryptedethPrvKey);
-					_localstore->SetRipplePrimaryPubKey(ripplePubKey);
+		const encryptedMnemonic: string = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), payPasswd);
+		const encryptedxPrvKey: string = AES::EncryptCCM(rootkey.extkey(), payPasswd);
 
-		Init();
+		const xpubBitcoin: string = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
+		const xPubKey: string = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
+		const xpubHDPM: string = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
+
+		const requestKey: HDKeychain = rootkey.getChild("1'/0");
+
+		const encryptedRequestPrvKey: string = AES::EncryptCCM(requestKey.privkey(), payPasswd);
+
+		const requestPubKey: string = requestKey.pubkey().getHex();
+		const ownerPubKey: string = rootkey.getChild("44'/0'/1'/0/0").pubkey().getHex();
+
+		this._localstore = new LocalStore(path);
+		this._localstore.setDerivationStrategy("BIP44");
+		this._localstore.setM(1);
+		this._localstore.setN(1);
+		this._localstore.setSingleAddress(singleAddress);
+		this._localstore.setReadonly(false);
+		this._localstore.setHasPassPhrase(!passphrase.empty());
+		this._localstore.setPublicKeyRing({PublicKeyRing(requestPubKey, xpubHDPM)});
+		this._localstore.setMnemonic(encryptedMnemonic);
+		this._localstore.setxPrivKey(encryptedxPrvKey);
+		this._localstore.setxPubKey(xPubKey);
+		this._localstore.setxPubKeyHDPM(xpubHDPM);
+		this._localstore.setRequestPubKey(requestPubKey);
+		this._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+		this._localstore.setOwnerPubKey(ownerPubKey);
+		this._localstore.setSeed(encryptedSeed);
+		this._localstore.setETHSCPrimaryPubKey(ethscPubKey);
+		this._localstore.setxPubKeyBitcoin(xpubBitcoin);
+		this._localstore.setSinglePrivateKey(encryptedethPrvKey);
+		this._localstore.setRipplePrimaryPubKey(ripplePubKey);
+
+		this.init();
 	}
 
+
+	/*
 			Account::Account(const std::string &path, const std::string singlePrivateKey, const std::string &passwd) {
 			bytes_t singlePrvKey;
 			singlePrvKey.setHex(singlePrivateKey);
@@ -1188,11 +1201,11 @@ export class Account {
 
 		return false;
 	}
-
-	void Account::Save() {
-		_localstore->Save();
+*/
+	save(): void {
+		this._localstore.save();
 	}
-
+/*
 	void Account::Remove() {
 		_localstore->Remove();
 	}

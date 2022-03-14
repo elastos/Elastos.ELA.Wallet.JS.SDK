@@ -22,13 +22,19 @@
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
-import { Config, CONFIG_MAINNET, CONFIG_PRVNET, CONFIG_REGTEST, CONFIG_TESTNET } from "../Config";
+import {
+  Config,
+  CONFIG_MAINNET,
+  CONFIG_PRVNET,
+  CONFIG_REGTEST,
+  CONFIG_TESTNET
+} from "../Config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json } from "../types";
 import { ExtKeyVersionMap, HDKeychain } from "../walletcore/HDKeychain";
 import { MasterWallet } from "./MasterWallet";
 
-const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json" // TODO: move to store
+const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
 const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
 
 /* type MasterWalletMap = {
@@ -38,53 +44,67 @@ const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
 type MasterWalletMap = Map<string, MasterWallet>;
 
 export class MasterWalletManager {
-	protected _lock: Lockable;
-	protected _config: Config;
-	protected _rootPath: string;
-	protected _dataPath: string;
-	protected _masterWalletMap: MasterWalletMap;
+  protected _lock: Lockable;
+  protected _config: Config;
+  protected _rootPath: string;
+  protected _dataPath: string;
+  protected _masterWalletMap: MasterWalletMap;
 
-	constructor(
-		storage: WalletStorage,
-		/* const std::string &rootPath; */
-		netType: string,
-		config: json/* , dataPath: string */) {
-		// TODO _rootPath(rootPath),
-		// TODO _dataPath(dataPath),
-		this._lock = new Lockable();
+  constructor(
+    storage: WalletStorage,
+    /* const std::string &rootPath; */
+    netType: string,
+    config: json /* , dataPath: string */
+  ) {
+    // TODO _rootPath(rootPath),
+    // TODO _dataPath(dataPath),
+    this._lock = new Lockable();
 
-		// TODO if (_dataPath.empty())
-		// TODO 	_dataPath = _rootPath;
+    // TODO if (_dataPath.empty())
+    // TODO 	_dataPath = _rootPath;
 
-		// TODO ErrorChecker.CheckPathExists(_rootPath, false);
-		// TODO ErrorChecker::CheckPathExists(_dataPath, false);
+    // TODO ErrorChecker.CheckPathExists(_rootPath, false);
+    // TODO ErrorChecker::CheckPathExists(_dataPath, false);
 
-		// TODO Log.registerMultiLogger(_dataPath);
+    // TODO Log.registerMultiLogger(_dataPath);
 
-		// TODO Log.setLevel(spdlog:: level:: level_enum(SPVLOG_LEVEL));
-		// TODO Log.info("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
+    // TODO Log.setLevel(spdlog:: level:: level_enum(SPVLOG_LEVEL));
+    // TODO Log.info("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
 
-		if (netType != CONFIG_MAINNET && netType != CONFIG_TESTNET &&
-			netType != CONFIG_REGTEST && netType != CONFIG_PRVNET) {
-			ErrorChecker.throwParamException(Error.Code.InvalidArgument, "invalid NetType");
-		}
+    if (
+      netType != CONFIG_MAINNET &&
+      netType != CONFIG_TESTNET &&
+      netType != CONFIG_REGTEST &&
+      netType != CONFIG_PRVNET
+    ) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid NetType"
+      );
+    }
 
-		this._config = Config.newFromParams(netType, config);
-		if (this._config.getNetType() == CONFIG_MAINNET) {
-			HDKeychain.setVersions(ExtKeyVersionMap["bip32"]["mainnet"]["prv"], ExtKeyVersionMap["bip32"]["mainnet"]["pub"]);
-		} else {
-			HDKeychain.setVersions(ExtKeyVersionMap["bip32"]["testnet"]["prv"], ExtKeyVersionMap["bip32"]["testnet"]["pub"]);
+    this._config = Config.newFromParams(netType, config);
+    if (this._config.getNetType() == CONFIG_MAINNET) {
+      HDKeychain.setVersions(
+        ExtKeyVersionMap["bip32"]["mainnet"]["prv"],
+        ExtKeyVersionMap["bip32"]["mainnet"]["pub"]
+      );
+    } else {
+      HDKeychain.setVersions(
+        ExtKeyVersionMap["bip32"]["testnet"]["prv"],
+        ExtKeyVersionMap["bip32"]["testnet"]["pub"]
+      );
 
-			/* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
+      /* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
 			this._dataPath = this._dataPath + "/" + this._config.getNetType();
 			if (!boost:: filesystem:: exists(_dataPath))
 				boost:: filesystem:: create_directory(_dataPath); */
-		}
+    }
 
-		this.loadMasterWalletID();
-	}
+    this.loadMasterWalletID();
+  }
 
-	/*MasterWalletManager::~MasterWalletManager() {
+  /*MasterWalletManager::~MasterWalletManager() {
 		for (MasterWalletMap::iterator it = _masterWalletMap.begin(); it != _masterWalletMap.end();) {
 			MasterWallet *masterWallet = static_cast<MasterWallet *>(it->second);
 			if (masterWallet != nullptr) {
@@ -106,23 +126,25 @@ export class MasterWalletManager {
 		_lock = nullptr;
 	}*/
 
-	private loadMasterWalletID() {
-		boost:: filesystem::path rootpath(_dataPath);
-		for (directory_iterator it(rootpath); it != directory_iterator(); ++it) {
+  protected loadMasterWalletID() {
+    /* 
+			boost::filesystem::path rootpath(_dataPath);
+			for (directory_iterator it(rootpath); it != directory_iterator(); ++it) {
 
-				path temp = * it;
-			if (!exists(temp) || !is_directory(temp)) {
-				continue;
+				path temp = *it;
+				if (!exists(temp) || !is_directory(temp)) {
+					continue;
+				}
+
+				std::string masterWalletID = temp.filename().string();
+				if (exists((*it) / LOCAL_STORE_FILE) || exists((*it) / MASTER_WALLET_STORE_FILE)) {
+					_masterWalletMap[masterWalletID] = nullptr;
+				}
 			}
+		*/
+  }
 
-			std::string masterWalletID = temp.filename().string();
-			if (exists((* it) / LOCAL_STORE_FILE) || exists((* it) / MASTER_WALLET_STORE_FILE)) {
-				_masterWalletMap[masterWalletID] = null;
-			}
-		}
-	}
-
-	/*	IMasterWallet *MasterWalletManager::LoadMasterWallet(const std::string &masterWalletID) const {
+  /*	IMasterWallet *MasterWalletManager::LoadMasterWallet(const std::string &masterWalletID) const {
 			boost::filesystem::path walletStore(_dataPath);
 
 			walletStore /= masterWalletID;
@@ -156,45 +178,55 @@ export class MasterWalletManager {
 			ArgInfo("r => *");
 			return mnemonic;
 		}
+	*/
 
-		IMasterWallet *MasterWalletManager::CreateMasterWallet(const std::string &masterWalletID,
-																 const std::string &mnemonic,
-																 const std::string &passphrase,
-																 const std::string &passwd,
-																 bool singleAddress) {
+  createMasterWallet(
+    masterWalletID: string,
+    mnemonic: string,
+    passphrase: string,
+    passwd: string,
+    singleAddress: boolean
+  ): MasterWallet {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("mnemonic: *");
+    // ArgInfo("passphrase: *, empty: {}", passphrase.empty());
+    // ArgInfo("passwd: *");
+    // ArgInfo("singleAddress: {}", singleAddress);
 
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-			ArgInfo("mnemonic: *");
-			ArgInfo("passphrase: *, empty: {}", passphrase.empty());
-			ArgInfo("passwd: *");
-			ArgInfo("singleAddress: {}", singleAddress);
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+    // ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    // ErrorChecker.checkParamNotEmpty(mnemonic, "mnemonic");
+    // ErrorChecker.checkPassword(passwd, "Pay");
+    // ErrorChecker.checkPasswordWithNullLegal(passphrase, "Phrase");
 
-			ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-			ErrorChecker::CheckParamNotEmpty(mnemonic, "mnemonic");
-			ErrorChecker::CheckPassword(passwd, "Pay");
-			ErrorChecker::CheckPasswordWithNullLegal(passphrase, "Phrase");
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap[masterWalletID];
+    }
 
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				ArgInfo("r => already exist");
-				return _masterWalletMap[masterWalletID];
-			}
+    // ErrorChecker.checkLogic(!Mnemonic::Validate(mnemonic), Error.Code.Mnemonic, "Invalid mnemonic");
 
-			ErrorChecker::CheckLogic(!Mnemonic::Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress,
+      this._config
+      // _dataPath
+    );
 
-			MasterWallet *masterWallet = new MasterWallet(masterWalletID, mnemonic, passphrase, passwd,
-																													singleAddress, ConfigPtr(new Config(*_config)),
-																													_dataPath);
-			checkRedundant(masterWallet);
-			_masterWalletMap[masterWalletID] = masterWallet;
+    // this.checkRedundant(masterWallet);
+    this._masterWalletMap[masterWalletID] = masterWallet;
 
-			ArgInfo("r => create master wallet done");
+    // ArgInfo("r => create master wallet done");
 
-			return masterWallet;
-		}
+    return masterWallet;
+  }
 
+  /*
 				IMasterWallet *MasterWalletManager::CreateMasterWallet(const std::string &masterWalletID,
 																															 const std::string &singlePrivateKey,
 																															 const std::string &passwd) {
@@ -597,19 +629,21 @@ export class MasterWalletManager {
 			return _masterWalletMap[masterWalletID] != nullptr;
 		}*/
 
-	public getMasterWallet(masterWalletID: string): MasterWallet {
-		//ArgInfo("{}", GetFunName());
-		//ArgInfo("masterWalletID: {}", masterWalletID);
+  public getMasterWallet(masterWalletID: string): MasterWallet {
+    //ArgInfo("{}", GetFunName());
+    //ArgInfo("masterWalletID: {}", masterWalletID);
 
-		if (this._masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
-			_masterWalletMap[masterWalletID] != nullptr) {
-			return _masterWalletMap[masterWalletID];
-		}
+    if (
+      this._masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
+      _masterWalletMap[masterWalletID] != nullptr
+    ) {
+      return _masterWalletMap[masterWalletID];
+    }
 
-		return LoadMasterWallet(masterWalletID);
-	}
+    return LoadMasterWallet(masterWalletID);
+  }
 
-	/*void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {
+  /*void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {
 
 		MasterWallet *masterWallet = static_cast<MasterWallet *>(wallet);
 

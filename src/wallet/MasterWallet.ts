@@ -25,16 +25,16 @@ import { Config } from "../config";
 import { SubWallet } from "./SubWallet";
 
 type WalletMap = {
-	[id: string]: SubWallet
+  [id: string]: SubWallet;
 };
 
 export class MasterWallet {
-	protected _createdWallets: WalletMap;
-	protected _account: Account;
-	protected _id: string;
-	protected _config: Config;
+  protected _createdWallets: WalletMap;
+  protected _account: Account;
+  protected _id: string;
+  protected _config: Config;
 
-	/* MasterWallet::MasterWallet(const std::string &id,
+  /* MasterWallet::MasterWallet(const std::string &id,
 								 const ConfigPtr &config,
 								 const std::string &dataPath) :
 			_id(id),
@@ -43,21 +43,34 @@ export class MasterWallet {
 		_account = AccountPtr(new Account(dataPath + "/" + _id));
 					SetupNetworkParameters();
 	}
+	*/
 
-	MasterWallet::MasterWallet(const std::string &id,
-								 const std::string &mnemonic,
-								 const std::string &passphrase,
-								 const std::string &passwd,
-								 bool singleAddress,
-								 const ConfigPtr &config,
-								 const std::string &dataPath) :
-			_id(id),
-			_config(config) {
+  constructor(
+    id: string,
+    mnemonic: string,
+    passphrase: string,
+    passwd: string,
+    singleAddress: boolean,
+    config: Config
+    // dataPath: string
+  ) {
+    this._id = id;
+    this._config = config;
 
-		_account = AccountPtr(new Account(dataPath + "/" + _id, mnemonic, passphrase, passwd, singleAddress));
-		_account->Save();
-					SetupNetworkParameters();
-	}
+    this._account = new Account(
+      // original code: `${dataPath}/${this._id}`
+      this._id,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    this._account.save();
+    // this.setupNetworkParameters();
+  }
+
+  /*
 
 			MasterWallet::MasterWallet(const std::string &id,
 																 const std::string &singlePrivateKey,
@@ -143,10 +156,9 @@ export class MasterWallet {
 					SetupNetworkParameters();
 	} */
 
-	destroy() {
-	}
+  destroy() {}
 
-	/* std::string MasterWallet::GenerateMnemonic(const std::string &language, Mnemonic::WordCount wordCount) {
+  /* std::string MasterWallet::GenerateMnemonic(const std::string &language, Mnemonic::WordCount wordCount) {
 		return Mnemonic::Create(language, wordCount);
 	}
 
@@ -154,42 +166,43 @@ export class MasterWallet {
 		_account->Remove();
 	}*/
 
-	public getID(): string {
-		return this._id;
-	}
+  public getID(): string {
+    return this._id;
+  }
 
-	public getWalletID(): string {
-		return this._id;
-	}
+  public getWalletID(): string {
+    return this._id;
+  }
 
-	public getAllSubWallets(): SubWallet[] {
-		//ArgInfo("{} {}", _id, GetFunName());
+  public getAllSubWallets(): SubWallet[] {
+    //ArgInfo("{} {}", _id, GetFunName());
 
-		let subWallets: SubWallet[] = Object.values(this._createdWallets);
+    let subWallets: SubWallet[] = Object.values(this._createdWallets);
 
-		let result;
-		for (let i = 0; i < subWallets.length; ++i)
-			result += subWallets[i].getChainID() + ",";
+    let result;
+    for (let i = 0; i < subWallets.length; ++i)
+      result += subWallets[i].getChainID() + ",";
 
-		//ArgInfo("r => {}", result);
-		return subWallets;
-	}
+    //ArgInfo("r => {}", result);
+    return subWallets;
+  }
 
-	public getSubWallet(chainID: string): SubWallet {
+  public getSubWallet(chainID: string): SubWallet {
+    //ArgInfo("{} {}", _id, GetFunName());
+    //ArgInfo("chainID: {}", chainID);
+
+    if (chainID in this._createdWallets) {
+      return this._createdWallets[chainID];
+    }
+
+    return null;
+  }
+
+  public createSubWallet(chainID: string): SubWallet {
+    /*
 		//ArgInfo("{} {}", _id, GetFunName());
 		//ArgInfo("chainID: {}", chainID);
-
-		if (chainID in this._createdWallets) {
-			return this._createdWallets[chainID];
-		}
-
-		return null;
-	}
-
-	public createSubWallet(chainID: string): SubWallet {
-		//ArgInfo("{} {}", _id, GetFunName());
-		//ArgInfo("chainID: {}", chainID);
-
+		
 		ErrorChecker:: CheckParamNotEmpty(chainID, "Chain ID");
 		ErrorChecker:: CheckParam(chainID.size() > 128, Error:: InvalidArgument, "Chain ID sould less than 128");
 
@@ -212,9 +225,10 @@ export class MasterWallet {
 		_account -> Save();
 
 		return subWallet;
-	}
+		*/
+  }
 
-	/*bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
+  /*bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
 		ArgInfo("{} {}", _id, GetFunName());
 		ArgInfo("mnemonic: *");
 		ArgInfo("passphrase: *");
@@ -391,11 +405,11 @@ export class MasterWallet {
 		return _account->GetDataPath();
 	}*/
 
-	public getAccount(): Account {
-		return this._account;
-	}
+  public getAccount(): Account {
+    return this._account;
+  }
 
-	/*	bool MasterWallet::IsAddressValid(const std::string &address) const {
+  /*	bool MasterWallet::IsAddressValid(const std::string &address) const {
 			ArgInfo("{} {}", _id, GetFunName());
 			ArgInfo("addr: {}", address);
 
@@ -490,5 +504,4 @@ export class MasterWallet {
 		ChainConfigPtr MasterWallet::GetChainConfig(const std::string &chainID) const {
 			return _config->GetChainConfig(chainID);
 		} */
-
 }
