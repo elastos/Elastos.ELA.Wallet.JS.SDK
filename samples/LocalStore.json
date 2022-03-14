@@ -1,0 +1,34 @@
+{
+  "account": 0,
+  "coinInfo": [
+    {
+      "ChainID": "ELA",
+      "EarliestPeerTime": 1513936800,
+      "VisibleAssets": [
+        "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0"
+      ]
+    }
+  ],
+  "derivationStrategy": "BIP44",
+  "ethscPrimaryPubKey": "047b695537d0e6ae2fcad1bb65d68095f72ebe78c843e6bf349726616eaa13cee75432e3ca812a6a5ef44e4d73c549fe7cda61f67b0735c038d8cb508cbdd3eee4",
+  "m": 1,
+  "mnemonic": "Vs1TQEoH2e5CGKRylMeHHmGtt4nDr5w+4R0zVn4l+fVBUIzRQSVUWiro9eWF1vwv2LiXLht5AA==",
+  "mnemonicHasPassphrase": false,
+  "n": 1,
+  "ownerPubKey": "03f999e19ad5f2b578f40f073fa2be253b99432b43ee63bf2fbeac430070e2beb8",
+  "passphrase": "",
+  "publicKeyRing": [
+    {
+      "requestPubKey": "02039e3ded65e9e4c3e9231ab9ef4891a5c1d41e1bf4a17ce475fc15b6f03c65a7",
+      "xPubKey": "xpub69937xwjTff5W2M4VFLc2pKDoCJq4DEhrKaCwTx1c6csrHz9cUYX71WKCFiJ1rUw4bdijZ3F6FkL6aMU91A5hyTpaQnPTMXcKQV8gsgzwMu"
+    }
+  ],
+  "readonly": false,
+  "requestPrivKey": "wp3s10FQQsbTNDpz2Z6NBvOcGtrBTL6bhJyURGRtINCyaH1+m/JbdQ==",
+  "requestPubKey": "02039e3ded65e9e4c3e9231ab9ef4891a5c1d41e1bf4a17ce475fc15b6f03c65a7",
+  "seed": "TfqATyofwITCyQdYfb5g6S1wyw91+fsPN/W3w3Gyg55l02OSq3F/A8MTxjveL5v+iWeBfMJDnbArj1FhU4BMB34pkWFnm3H1",
+  "singleAddress": false,
+  "xPrivKey": "u8V4hK67bc6rsgxSctuZ5YV/Yp5cXd1HMDWZo+qKNxrFklc7+6kNHRPMkQ/Vfm8gU+KQTY6MgX2NtI3OqinOOBt+9RY1ybPcoWZBhjXdBuUCS1sFFOo=",
+  "xPubKey": "xpub6D1ZwFZPR3U1adqUxrSZWQ4T2tnZUQ6zk7kmTF9xifwrmWVF7TEjn7GzbQ4AQMXLUZvmkfRPx8cbcEwt2jJwHdGNcm6jdHGzkYYEgnGvjhM",
+  "xPubKeyHDPM": "xpub69937xwjTff5W2M4VFLc2pKDoCJq4DEhrKaCwTx1c6csrHz9cUYX71WKCFiJ1rUw4bdijZ3F6FkL6aMU91A5hyTpaQnPTMXcKQV8gsgzwMu"
+}

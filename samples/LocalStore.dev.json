@@ -1,0 +1,29 @@
+{
+  "SinglePrivateKey": "qA3OoQxKPJNq6Tr3fTIkeF6etq5yCEqB7WFV5pt6+KmYYI2wlHAqWw==",
+  "account": 0,
+  "coinInfo": [{ "ChainID": "ELA" }],
+  "derivationStrategy": "BIP44",
+  "ethscPrimaryPubKey": "04d9f6fa153c50b49166ecdbdf8d42f63d72d3a93196f966a3447b13d3d2c3e34a34c1e0f744356813b15d279a66756b445547bc31a5679fb15b46b6db7934e782",
+  "m": 1,
+  "mnemonic": "scsrx6rItDj9zcYSIp+kdN1zANsiDkT9iKuOnwO5L2kfF0g1EAHh/aIGfEL1EzGr3eQz9k+HysohCfFztvDXFS9BVmcR9H4xWVbVD7wj+MpYgZZ1ZMMk/g==",
+  "mnemonicHasPassphrase": false,
+  "n": 1,
+  "ownerPubKey": "0348ee4410075f4c5d328f8938796935f243ece888a2fcc8f141b78b189a2165ab",
+  "passphrase": "",
+  "publicKeyRing": [
+    {
+      "requestPubKey": "027b8619b582735831f5d34b69612440395c0cc461ea8e878d43b83e9ed9d9695f",
+      "xPubKey": "xpub69cNJYpjUz3trimNUaKdoBb1jWvArn6DNmSU5DVeE4zgoC2ut4hbdfXy3CMyVuXHPdcqeo7VxsmqTxC2ggTZtbydELpfdD939PmVRYNYyML"
+    }
+  ],
+  "readonly": false,
+  "requestPrivKey": "pjNbuzPShI9UDCp9f5wcZCzUyCqU9x9lv7i98/nZ/95r8JIpN0cYoQ==",
+  "requestPubKey": "027b8619b582735831f5d34b69612440395c0cc461ea8e878d43b83e9ed9d9695f",
+  "ripplePrimaryPubKey": "03a2cabfbd9ae2e92d42332e6598ee0fc7d6a996f5e672ef59de7580ab3262dfc1",
+  "seed": "bad1cLMk2nTyipGHYDgV0vG3KBPKJ+GwmNnBFplrb61T1NdaA048BHrychJj04W39uEocMDWnhpOuhm6Wa69ZrIIY65hk+B4",
+  "singleAddress": false,
+  "xPrivKey": "2SznTYq+3UuIrKoyUTXGO70MU8tnS8U6fmnH5n6pghxMdcfZ8x1v/dUM/uJSfemxOgnNdJmpWI5VbvmwjLVLOUiYSEiizSqhals1Y6ULiswNe3YSLEU=",
+  "xPubKey": "xpub6BgzmR5yPgcBDrZqkmyxMXLGfDo3DroMvwdNaDKg7U9JLSiRrsWWzqDrT88cL69S8fzi3t1rKud2VFtH4ovym3tviNyzyU7zhpC1dFV3sEv",
+  "xPubKeyBitcoin": "xpub6CxeU2mqrPkE6GwP4o6s3EeAus1E74JxYRAFCoKzDfNdGASavh9UKQ3ftje7fipcgvfYW9vi9WCkDPn5dfnLZcyArs7jG3CkWQ3ThB9p79L",
+  "xPubKeyHDPM": "xpub69cNJYpjUz3trimNUaKdoBb1jWvArn6DNmSU5DVeE4zgoC2ut4hbdfXy3CMyVuXHPdcqeo7VxsmqTxC2ggTZtbydELpfdD939PmVRYNYyML"
+}
