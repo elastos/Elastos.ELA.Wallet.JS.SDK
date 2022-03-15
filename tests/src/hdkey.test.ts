@@ -35,19 +35,19 @@ describe('HDKey Tests', () => {
         let DIDString = "iY4Ghz9tCuWvB5rNwvn4ngWvthZMNzEA7U";
 
         let root = HDKey.fromMnemonic(mnemonic, "", KeySpec.Elastos);
-        console.log(root.serializeBase58());  
-        console.log(root.serializePublicKeyBase58());      
+        console.log(root.serializeBase58());
+        console.log(root.serializePublicKeyBase58());
         expect(root.serializeBase58()).toBe(rootSK);
         expect(root.serializePublicKeyBase58()).toBe(rootPK);
 
         let key = root.deriveWithPath(HDKey.ELASTOS_ACCOUNT_DERIVATION_PATH_PREFIX + '0');
-        console.log(key.serializeBase58());        
-        console.log(key.serializePublicKeyBase58());   
+        console.log(key.serializeBase58());
+        console.log(key.serializePublicKeyBase58());
         expect(key.serializeBase58()).toBe(ki00SK);
         expect(key.serializePublicKeyBase58()).toBe(ki00PK);
 
-        expect(key.getAddress()).toBe(address);       
-        expect(key.getDidAddress()).toBe(DIDString);       
+        expect(key.getAddress()).toBe(address);
+        expect(key.getDidAddress()).toBe(DIDString);
     });
 
     test('Test Bitcoin', () => {
@@ -61,19 +61,19 @@ describe('HDKey Tests', () => {
         let address = "17A3DeeUTgL7HLacFVKx3kBqfkjkhVau5x";
 
         let root = HDKey.fromMnemonic(mnemonic, "", KeySpec.Bitcoin);
-        console.log(root.serializeBase58());  
-        console.log(root.serializePublicKeyBase58());      
+        console.log(root.serializeBase58());
+        console.log(root.serializePublicKeyBase58());
         expect(root.serializeBase58()).toBe(rootSK);
         expect(root.serializePublicKeyBase58()).toBe(rootPK);
 
         let key = root.deriveWithPath(HDKey.BITCOIN_ACCOUNT_DERIVATION_PATH_PREFIX + '0');
-        console.log(key.serializeBase58());        
-        console.log(key.serializePublicKeyBase58());   
+        console.log(key.serializeBase58());
+        console.log(key.serializePublicKeyBase58());
         expect(key.serializeBase58()).toBe(ki00SK);
         expect(key.serializePublicKeyBase58()).toBe(ki00PK);
 
         console.log(key.getAddress());
-        expect(key.getAddress()).toBe(address);       
+        expect(key.getAddress()).toBe(address);
     });
 
     test('Test Ethereum', () => {
@@ -84,22 +84,22 @@ describe('HDKey Tests', () => {
         let ki00SK = "xprvA3PYQNrdAdfKaYdYT1qSiEjQA8YgYiGzUny3b3vRmxv9HSS22QnKkz3UyPrhhoj3ZbzVy3u79Rdr3FBtoZcqfwCBaAmyfimRYaZ8kKiLyqK";
         let ki00PK = "xpub6GNtotPX11Dco2i1Z3NT5Ng8iAPAxAzqr1tePSL3LJT8AEmAZx6aJnMxpg5C1tbpiW9c8enmxct794jpv55HVayzGyhFTfit9T9SPn3rwXa";
 
-        let address = "0x4d2851618957e63a1cf40d816773447816c455f4";
+        let address = "0x4d2851618957E63A1CF40D816773447816C455f4";
 
         let root = HDKey.fromMnemonic(mnemonic, "", KeySpec.Ethereum);
-        console.log(root.serializeBase58());  
-        console.log(root.serializePublicKeyBase58());      
+        console.log(root.serializeBase58());
+        console.log(root.serializePublicKeyBase58());
         expect(root.serializeBase58()).toBe(rootSK);
         expect(root.serializePublicKeyBase58()).toBe(rootPK);
 
         let key = root.deriveWithPath(HDKey.ETHEREUM_ACCOUNT_DERIVATION_PATH_PREFIX + '0');
-        console.log(key.serializeBase58());        
-        console.log(key.serializePublicKeyBase58());   
+        console.log(key.serializeBase58());
+        console.log(key.serializePublicKeyBase58());
         expect(key.serializeBase58()).toBe(ki00SK);
         expect(key.serializePublicKeyBase58()).toBe(ki00PK);
 
         console.log(key.getAddress());
-        expect(key.getAddress()).toBe(address);       
+        expect(key.getAddress()).toBe(address);
     });
 
     test('Test Derive Public Only', () => {

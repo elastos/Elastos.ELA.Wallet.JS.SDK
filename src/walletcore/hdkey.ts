@@ -23,12 +23,11 @@
 // NOTE: Ideally the nodejs build should use the native buffer, browser should use the polyfill.
 // Buf haven't found a way to make this work for typescript files at the rollup build level.
 import { Buffer } from "buffer";
-import { BN } from "bn.js";
-import { Base58, Base58Check } from './base58';
 import { keccak256 } from "js-sha3";
-import { SHA256 } from "./sha256";
-import { Mnemonic } from "./mnemonic";
+import { Base58, Base58Check } from './base58';
 import { DeterministicKey, Version } from "./deterministickey";
+import { Mnemonic } from "./mnemonic";
+import { SHA256 } from "./sha256";
 
 export enum KeySpec {
     Elastos = 1,
@@ -73,7 +72,7 @@ export class HDKey {
     private static toVersion(spec?: KeySpec): Version {
         let version = DeterministicKey.ELASTOS_VERSIONS;
         if (spec) {
-            switch(spec) {
+            switch (spec) {
                 case KeySpec.Elastos:
                     version = DeterministicKey.ELASTOS_VERSIONS;
                     break;
@@ -168,12 +167,12 @@ export class HDKey {
         messagePrefix: '\x18Bitcoin Signed Message:\n',
         bech32: 'bc',
         bip32: {
-          public: 0x0488b21e,
-          private: 0x0488ade4,
+            public: 0x0488b21e,
+            private: 0x0488ade4,
         },
         pubKeyHash: 0x00,
         scriptHash: 0x05,
-        wif: 0x80,    
+        wif: 0x80,
     }
 
     private getBitcoinAddress(): string {
@@ -182,7 +181,7 @@ export class HDKey {
         const payload = Buffer.allocUnsafe(21);
         payload.writeUInt8(HDKey.BITCOIN_NETWORK.pubKeyHash, 0);
         pkh.copy(payload, 1);
-        return Base58Check.encode(payload);  
+        return Base58Check.encode(payload);
     }
 
     // Ethereum Address
@@ -191,11 +190,15 @@ export class HDKey {
         //let bi = new BN(pk.slice(1, pk.length));
         //let bytes = Buffer.from(bi.toString("hex", 128), "hex");
         //let address = keccak256(bytes);
-        let address = keccak256(Buffer.from(this.key.publicKeyHex, "hex"));
-        let addressHash = keccak256(address.slice(address.length - 40));
+
+        let address = Buffer.from(keccak256(Buffer.from(this.key.publicKeyHex, "hex")), "hex").slice(-20).toString("hex");
+
+        //let addressHash = keccak256(address.slice(address.length - 40));
+        let addressHash = keccak256(address);
         let checksumAddress = "0x";
-        for (let i = 0; i < 40; i++) checksumAddress += parseInt(addressHash[i + 2], 16) > 7 ? address[i + 2].toUpperCase() : address[i + 2];
-        return checksumAddress;        
+        for (let i = 0; i < 40; i++)
+            checksumAddress += parseInt(addressHash[i], 16) > 7 ? address[i].toUpperCase() : address[i];
+        return checksumAddress;
     }
 
     // Elatos Addresses
@@ -252,7 +255,7 @@ export class HDKey {
     // Public address methods
 
     public getAddress(): string {
-        switch(this.spec) {
+        switch (this.spec) {
             case KeySpec.Elastos:
                 return this.getElastosAddress();
             case KeySpec.Bitcoin:
