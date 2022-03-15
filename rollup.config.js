@@ -4,7 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import fs from 'fs';
 //import { terser } from 'rollup-plugin-terser';
 import typescript from "@rollup/plugin-typescript";
-import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
+//import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
 //import replaceBrowserModules from './build-plugins/replace-browser-modules.js';
 import pkg from './package.json';
 //import serve from 'rollup-plugin-serve';
@@ -105,6 +105,7 @@ const nodePlugins = [
     }),
     commonjs({}),
     typescript({
+        include: ["index.ts", "src/walletcore/mnemonic.ts"],
         exclude: "*.browser.ts"
     }),
     size()
@@ -168,7 +169,7 @@ export default command => {
         input: { 'wallet.js': 'src/index.ts' },
         plugins: [
             ...nodePlugins,
-            emitModulePackageFile(),
+            //emitModulePackageFile(),
             //collectLicenses()
         ],
         output: {
@@ -305,5 +306,5 @@ export default command => {
         ]
     };
 
-    return [commonJSBuild, esmBuild, browserBuilds];
+    return [commonJSBuild,/*  esmBuild, browserBuilds */];
 };
