@@ -24,10 +24,13 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
 import { bytes_t, json } from "../types";
-import { Base58 } from "../walletcore/base58";
+import { Base58, Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { CoinType } from "../walletcore/cointype";
-import { HDKeychain, HDSeed } from "../walletcore/HDKeychain";
+import { HDKey, KeySpec } from "../walletcore/hdkey";
+import { Mnemonic } from "../walletcore/mnemonic";
+import { AESEncrypt } from '../walletcore/aes'
+import { PublicKeyRing } from '../walletcore/publickeyring'
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 
@@ -38,11 +41,11 @@ export enum SignType {
 
 export class Account {
 	private _localstore: LocalStore;
-	private _xpub: HDKeychain;
-	private _btcMasterPubKey: HDKeychain;
+	private _xpub: HDKey;
+	private _btcMasterPubKey: HDKey;
 	private _cosignerIndex: number;
-	private _curMultiSigner: HDKeychain; // multi sign current wallet signer
-	private _allMultiSigners: HDKeychain[]; // including _multiSigner and sorted
+	private _curMultiSigner: HDKey; // multi sign current wallet signer
+	private _allMultiSigners: HDKey[]; // including _multiSigner and sorted
 	private _ownerPubKey: bytes_t;
 	private _requestPubKey: bytes_t;
 
@@ -291,42 +294,45 @@ export class Account {
 		payPasswd: string,
 		singleAddress: boolean
 	) {
-		const seed: uint512 = Mnemonic.deriveSeed(mnemonic, passphrase);
-		const hdseed = new HDSeed(seed.bytes())
+		const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
+		const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
 
-		const rootkey = new HDKeychain(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-		const stdrootkey = new HDKeychain(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
-		const ethkey: HDKeychain = stdrootkey.getChild("44'/60'/0'/0/0");
+		const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
+		const ethkey: HDKey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
 
-		const encryptedSeed: string = AES::EncryptCCM(bytes_t(seed.begin(), seed.size()), payPasswd);
-		const encryptedethPrvKey: string = AES::EncryptCCM(ethkey.privkey(), payPasswd);
+		const encryptedSeed: string = AESEncrypt(seed, payPasswd);
 
-		const ethscPubKey: string = ethkey.uncompressed_pubkey().getHex();
+		const encryptedethPrvKey: string = AESEncrypt(ethkey.getPrivateKeyBytes(), payPasswd);
+
+		const ethscPubKey: string = ethkey.getPublicKeyBytes().toString('hex');
+		
 		// TODO const ripplePubKey: string = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
 
-		const encryptedMnemonic: string = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), payPasswd);
-		const encryptedxPrvKey: string = AES::EncryptCCM(rootkey.extkey(), payPasswd);
+		const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
+		const encryptedxPrvKey: string = AESEncrypt(rootkey.getPrivateKeyBytes(), payPasswd);
 
 		// TODO const xpubBitcoin: string = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
 
-		const xPubKey: string = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
-		const xpubHDPM: string = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
+		const xPubKey: string = Base58Check.encode(rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes());
+		
+		const xpubHDPM: string = Base58Check.encode(rootkey.deriveWithPath("45'").getPublicKeyBytes());
 
-		const requestKey: HDKeychain = rootkey.getChild("1'/0");
+		const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
 
-		const encryptedRequestPrvKey: string = AES::EncryptCCM(requestKey.privkey(), payPasswd);
+		const encryptedRequestPrvKey: string = AESEncrypt(requestKey.getPrivateKeyBytes(), payPasswd);
 
-		const requestPubKey: string = requestKey.pubkey().getHex();
-		const ownerPubKey: string = rootkey.getChild("44'/0'/1'/0/0").pubkey().getHex();
+		const requestPubKey: string = requestKey.getPublicKeyBytes().toString('hex');
+		const ownerPubKey: string = rootkey.deriveWithPath("44'/0'/1'/0/0").getPublicKeyBytes().toString('hex');
 
+		// TODO: path should be replaced with a WalletStorage object
 		this._localstore = new LocalStore(path);
 		this._localstore.setDerivationStrategy("BIP44");
 		this._localstore.setM(1);
 		this._localstore.setN(1);
 		this._localstore.setSingleAddress(singleAddress);
 		this._localstore.setReadonly(false);
-		this._localstore.setHasPassPhrase(!passphrase.empty());
-		this._localstore.setPublicKeyRing({PublicKeyRing(requestPubKey, xpubHDPM)});
+		this._localstore.setHasPassPhrase(passphrase.length > 0);
+		this._localstore.setPublicKeyRing([new PublicKeyRing(requestPubKey, xpubHDPM)]);
 		this._localstore.setMnemonic(encryptedMnemonic);
 		this._localstore.setxPrivKey(encryptedxPrvKey);
 		this._localstore.setxPubKey(xPubKey);
