@@ -7,7 +7,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { uint168 } from "../common/uint168";
 import { bytes_t, UINT8_MAX, uint8_t } from "../types";
-import { Base58 } from "./base58";
+import { Base58Check } from "./base58";
 import { SHA256 } from "./sha256";
 
 export const ELA_SIDECHAIN_DESTROY_ADDR = "1111111111111111111114oLvT2";
@@ -57,7 +57,7 @@ export class Address {
 			addr._isValid = false;
 		} else {
 			let payload: bytes_t;
-			if (Base58.checkDecode(address, payload)) {
+			if (payload = Base58Check.decode(address)) {
 				addr._programHash = uint168.newFrom21BytesBuffer(payload);
 				addr.checkValid();
 			} else {
@@ -110,7 +110,7 @@ export class Address {
 	}*/
 
 	public string(): string {
-		return Base58.checkEncode(this._programHash.bytes());
+		return Base58Check.encode(this._programHash.bytes());
 	}
 
 	public programHash(): uint168 {

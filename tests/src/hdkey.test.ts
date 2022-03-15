@@ -102,31 +102,6 @@ describe('HDKey Tests', () => {
         expect(key.getAddress()).toBe(address);       
     });
 
-    test('Test 1', () => {
-        let expectedIDString = "iW3HU8fTmwkENeVT9UCEvvg3ddUD5oCxYA";
-        let mnemonic = "service illegal blossom voice three eagle grace agent service average knock round";
-
-        let root = HDKey.fromMnemonic(mnemonic, "");
-        let key = root.deriveWithPath(HDKey.ELASTOS_ACCOUNT_DERIVATION_PATH_PREFIX + "0")
-
-        expect(key.getDidAddress()).toBe(expectedIDString)
-        expect(key.getDidAddress()).toEqual(HDKey.toDidAddress(key.getPublicKeyBytes()));
-    });
-
-    test('Test 2', () => {
-        let mnemonic = "pact reject sick voyage foster fence warm luggage cabbage any subject carbon";
-        let expectedKey = "xprv9s21ZrQH143K4biiQbUq8369meTb1R8KnstYFAKtfwk3vF8uvFd1EC2s49bMQsbdbmdJxUWRkuC48CXPutFfynYFVGnoeq8LJZhfd9QjvUt";
-        let root = HDKey.fromMnemonic(mnemonic, "helloworld");
-        let key = root.serializeBase58();
-        expect(key).toBe(expectedKey)
-
-        let rk = HDKey.deserializeBase58(key);
-
-        expect(rk.getPrivateKeyBase58()).toBe(root.getPrivateKeyBase58())
-        expect(rk.getPublicKeyBase58()).toBe(root.getPublicKeyBase58())
-    });
-
-
     test('Test Derive Public Only', () => {
         let mnemonic = "pact reject sick voyage foster fence warm luggage cabbage any subject carbon";
         let root = HDKey.fromMnemonic(mnemonic, "helloworld");
@@ -142,10 +117,4 @@ describe('HDKey Tests', () => {
             expect(key.getDidAddress()).toBe(keyPubOnly.getDidAddress())
         }
     });
-
-
-
-
-
-
 })

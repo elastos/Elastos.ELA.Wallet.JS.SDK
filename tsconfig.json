@@ -1,6 +1,7 @@
 {
   "include": [
-    "src/**/*"
+    "src/index.ts",
+    "src/walletcore/*"
   ],
   "exclude": [
     "node_modules",

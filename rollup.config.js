@@ -4,7 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import fs from 'fs';
 //import { terser } from 'rollup-plugin-terser';
 import typescript from "@rollup/plugin-typescript";
-//import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
+import emitModulePackageFile from './build-plugins/emit-module-package-file.js';
 //import replaceBrowserModules from './build-plugins/replace-browser-modules.js';
 import pkg from './package.json';
 //import serve from 'rollup-plugin-serve';
@@ -85,11 +85,11 @@ const nodePlugins = [
     replace({
         delimiters: ['', ''],
         preventAssignment: true,
-        //exclude: [
-        //    '/node_modules/rollup-plugin-node-polyfills/**/*.js',
-        //    '/node_modules/rollup-plugin-polyfill-node/**/*.js',
-        //],
-        /*  values: {
+        exclude: [
+            '/node_modules/rollup-plugin-node-polyfills/**/*.js',
+            '/node_modules/rollup-plugin-polyfill-node/**/*.js',
+        ],
+         values: {
              // Replace readable-stream with stream (polyfilled) because it uses dynamic requires and this doesn't work well at runtime
              // even if trying to add "readable-stream" to "dynamicRequireTargets" in commonJs().
              // https://github.com/rollup/rollup/issues/1507#issuecomment-340550539
@@ -101,11 +101,11 @@ const nodePlugins = [
              'require("readable-stream/readable")': 'require("stream").Readable',
              'LegacyTransportStream = require(\'./legacy\')': 'LegacyTransportStream = null',
              'LegacyTransportStream = require(\'winston-transport/legacy\')': 'LegacyTransportStream = null'
-         } */
+         }
     }),
     commonjs({}),
     typescript({
-        include: ["index.ts", "src/walletcore/mnemonic.ts"],
+        include: ["index.ts", "src/walletcore/*.ts"],
         exclude: "*.browser.ts"
     }),
     size()
@@ -169,7 +169,7 @@ export default command => {
         input: { 'wallet.js': 'src/index.ts' },
         plugins: [
             ...nodePlugins,
-            //emitModulePackageFile(),
+            emitModulePackageFile(),
             //collectLicenses()
         ],
         output: {
@@ -306,5 +306,5 @@ export default command => {
         ]
     };
 
-    return [commonJSBuild,/*  esmBuild, browserBuilds */];
+    return [commonJSBuild, esmBuild /*, browserBuilds */];
 };
