@@ -31,6 +31,7 @@ import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
 import { PublicKeyRing } from "../walletcore/publickeyring";
+import { WalletStorage } from "../persistence/WalletStorage";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 
@@ -166,17 +167,23 @@ export class Account {
     }
   }
 
+  private constructor() {}
+
   /*Account::Account(const LocalStorePtr &store) :
 		_localstore(store) {
 		Init();
 	}
+	*/
 
-	Account::Account(const std::string &path) {
-		_localstore = LocalStorePtr(new LocalStore(path));
-		_localstore->Load();
-		Init();
-	}
+  public static newFromAccount(storage: WalletStorage) {
+    let account = new Account();
+    account._localstore = new LocalStore(storage);
+    account._localstore.load();
+    account.init();
+    return account;
+  }
 
+  /*
 	Account::Account(const std::string &path, const std::vector<PublicKeyRing> &cosigners, int m,
 					 bool singleAddress, bool compatible) {
 		ErrorChecker::CheckParam(cosigners.size() > MAX_MULTISIGN_COSIGNERS, Error::MultiSign, "Too much signers");
@@ -320,13 +327,15 @@ export class Account {
 	}
 */
 
-  constructor(
-    path: string,
+  public static newFromSingleAddress(
+    storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
     payPasswd: string,
     singleAddress: boolean
   ) {
+    let account = new Account();
+
     const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
     const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
 
@@ -376,30 +385,31 @@ export class Account {
       .toString("hex");
 
     // TODO: path should be replaced with a WalletStorage object
-    this._localstore = new LocalStore(path);
-    this._localstore.setDerivationStrategy("BIP44");
-    this._localstore.setM(1);
-    this._localstore.setN(1);
-    this._localstore.setSingleAddress(singleAddress);
-    this._localstore.setReadonly(false);
-    this._localstore.setHasPassPhrase(passphrase.length > 0);
-    this._localstore.setPublicKeyRing([
+    account._localstore = new LocalStore(storage);
+    account._localstore.setDerivationStrategy("BIP44");
+    account._localstore.setM(1);
+    account._localstore.setN(1);
+    account._localstore.setSingleAddress(singleAddress);
+    account._localstore.setReadonly(false);
+    account._localstore.setHasPassPhrase(passphrase.length > 0);
+    account._localstore.setPublicKeyRing([
       new PublicKeyRing(requestPubKey, xpubHDPM)
     ]);
-    this._localstore.setMnemonic(encryptedMnemonic);
-    this._localstore.setxPrivKey(encryptedxPrvKey);
-    this._localstore.setxPubKey(xPubKey);
-    this._localstore.setxPubKeyHDPM(xpubHDPM);
-    this._localstore.setRequestPubKey(requestPubKey);
-    this._localstore.setRequestPrivKey(encryptedRequestPrvKey);
-    this._localstore.setOwnerPubKey(ownerPubKey);
-    this._localstore.setSeed(encryptedSeed);
-    this._localstore.setETHSCPrimaryPubKey(ethscPubKey);
+    account._localstore.setMnemonic(encryptedMnemonic);
+    account._localstore.setxPrivKey(encryptedxPrvKey);
+    account._localstore.setxPubKey(xPubKey);
+    account._localstore.setxPubKeyHDPM(xpubHDPM);
+    account._localstore.setRequestPubKey(requestPubKey);
+    account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+    account._localstore.setOwnerPubKey(ownerPubKey);
+    account._localstore.setSeed(encryptedSeed);
+    account._localstore.setETHSCPrimaryPubKey(ethscPubKey);
     // TODO this._localstore.setxPubKeyBitcoin(xpubBitcoin);
-    this._localstore.setSinglePrivateKey(encryptedethPrvKey);
+    account._localstore.setSinglePrivateKey(encryptedethPrvKey);
     // TODO this._localstore.setRipplePrimaryPubKey(ripplePubKey);
 
-    this.init();
+    account.init();
+    return account;
   }
 
   /*

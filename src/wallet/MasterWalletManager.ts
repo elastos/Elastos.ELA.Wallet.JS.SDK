@@ -22,6 +22,7 @@
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
+import { Log } from "../common/Log";
 import {
   Config,
   CONFIG_MAINNET,
@@ -31,7 +32,8 @@ import {
 } from "../Config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json } from "../types";
-import { ExtKeyVersionMap, HDKeychain } from "../walletcore/HDKeychain";
+import { HDKey } from "../walletcore/hdkey";
+import { Mnemonic } from "../walletcore/mnemonic";
 import { MasterWallet } from "./MasterWallet";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
@@ -49,6 +51,7 @@ export class MasterWalletManager {
   protected _rootPath: string;
   protected _dataPath: string;
   protected _masterWalletMap: MasterWalletMap;
+  private _storage: WalletStorage;
 
   constructor(
     storage: WalletStorage,
@@ -71,6 +74,8 @@ export class MasterWalletManager {
     // TODO Log.setLevel(spdlog:: level:: level_enum(SPVLOG_LEVEL));
     // TODO Log.info("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
 
+    this._storage = storage;
+
     if (
       netType != CONFIG_MAINNET &&
       netType != CONFIG_TESTNET &&
@@ -85,16 +90,19 @@ export class MasterWalletManager {
 
     this._config = Config.newFromParams(netType, config);
     if (this._config.getNetType() == CONFIG_MAINNET) {
+      /* TODO
       HDKeychain.setVersions(
         ExtKeyVersionMap["bip32"]["mainnet"]["prv"],
         ExtKeyVersionMap["bip32"]["mainnet"]["pub"]
       );
+			*/
     } else {
+      /* TODO
       HDKeychain.setVersions(
         ExtKeyVersionMap["bip32"]["testnet"]["prv"],
         ExtKeyVersionMap["bip32"]["testnet"]["pub"]
       );
-
+			*/
       /* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
 			this._dataPath = this._dataPath + "/" + this._config.getNetType();
 			if (!boost:: filesystem:: exists(_dataPath))
@@ -144,49 +152,44 @@ export class MasterWalletManager {
 		*/
   }
 
-  /*	IMasterWallet *MasterWalletManager::LoadMasterWallet(const std::string &masterWalletID) const {
-			boost::filesystem::path walletStore(_dataPath);
+  loadMasterWallet(storage: WalletStorage): MasterWallet {
+    const masterWalletID = storage.masterWalletID;
+    Log.info("loading wallet: {} ...", masterWalletID);
 
-			walletStore /= masterWalletID;
-			if (!exists(walletStore / LOCAL_STORE_FILE) && !exists(walletStore / MASTER_WALLET_STORE_FILE)) {
-				Log::error("load master wallet '{}' failed: not exist", masterWalletID);
-				return nullptr;
-			}
+    let masterWallet: MasterWallet;
+    try {
+      masterWallet = MasterWallet.newFromStorage(storage, this._config);
+      masterWallet.initSubWallets();
+      this._masterWalletMap[masterWalletID] = masterWallet;
+    } catch (error) {
+      Log.error("load master wallet '{}' failed: {}", masterWalletID, error);
+      masterWallet = null;
+    }
 
-			Log::info("loading wallet: {} ...", masterWalletID);
-			MasterWallet *masterWallet;
-			try {
-				masterWallet = new MasterWallet(masterWalletID, ConfigPtr(new Config(*_config)), _dataPath);
-				masterWallet->InitSubWallets();
-				_masterWalletMap[masterWalletID] = masterWallet;
-			} catch (const std::exception &e) {
-				Log::error("load master wallet '{}' failed: {}", masterWalletID, e.what());
-				masterWallet = nullptr;
-			}
+    return masterWallet;
+  }
 
-			return masterWallet;
-		}
+  generateMnemonic(language: string, wordCount?: number): string {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("language: {}", language);
+    // ArgInfo("wordCount: {}", wordCount);
 
-		std::string MasterWalletManager::GenerateMnemonic(const std::string &language, int wordCount) const {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("language: {}", language);
-			ArgInfo("wordCount: {}", wordCount);
+    const mnemonicObj = Mnemonic.getInstance(language);
+    const mnemonic = mnemonicObj.generate();
 
-			Mnemonic::WordCount count = Mnemonic::WordCount(wordCount);
-			std::string mnemonic = MasterWallet::GenerateMnemonic(language, count);
-
-			ArgInfo("r => *");
-			return mnemonic;
-		}
-	*/
+    // ArgInfo("r => *");
+    return mnemonic;
+  }
 
   createMasterWallet(
-    masterWalletID: string,
+    // storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
     passwd: string,
     singleAddress: boolean
   ): MasterWallet {
+    const masterWalletID = this._storage.masterWalletID;
+
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("mnemonic: *");
@@ -208,8 +211,8 @@ export class MasterWalletManager {
 
     // ErrorChecker.checkLogic(!Mnemonic::Validate(mnemonic), Error.Code.Mnemonic, "Invalid mnemonic");
 
-    const masterWallet = new MasterWallet(
-      masterWalletID,
+    const masterWallet = MasterWallet.newFromSingleAddress(
+      this._storage,
       mnemonic,
       passphrase,
       passwd,
@@ -634,13 +637,13 @@ export class MasterWalletManager {
     //ArgInfo("masterWalletID: {}", masterWalletID);
 
     if (
-      this._masterWalletMap.find(masterWalletID) != _masterWalletMap.cend() &&
-      _masterWalletMap[masterWalletID] != nullptr
+      this._masterWalletMap.has(masterWalletID) &&
+      this._masterWalletMap[masterWalletID] != null
     ) {
-      return _masterWalletMap[masterWalletID];
+      return this._masterWalletMap[masterWalletID];
     }
 
-    return LoadMasterWallet(masterWalletID);
+    return this.loadMasterWallet(masterWalletID);
   }
 
   /*void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {

@@ -21,8 +21,13 @@
  */
 
 import { Account } from "../account/Account";
-import { Config } from "../config";
+import { Config, ChainConfig } from "../config";
+import { WalletStorage } from "../persistence/WalletStorage";
+import { CoinInfo } from "../walletcore/CoinInfo";
 import { SubWallet } from "./SubWallet";
+import { ISubWallet } from "./ISubWallet";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { Log } from "../common/Log";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -34,19 +39,23 @@ export class MasterWallet {
   protected _id: string;
   protected _config: Config;
 
-  /* MasterWallet::MasterWallet(const std::string &id,
-								 const ConfigPtr &config,
-								 const std::string &dataPath) :
-			_id(id),
-			_config(config) {
+  private constructor() {}
 
-		_account = AccountPtr(new Account(dataPath + "/" + _id));
-					SetupNetworkParameters();
-	}
-	*/
+  public static newFromStorage(
+    storage: WalletStorage,
+    config: Config
+    // dataPath: string
+  ) {
+    let masterWallet = new MasterWallet();
+    masterWallet._id = storage.masterWalletID;
+    masterWallet._config = config;
+    masterWallet._account = Account.newFromAccount(storage);
+    // this.setupNetworkParameters();
+    return masterWallet;
+  }
 
-  constructor(
-    id: string,
+  public static newFromSingleAddress(
+    storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
     passwd: string,
@@ -54,20 +63,21 @@ export class MasterWallet {
     config: Config
     // dataPath: string
   ) {
-    this._id = id;
-    this._config = config;
+    let masterWallet = new MasterWallet();
+    masterWallet._id = storage.masterWalletID;
+    masterWallet._config = config;
 
-    this._account = new Account(
-      // original code: `${dataPath}/${this._id}`
-      this._id,
+    masterWallet._account = Account.newFromSingleAddress(
+      storage, // original code: `${dataPath}/${this._id}`
       mnemonic,
       passphrase,
       passwd,
       singleAddress
     );
 
-    this._account.save();
+    masterWallet._account.save();
     // this.setupNetworkParameters();
+    return masterWallet;
   }
 
   /*
@@ -198,7 +208,7 @@ export class MasterWallet {
     return null;
   }
 
-  public createSubWallet(chainID: string): SubWallet {
+  public createSubWallet(chainID: string) {
     /*
 		//ArgInfo("{} {}", _id, GetFunName());
 		//ArgInfo("chainID: {}", chainID);
@@ -362,25 +372,36 @@ export class MasterWallet {
 
 		ArgInfo("r => {}", mpk);
 		return mpk;
-	}
+	}*/
 
-			void MasterWallet::InitSubWallets() {
-					const std::vector<CoinInfoPtr> &info = _account->SubWalletInfoList();
+  initSubWallets() {
+    const info: CoinInfo[] = this._account.subWalletInfoList();
+    for (let i = 0; i < info.length; ++i) {
+      let chainConfig: ChainConfig = this._config.getChainConfig(
+        info[i].getChainID()
+      );
+      if (chainConfig == null) {
+        Log.error("Can not find config of chain ID: " + info[i].getChainID());
+        continue;
+      }
 
-					for (int i = 0; i < info.size(); ++i) {
-							ChainConfigPtr chainConfig = _config->GetChainConfig(info[i]->GetChainID());
-							if (chainConfig == nullptr) {
-									Log::error("Can not find config of chain ID: " + info[i]->GetChainID());
-									continue;
-							}
+      let subWallet: ISubWallet = this.subWalletFactoryMethod(
+        info[i],
+        chainConfig,
+        this,
+        this._config.getNetType()
+      );
 
-							ISubWallet *subWallet = SubWalletFactoryMethod(info[i], chainConfig, this, _config->GetNetType());
-							ErrorChecker::CheckCondition(subWallet == nullptr, Error::CreateSubWalletError,
-																					 "Recover sub wallet error");
-							_createdWallets[subWallet->GetChainID()] = subWallet;
-					}
-			}
+      ErrorChecker.checkCondition(
+        subWallet == null,
+        Error.Code.CreateSubWalletError,
+        "Recover sub wallet error"
+      );
+      this._createdWallets[subWallet.getChainID()] = subWallet;
+    }
+  }
 
+  /*
 	ISubWallet *MasterWallet::SubWalletFactoryMethod(const CoinInfoPtr &info, const ChainConfigPtr &config,
 													MasterWallet *parent, const std::string &netType) {
 

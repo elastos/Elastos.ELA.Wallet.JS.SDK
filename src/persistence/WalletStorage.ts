@@ -13,5 +13,5 @@ export interface WalletStorage {
   /**
    * Saves the given local store JSON representation to persistent storage.
    */
-  saveStore(j: json);
+  saveStore(j: json): void;
 }
