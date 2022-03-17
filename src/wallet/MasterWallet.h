@@ -51,8 +51,6 @@ namespace Elastos {
 		public:
 			virtual ~MasterWallet();
 
-			virtual void RemoveLocalStore();
-
 			bool IsEqual(const MasterWallet &wallet) const;
 
 			void FlushData();
@@ -61,15 +59,7 @@ namespace Elastos {
 
 			static std::string GenerateMnemonic(const std::string &language, Mnemonic::WordCount wordCount = Mnemonic::WordCount::WORDS_12);
 
-			virtual std::string GetID() const;
-
 			virtual nlohmann::json GetBasicInfo() const;
-
-			virtual std::vector<ISubWallet *> GetAllSubWallets() const;
-
-			virtual ISubWallet *GetSubWallet(const std::string &chainID) const;
-
-			virtual ISubWallet *CreateSubWallet(const std::string &chainID);
 
 			nlohmann::json ExportKeystore(const std::string &backupPassword,
 										  const std::string &payPassword) const;
@@ -103,15 +93,10 @@ namespace Elastos {
 			virtual void ResetPassword(const std::string &mnemonic, const std::string &passphrase,
 									   const std::string &newPassword);
 
-			void InitSubWallets();
-
-			std::string GetWalletID() const;
-
 			ChainConfigPtr GetChainConfig(const std::string &chainID) const;
 
 			std::string GetDataPath() const;
 
-			AccountPtr GetAccount() const;
 		protected:
 
 			friend class MasterWalletManager;

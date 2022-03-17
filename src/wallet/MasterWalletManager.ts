@@ -33,7 +33,6 @@ import {
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json } from "../types";
 import { HDKey } from "../walletcore/hdkey";
-import { Mnemonic } from "../walletcore/mnemonic";
 import { MasterWallet } from "./MasterWallet";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
@@ -169,14 +168,11 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  generateMnemonic(language: string, wordCount?: number): string {
+  generateMnemonic(language: string, wordCount?: any): string {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("language: {}", language);
     // ArgInfo("wordCount: {}", wordCount);
-
-    const mnemonicObj = Mnemonic.getInstance(language);
-    const mnemonic = mnemonicObj.generate();
-
+    const mnemonic: string = MasterWallet.generateMnemonic(language);
     // ArgInfo("r => *");
     return mnemonic;
   }

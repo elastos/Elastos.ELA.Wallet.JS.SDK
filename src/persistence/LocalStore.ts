@@ -284,12 +284,15 @@ export class LocalStore {
     this._walletStorage.saveStore(this.toJson());
   }
 
-  /* void LocalStore:: Remove() {
+  remove() {
+    /*
 		boost:: filesystem::path path(_path);
 		if (boost:: filesystem:: exists(path))
-		boost:: filesystem:: remove_all(path);
-	}
+      boost:: filesystem:: remove_all(path);
+    */
+  }
 
+  /*
 	const std:: string & LocalStore:: GetDataPath() const {
 		return _path;
 			}

@@ -28,6 +28,7 @@ import { SubWallet } from "./SubWallet";
 import { ISubWallet } from "./ISubWallet";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
+import { Mnemonic } from "../walletcore/mnemonic";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -168,13 +169,15 @@ export class MasterWallet {
 
   destroy() {}
 
-  /* std::string MasterWallet::GenerateMnemonic(const std::string &language, Mnemonic::WordCount wordCount) {
-		return Mnemonic::Create(language, wordCount);
-	}
+  public static generateMnemonic(language: string, wordCount?: any): string {
+    const mnemonicObj = Mnemonic.getInstance(language);
+    const mnemonic = mnemonicObj.generate();
+    return mnemonic;
+  }
 
-	void MasterWallet::RemoveLocalStore() {
-		_account->Remove();
-	}*/
+  removeLocalStore() {
+    this._account.remove();
+  }
 
   public getID(): string {
     return this._id;

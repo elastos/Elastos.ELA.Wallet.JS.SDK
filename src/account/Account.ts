@@ -1282,13 +1282,13 @@ export class Account {
   save(): void {
     this._localstore.save();
   }
-  /*
-	void Account::Remove() {
-		_localstore->Remove();
-	}
 
+  remove() {
+    this._localstore.remove();
+  }
+
+  /*
 	std::string Account::GetDataPath() const {
 		return _localstore->GetDataPath();
-	}
-*/
+	}*/
 }
