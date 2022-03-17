@@ -151,7 +151,7 @@ export class MasterWalletManager {
 		*/
   }
 
-  loadMasterWallet(storage: WalletStorage): MasterWallet {
+  protected loadMasterWallet(storage: WalletStorage): MasterWallet {
     const masterWalletID = storage.masterWalletID;
     Log.info("loading wallet: {} ...", masterWalletID);
 
@@ -159,7 +159,7 @@ export class MasterWalletManager {
     try {
       masterWallet = MasterWallet.newFromStorage(storage, this._config);
       masterWallet.initSubWallets();
-      this._masterWalletMap[masterWalletID] = masterWallet;
+      this._masterWalletMap.set(masterWalletID, masterWallet);
     } catch (error) {
       Log.error("load master wallet '{}' failed: {}", masterWalletID, error);
       masterWallet = null;
@@ -634,9 +634,9 @@ export class MasterWalletManager {
 
     if (
       this._masterWalletMap.has(masterWalletID) &&
-      this._masterWalletMap[masterWalletID] != null
+      this._masterWalletMap.get(masterWalletID) != null
     ) {
-      return this._masterWalletMap[masterWalletID];
+      return this._masterWalletMap.get(masterWalletID);
     }
 
     return this.loadMasterWallet(masterWalletID);
