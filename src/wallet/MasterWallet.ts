@@ -209,33 +209,44 @@ export class MasterWallet {
   }
 
   public createSubWallet(chainID: string) {
-    /*
-		//ArgInfo("{} {}", _id, GetFunName());
-		//ArgInfo("chainID: {}", chainID);
-		
-		ErrorChecker:: CheckParamNotEmpty(chainID, "Chain ID");
-		ErrorChecker:: CheckParam(chainID.size() > 128, Error:: InvalidArgument, "Chain ID sould less than 128");
+    //ArgInfo("{} {}", _id, GetFunName());
+    //ArgInfo("chainID: {}", chainID);
 
-		if (_createdWallets.find(chainID) != _createdWallets.end()) {
-			ISubWallet * subWallet = _createdWallets[chainID];
-			ArgInfo("r => already created");
-			return subWallet;
-		}
+    ErrorChecker.checkParamNotEmpty(chainID, "Chain ID");
+    ErrorChecker.checkParam(
+      chainID.length > 128,
+      Error.Code.InvalidArgument,
+      "Chain ID sould less than 128"
+    );
 
-		ChainConfigPtr chainConfig = _config -> GetChainConfig(chainID);
-		ErrorChecker:: CheckLogic(chainConfig == nullptr, Error:: InvalidArgument, "Unsupport chain ID: " + chainID);
+    if (this._createdWallets[chainID]) {
+      const subWallet = this._createdWallets[chainID];
+      // ArgInfo("r => already created");
+      return subWallet;
+    }
 
-		CoinInfoPtr info(new CoinInfo());
+    const chainConfig = this._config.getChainConfig(chainID);
+    ErrorChecker.checkLogic(
+      chainConfig == null,
+      Error.Code.InvalidArgument,
+      "Unsupport chain ID: " + chainID
+    );
 
-		info -> SetChainID(chainID);
+    const info = new CoinInfo();
 
-		ISubWallet * subWallet = SubWalletFactoryMethod(info, chainConfig, this, _config -> GetNetType());
-		_createdWallets[chainID] = subWallet;
-		_account -> AddSubWalletInfoList(info);
-		_account -> Save();
+    info.setChainID(chainID);
 
-		return subWallet;
-		*/
+    let subWallet = this.subWalletFactoryMethod(
+      info,
+      chainConfig,
+      this,
+      this._config.getNetType()
+    );
+    this._createdWallets[chainID] = subWallet;
+    this._account.addSubWalletInfoList(info);
+    this._account.save();
+
+    return subWallet;
   }
 
   /*bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
