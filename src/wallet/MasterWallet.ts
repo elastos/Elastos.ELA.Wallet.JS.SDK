@@ -21,7 +21,7 @@
  */
 
 import { Account } from "../account/Account";
-import { Config, ChainConfig } from "../config";
+import { Config, ChainConfig, ConfigMap } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { SubWallet } from "./SubWallet";
@@ -29,6 +29,8 @@ import { ISubWallet } from "./ISubWallet";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Mnemonic } from "../walletcore/mnemonic";
+import { JSONObject, uint32_t } from "../types";
+import { PublicKeyRing } from "../walletcore/publickeyring";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -56,7 +58,7 @@ export class MasterWallet {
   }
 
   public static newFromMnemonic(
-    storage: WalletStorage,
+    storage: WalletStorage, // masterWalletID
     mnemonic: string,
     passphrase: string,
     passwd: string,
@@ -77,95 +79,151 @@ export class MasterWallet {
     );
 
     masterWallet._account.save();
-    // this.setupNetworkParameters();
+    masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  /*
+  public static newFromSinglePrivateKey(
+    id: string,
+    singlePrivateKey: string,
+    passwd: string,
+    config: Config,
+    dataPath: string
+  ) {
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = new Account(
+      dataPath + "/" + _id,
+      singlePrivateKey,
+      passwd
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
 
-			MasterWallet::MasterWallet(const std::string &id,
-																 const std::string &singlePrivateKey,
-																 const std::string &passwd,
-																 const ConfigPtr &config,
-																 const std::string &dataPath) :
-																 _id(id),
-																 _config(config) {
-					_account = AccountPtr(new Account(dataPath + "/" + _id, singlePrivateKey, passwd));
-					_account->Save();
-					SetupNetworkParameters();
-	}
+  public static newFromKeystore(
+    id: string,
+    keystoreContent: JSONObject,
+    backupPassword: string,
+    payPasswd: string,
+    config: Config,
+    dataPath: string
+  ) {
+    // KeyStore keystore;
+    // keystore.Import(keystoreContent, backupPassword);
 
-	MasterWallet::MasterWallet(const std::string &id,
-								 const nlohmann::json &keystoreContent,
-								 const std::string &backupPassword,
-								 const std::string &payPasswd,
-								 const ConfigPtr &config,
-								 const std::string &dataPath) :
-			_id(id),
-			_config(config) {
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
 
-		KeyStore keystore;
-		keystore.Import(keystoreContent, backupPassword);
+    masterWallet._account = new Account(
+      dataPath + "/" + _id,
+      keystore,
+      payPasswd
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
 
-		_account = AccountPtr(new Account(dataPath + "/" + _id, keystore, payPasswd));
-		_account->Save();
-					SetupNetworkParameters();
-	}
+  public static newFromPublicKeyRings(
+    id: string,
+    pubKeyRings: PublicKeyRing[],
+    m: uint32_t,
+    config: Config,
+    dataPath: string,
+    singleAddress: boolean,
+    compatible: boolean
+  ): MasterWallet {
+    ErrorChecker.checkParam(
+      pubKeyRings.length < m,
+      Error.Code.InvalidArgument,
+      "Invalid M"
+    );
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = new Account(
+      dataPath + "/" + _id,
+      pubKeyRings,
+      m,
+      singleAddress,
+      compatible
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
 
-	MasterWallet::MasterWallet(const std::string &id,
-								 const std::vector<PublicKeyRing> &pubKeyRings,
-								 uint32_t m,
-								 const ConfigPtr &config,
-								 const std::string &dataPath,
-								 bool singleAddress,
-								 bool compatible) :
-			_id(id),
-			_config(config) {
-		ErrorChecker::CheckParam(pubKeyRings.size() < m, Error::InvalidArgument, "Invalid M");
+  public static newFromXPrivateKey(
+    id: string,
+    xprv: string,
+    payPassword: string,
+    cosigners: PublicKeyRing[],
+    m: uint32_t,
+    config: Config,
+    dataPath: string,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 < m,
+      Error.Code.InvalidArgument,
+      "Invalid M"
+    );
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = new Account(
+      dataPath + "/" + _id,
+      xprv,
+      payPassword,
+      cosigners,
+      m,
+      singleAddress,
+      compatible
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
 
-		_account = AccountPtr(new Account(dataPath + "/" + _id, pubKeyRings, m, singleAddress, compatible));
-		_account->Save();
-					SetupNetworkParameters();
-	}
-
-	MasterWallet::MasterWallet(const std::string &id,
-								 const std::string &xprv,
-								 const std::string &payPassword,
-								 const std::vector<PublicKeyRing> &cosigners,
-								 uint32_t m,
-								 const ConfigPtr &config,
-								 const std::string &dataPath,
-								 bool singleAddress,
-								 bool compatible) :
-			_id(id),
-			_config(config) {
-
-		ErrorChecker::CheckParam(cosigners.size() + 1 < m, Error::InvalidArgument, "Invalid M");
-
-		_account = AccountPtr(new Account(dataPath + "/" + _id, xprv, payPassword, cosigners, m, singleAddress, compatible));
-		_account->Save();
-					SetupNetworkParameters();
-	}
-
-	MasterWallet::MasterWallet(const std::string &id,
-								 const std::string &mnemonic,
-								 const std::string &passphrase,
-								 const std::string &payPasswd,
-								 const std::vector<PublicKeyRing> &cosigners,
-								 uint32_t m,
-								 const ConfigPtr &config,
-								 const std::string &dataPath,
-								 bool singleAddress,
-								 bool compatible) :
-			_id(id),
-			_config(config) {
-
-		ErrorChecker::CheckParam(cosigners.size() + 1 < m, Error::InvalidArgument, "Invalid M");
-
-		_account = AccountPtr(new Account(dataPath + "/" + _id, mnemonic, passphrase, payPasswd, cosigners, m, singleAddress, compatible));
-		_account->Save();
-					SetupNetworkParameters();
-	} */
+  public static newFromMnemonicAndPublicKeyRings(
+    id: string,
+    mnemonic: string,
+    passphrase: string,
+    payPasswd: string,
+    cosigners: PublicKeyRing[],
+    m: uint32_t,
+    config: Config,
+    dataPath: string,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 < m,
+      Error.Code.InvalidArgument,
+      "Invalid M"
+    );
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = new Account(
+      dataPath + "/" + _id,
+      mnemonic,
+      passphrase,
+      payPasswd,
+      cosigners,
+      m,
+      singleAddress,
+      compatible
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
 
   destroy() {}
 
@@ -252,82 +310,78 @@ export class MasterWallet {
     return subWallet;
   }
 
-  /*bool MasterWallet::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("mnemonic: *");
-		ArgInfo("passphrase: *");
-		bool r = _account->VerifyPrivateKey(mnemonic, passphrase);
-		ArgInfo("r => {}", r);
-		return r;
-	}
+  verifyPrivateKey(mnemonic: string, passphrase: string): boolean {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("mnemonic: *");
+    // ArgInfo("passphrase: *");
+    const r: boolean = this._account.verifyPrivateKey(mnemonic, passphrase);
+    // ArgInfo("r => {}", r);
+    return r;
+  }
 
-	bool MasterWallet::VerifyPassPhrase(const std::string &passphrase, const std::string &payPasswd) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("passphrase: *");
-		ArgInfo("payPasswd: *");
-		bool r = _account->VerifyPassPhrase(passphrase, payPasswd);
-		ArgInfo("r => {}", r);
-		return r;
-	}
+  verifyPassPhrase(passphrase: string, payPasswd: string): boolean {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("passphrase: *");
+    // ArgInfo("payPasswd: *");
+    const r: boolean = this._account.verifyPassPhrase(passphrase, payPasswd);
+    // ArgInfo("r => {}", r);
+    return r;
+  }
 
-	bool MasterWallet::VerifyPayPassword(const std::string &payPasswd) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("payPasswd: *");
-		bool r = _account->VerifyPayPassword(payPasswd);
-		ArgInfo("r => {}", r);
-		return r;
-	}
+  verifyPayPassword(payPasswd: string): boolean {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("payPasswd: *");
+    const r: boolean = this._account.verifyPayPassword(payPasswd);
+    // ArgInfo("r => {}", r);
+    return r;
+  }
 
-	void MasterWallet::CloseAllSubWallets() {
-		for (WalletMap::iterator it = _createdWallets.begin(); it != _createdWallets.end(); ) {
-			ISubWallet *subWallet = it->second;
-			std::string id = _id + ":" + subWallet->GetChainID();
-			Log::info("{} closing...", id);
+  closeAllSubWallets() {
+    this._createdWallets = {};
+  }
 
-			it = _createdWallets.erase(it);
+  setupNetworkParameters() {
+    const configs: ConfigMap = this._config.getConfigs();
+    const keys = Object.keys(configs);
+    for (let i = 0; i < keys.length; i++) {
+      const value = configs[keys[i]];
+      if (value.name().length !== 0) {
+        this.insertEthereumNetwork(
+          value.name(),
+          value.chainID(),
+          value.networkID()
+        );
+      }
+    }
+  }
 
-			delete subWallet;
-			subWallet = nullptr;
-			Log::info("{} closed", id);
-		}
-	}
+  destroyWallet(chainID: string) {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("chainID: {}", chainID);
+    const keys = Object.keys(this._createdWallets);
+    if (chainID in keys) {
+      const subWallet = this._createdWallets[chainID];
+      this._account.removeSubWalletInfo(subWallet.getChainID());
+      this._account.save();
+      this._createdWallets[chainID] = null;
+      // ArgInfo("r => {} {} done", this._id, GetFunName());
+    } else {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "chainID not found"
+      );
+    }
+  }
 
-			void MasterWallet::SetupNetworkParameters() {
-					const std::map<std::string, ChainConfigPtr> configs = _config->GetConfigs();
+  getPubKeyInfo(): JSONObject {
+    // ArgInfo("{} {}",this._id, GetFunName());
+    const j = this._account.getPubKeyInfo();
 
-					for (std::map<std::string, ChainConfigPtr>::const_iterator it = configs.begin(); it != configs.end(); ++it)
-							if (!it->second->Name().empty())
-									InsertEthereumNetwork(it->second->Name().c_str(), it->second->ChainID(), it->second->NetworkID());
-			}
+    // ArgInfo("r => {}", j.dump());
+    return j;
+  }
 
-	void MasterWallet::DestroyWallet(const std::string &chainID) {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("chainID: {}", chainID);
-
-		if (_createdWallets.find(chainID) == _createdWallets.end())
-			ErrorChecker::ThrowParamException(Error::InvalidArgument, "chainID not found");
-
-		ISubWallet *subWallet = _createdWallets[chainID];
-		_account->RemoveSubWalletInfo(subWallet->GetChainID());
-		_account->Save();
-
-		_createdWallets.erase(chainID);
-
-		delete subWallet;
-		subWallet = nullptr;
-
-		ArgInfo("r => {} {} done", _id, GetFunName());
-	}
-
-	nlohmann::json MasterWallet::GetPubKeyInfo() const {
-		ArgInfo("{} {}", _id, GetFunName());
-
-		nlohmann::json j = _account->GetPubKeyInfo();
-
-		ArgInfo("r => {}", j.dump());
-		return j;
-	}
-
+  /*
 #if 0
 	nlohmann::json MasterWallet::ExportReadonlyWallet() const {
 		ArgInfo("{} {}", _id, GetFunName());
@@ -338,55 +392,59 @@ export class MasterWallet {
 		return j;
 	}
 #endif
+*/
 
-	nlohmann::json MasterWallet::ExportKeystore(const std::string &backupPassword, const std::string &payPassword) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("backupPassword: *");
-		ArgInfo("payPassword: *");
-		ErrorChecker::CheckPassword(backupPassword, "Backup");
+  exportKeystore(backupPassword: string, payPassword: string): JSONObject {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("backupPassword: *");
+    // ArgInfo("payPassword: *");
+    ErrorChecker.checkPassword(backupPassword, "Backup");
 
-		std::vector<CoinInfoPtr> coinInfo = _account->SubWalletInfoList();
-		_account->SetSubWalletInfoList(coinInfo);
-		_account->Save();
+    const coinInfo: CoinInfo[] = this._account.subWalletInfoList();
+    this._account.setSubWalletInfoList(coinInfo);
+    this._account.save();
 
-		KeyStore keyStore = _account->ExportKeystore(payPassword);
-		nlohmann::json j = keyStore.Export(backupPassword, true);
+    const keyStore: KeyStore = this._account.exportKeystore(payPassword);
+    const j: JSONObject = keyStore.Export(backupPassword, true);
 
-		ArgInfo("r => *");
-		return j;
-	}
+    // ArgInfo("r => *");
+    return j;
+  }
 
-	std::string MasterWallet::ExportMnemonic(const std::string &payPassword) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("payPassword: *");
+  exportMnemonic(payPassword: string): string {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("payPassword: *");
 
-		std::string mnemonic = _account->ExportMnemonic(payPassword);
+    const mnemonic = this._account.exportMnemonic(payPassword);
 
-		ArgInfo("r => *");
-		return mnemonic;
-	}
+    // ArgInfo("r => *");
+    return mnemonic;
+  }
 
-	std::string MasterWallet::ExportPrivateKey(const std::string &payPasswd) const {
-		ArgInfo("{} {}", _id, GetFunName());
-		ArgInfo("payPsswd: *");
+  exportPrivateKey(payPasswd: string): string {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("payPsswd: *");
 
-		ErrorChecker::CheckLogic(_account->Readonly(), Error::UnsupportOperation,
-								 "Unsupport operation: read-only wallet do not contain xprv");
+    ErrorChecker.checkLogic(
+      this._account.readonly(),
+      Error.Code.UnsupportOperation,
+      "Unsupport operation: read-only wallet do not contain xprv"
+    );
 
-		std::string xprv = _account->GetxPrvKeyString(payPasswd);
+    const xprv: string = this._account.getxPrvKeyString(payPasswd);
 
-		ArgInfo("r => *");
-		return xprv;
-	}
+    // ArgInfo("r => *");
+    return xprv;
+  }
 
-	std::string MasterWallet::ExportMasterPublicKey() const {
-		ArgInfo("{} {}", _id, GetFunName());
+  exportMasterPublicKey(): string {
+    // ArgInfo("{} {}", _id, GetFunName());
 
-		std::string mpk = _account->MasterPubKeyString();
+    const mpk: string = this._account.masterPubKeyString();
 
-		ArgInfo("r => {}", mpk);
-		return mpk;
-	}*/
+    // ArgInfo("r => {}", mpk);
+    return mpk;
+  }
 
   initSubWallets() {
     const info: CoinInfo[] = this._account.subWalletInfoList();
@@ -435,10 +493,11 @@ export class MasterWallet {
 
 		return nullptr;
 	}
+	*/
 
-	std::string MasterWallet::GetDataPath() const {
-		return _account->GetDataPath();
-	}*/
+  getDataPath(): string {
+    return this._account.getDataPath();
+  }
 
   public getAccount(): Account {
     return this._account;

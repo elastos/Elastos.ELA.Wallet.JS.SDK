@@ -231,12 +231,12 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    const masterWallet = new MasterWallet(
+    const masterWallet = MasterWallet.newFromSinglePrivateKey(
       masterWalletID,
       singlePrivateKey,
       passwd,
-      new Config(this._config),
-      _dataPath
+      this._config,
+      this._dataPath // TODO
     );
     this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
@@ -302,12 +302,12 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    const masterWallet = new MasterWallet(
+    const masterWallet = MasterWallet.newFromPublicKeyRings(
       masterWalletID,
       pubKeyRing,
       m,
-      new Config(this._config),
-      _dataPath,
+      this._config,
+      this._dataPath, // TODO
       singleAddress,
       compatible
     );
@@ -379,14 +379,14 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    const masterWallet = new MasterWallet(
+    const masterWallet = MasterWallet.newFromXPrivateKey(
       masterWalletID,
       xprv,
       payPassword,
       pubKeyRing,
       m,
-      new Config(this._config),
-      _dataPath,
+      this._config,
+      this._dataPath, // TODO
       singleAddress,
       compatible
     );
@@ -459,15 +459,15 @@ export class MasterWalletManager {
       pubKeyRing.push(new PublicKeyRing(xpub));
     }
 
-    const masterWallet = new MasterWallet(
+    const masterWallet = MasterWallet.newFromMnemonicAndPublicKeyRings(
       masterWalletID,
       mnemonic,
       passphrase,
       payPassword,
       pubKeyRing,
       m,
-      new Config(this._config),
-      _dataPath,
+      this._config,
+      this._dataPath, // TODO
       singleAddress,
       compatible
     );
@@ -540,13 +540,13 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    const masterWallet = new MasterWallet(
+    const masterWallet = MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
       backupPassword,
       payPassword,
-      new Config(this._config),
-      _dataPath
+      this._config,
+      this._dataPath
     );
     this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
@@ -593,14 +593,14 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    const masterWallet = new MasterWallet(
-      masterWalletID,
+    const masterWallet = MasterWallet.newFromMnemonic(
+      masterWalletID, // TODO
       mnemonic,
       phrasePassword,
       payPassword,
       singleAddress,
-      new Config(this._config),
-      _dataPath
+      this._config
+      // this._dataPath // TODO
     );
 
     this.checkRedundant(masterWallet);
