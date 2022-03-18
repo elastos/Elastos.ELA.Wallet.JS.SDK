@@ -55,7 +55,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newFromSingleAddress(
+  public static newFromMnemonic(
     storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
@@ -68,7 +68,7 @@ export class MasterWallet {
     masterWallet._id = storage.masterWalletID;
     masterWallet._config = config;
 
-    masterWallet._account = Account.newFromSingleAddress(
+    masterWallet._account = Account.newFromMnemonicAndPassphrase(
       storage, // original code: `${dataPath}/${this._id}`
       mnemonic,
       passphrase,

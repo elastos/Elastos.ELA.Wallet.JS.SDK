@@ -36,6 +36,7 @@ import { HDKey } from "../walletcore/hdkey";
 import { MasterWallet } from "./MasterWallet";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
+import { Base58Check } from "../walletcore/base58";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
 const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
@@ -113,27 +114,7 @@ export class MasterWalletManager {
     this.loadMasterWalletID();
   }
 
-  /*MasterWalletManager::~MasterWalletManager() {
-		for (MasterWalletMap::iterator it = _masterWalletMap.begin(); it != _masterWalletMap.end();) {
-			MasterWallet *masterWallet = static_cast<MasterWallet *>(it->second);
-			if (masterWallet != nullptr) {
-				std::string id = masterWallet->GetID();
-				Log::info("closing master wallet (ID = {})...", id);
-				masterWallet->CloseAllSubWallets();
-				it = _masterWalletMap.erase(it);
-
-				delete masterWallet;
-				masterWallet = nullptr;
-				Log::info("closed master wallet (ID = {})", id);
-			} else {
-				++it;
-			}
-		}
-		delete _config;
-		_config = nullptr;
-		delete _lock;
-		_lock = nullptr;
-	}*/
+  destory() {}
 
   protected loadMasterWalletID() {
     /* 
@@ -215,7 +196,7 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    const masterWallet = MasterWallet.newFromSingleAddress(
+    const masterWallet = MasterWallet.newFromMnemonic(
       this._storage,
       mnemonic,
       passphrase,
@@ -233,30 +214,36 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  /*
-				IMasterWallet *MasterWalletManager::CreateMasterWallet(const std::string &masterWalletID,
-																															 const std::string &singlePrivateKey,
-																															 const std::string &passwd) {
-						ArgInfo("{}", GetFunName());
-						ArgInfo("masterWalletID: {}", masterWalletID);
-						ArgInfo("singlePrivateKey: *");
-						ArgInfo("passwd: *");
+  createMasterWalletWithPrivateKey(
+    masterWalletID: string,
+    singlePrivateKey: string,
+    passwd: string
+  ): MasterWallet {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("singlePrivateKey: *");
+    // ArgInfo("passwd: *");
 
-						ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-						ErrorChecker::CheckPassword(passwd, "Pay");
-						if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-								ArgInfo("r => already exist");
-								return _masterWalletMap[masterWalletID];
-						}
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkPassword(passwd, "Pay");
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
 
-						MasterWallet *masterWallet = new MasterWallet(masterWalletID, singlePrivateKey, passwd, ConfigPtr(new Config(*_config)), _dataPath);
-						checkRedundant(masterWallet);
-						_masterWalletMap[masterWalletID] = masterWallet;
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      singlePrivateKey,
+      passwd,
+      new Config(this._config),
+      _dataPath
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
 
-						ArgInfo("r => create master wallet done");
-						return masterWallet;
-				}
-				*/
+    // ArgInfo("r => create master wallet done");
+    return masterWallet;
+  }
 
   createMultiSignMasterWallet(
     masterWalletID: string,
@@ -331,122 +318,163 @@ export class MasterWalletManager {
 
     return masterWallet;
   }
-  /*
-		IMasterWallet *MasterWalletManager::CreateMultiSignMasterWallet(const std::string &masterWalletID,
-																		const std::string &xprv,
-																		const std::string &payPassword,
-																		const nlohmann::json &cosigners,
-																		uint32_t m,
-																		bool singleAddress,
-																		bool compatible,
-																		time_t timestamp) {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-			ArgInfo("xprv: *");
-			ArgInfo("payPasswd: *");
-			ArgInfo("cosigners: {}", cosigners.dump());
-			ArgInfo("m: {}", m);
-			ArgInfo("singleAddress: {}", singleAddress);
-			ArgInfo("compatible: {}", compatible);
-			ArgInfo("timestamp: {}", timestamp);
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+  createMultiSignMasterWalletWithPrivateKey(
+    masterWalletID: string,
+    xprv: string,
+    payPassword: string,
+    cosigners: string[],
+    m: uint32_t,
+    singleAddress: boolean,
+    compatible: boolean,
+    timestamp: time_t
+  ) {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("xprv: *");
+    // ArgInfo("payPasswd: *");
+    // ArgInfo("cosigners: {}", cosigners.dump());
+    // ArgInfo("m: {}", m);
+    // ArgInfo("singleAddress: {}", singleAddress);
+    // ArgInfo("compatible: {}", compatible);
+    // ArgInfo("timestamp: {}", timestamp);
 
-			ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-			ErrorChecker::CheckPassword(payPassword, "Pay");
-			ErrorChecker::CheckParam(!cosigners.is_array(), Error::PubKeyFormat, "cosigners should be JOSN array");
-			ErrorChecker::CheckParam(cosigners.empty(), Error::PubKeyFormat,
-									 "cosigners should at least contain 1 elements");
-			ErrorChecker::CheckParam(m < 1, Error::InvalidArgument, "Invalid m");
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-			std::vector<PublicKeyRing> pubKeyRing;
-			bytes_t bytes;
-			for (nlohmann::json::const_iterator it = cosigners.begin(); it != cosigners.end(); ++it) {
-				ErrorChecker::CheckCondition(!(*it).is_string(), Error::Code::PubKeyFormat,
-											 "cosigners should be string");
-				std::string xpub = (*it).get<std::string>();
-				for (int i = 0; i < pubKeyRing.size(); ++i) {
-					if (pubKeyRing[i].GetxPubKey() == xpub) {
-						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub");
-					}
-				}
-				pubKeyRing.emplace_back("", xpub);
-			}
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkPassword(payPassword, "Pay");
+    ErrorChecker.checkParam(
+      !Array.isArray(cosigners),
+      Error.Code.PubKeyFormat,
+      "cosigners should be JOSN array"
+    );
+    ErrorChecker.checkParam(
+      cosigners.length === 0,
+      Error.Code.PubKeyFormat,
+      "cosigners should at least contain 1 elements"
+    );
+    ErrorChecker.checkParam(m < 1, Error.Code.InvalidArgument, "Invalid m");
 
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				ArgInfo("r => already exist");
-				return _masterWalletMap[masterWalletID];
-			}
+    let pubKeyRing: PublicKeyRing[] = [];
+    for (let i = 0; i < cosigners.length; i++) {
+      ErrorChecker.checkCondition(
+        !(typeof cosigners[i] === "string"),
+        Error.Code.PubKeyFormat,
+        "cosigners should be string"
+      );
+      let xpub: string = cosigners[i];
+      for (let i = 0; i < pubKeyRing.length; ++i) {
+        if (pubKeyRing[i].getxPubKey() === xpub) {
+          ErrorChecker.throwParamException(
+            Error.Code.PubKeyFormat,
+            "Contain same xpub"
+          );
+        }
+      }
+      pubKeyRing.push(new PublicKeyRing(xpub));
+    }
 
-			MasterWallet *masterWallet = new MasterWallet(masterWalletID, xprv, payPassword, pubKeyRing,
-															m, ConfigPtr(new Config(*_config)), _dataPath,
-															singleAddress,
-															compatible);
-			checkRedundant(masterWallet);
-			_masterWalletMap[masterWalletID] = masterWallet;
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
 
-			ArgInfo("r => create multi sign wallet");
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      xprv,
+      payPassword,
+      pubKeyRing,
+      m,
+      new Config(this._config),
+      _dataPath,
+      singleAddress,
+      compatible
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
 
-			return masterWallet;
-		}
+    // ArgInfo("r => create multi sign wallet");
 
-		IMasterWallet *MasterWalletManager::CreateMultiSignMasterWallet(
-			const std::string &masterWalletID,
-			const std::string &mnemonic,
-			const std::string &passphrase,
-			const std::string &payPassword,
-			const nlohmann::json &cosigners,
-			uint32_t m,
-			bool singleAddress,
-			bool compatible,
-			time_t timestamp) {
+    return masterWallet;
+  }
 
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-			ArgInfo("mnemonic: *");
-			ArgInfo("passphrase: *, empty: {}", passphrase.empty());
-			ArgInfo("payPasswd: *");
-			ArgInfo("cosigners: {}", cosigners.dump());
-			ArgInfo("m: {}", m);
-			ArgInfo("singleAddress: {}", singleAddress);
-			ArgInfo("compatible: {}", compatible);
-			ArgInfo("timestamp: {}", timestamp);
+  createMultiSignMasterWalletWithMnemonic(
+    masterWalletID: string,
+    mnemonic: string,
+    passphrase: string,
+    payPassword: string,
+    cosigners: string[],
+    m: uint32_t,
+    singleAddress: boolean,
+    compatible: boolean,
+    timestamp: time_t
+  ): MasterWallet {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("mnemonic: *");
+    // ArgInfo("passphrase: *, empty: {}", passphrase.empty());
+    // ArgInfo("payPasswd: *");
+    // ArgInfo("cosigners: {}", cosigners.dump());
+    // ArgInfo("m: {}", m);
+    // ArgInfo("singleAddress: {}", singleAddress);
+    // ArgInfo("compatible: {}", compatible);
+    // ArgInfo("timestamp: {}", timestamp);
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-			ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-			ErrorChecker::CheckParamNotEmpty(mnemonic, "Mnemonic");
-			ErrorChecker::CheckPassword(payPassword, "Pay");
-			ErrorChecker::CheckPasswordWithNullLegal(passphrase, "Phrase");
-			ErrorChecker::CheckParam(!cosigners.is_array(), Error::PubKeyFormat, "cosigners should be JOSN array");
-			ErrorChecker::CheckParam(m < 1, Error::InvalidArgument, "Invalid m");
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkParamNotEmpty(mnemonic, "Mnemonic");
+    ErrorChecker.checkPassword(payPassword, "Pay");
+    ErrorChecker.checkPasswordWithNullLegal(passphrase, "Phrase");
+    ErrorChecker.checkParam(
+      !Array.isArray(cosigners),
+      Error.Code.PubKeyFormat,
+      "cosigners should be JOSN array"
+    );
+    ErrorChecker.checkParam(m < 1, Error.Code.InvalidArgument, "Invalid m");
 
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				ArgInfo("r => already exist");
-				return _masterWalletMap[masterWalletID];
-			}
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
 
-			std::vector<PublicKeyRing> pubKeyRing;
-			bytes_t bytes;
-			for (nlohmann::json::const_iterator it = cosigners.begin(); it != cosigners.end(); ++it) {
-				ErrorChecker::CheckCondition(!(*it).is_string() || !Base58::CheckDecode(*it, bytes),
-											 Error::Code::PubKeyFormat, "cosigners format error");
-				std::string xpub = (*it).get<std::string>();
-				for (int i = 0; i < pubKeyRing.size(); ++i) {
-					if (pubKeyRing[i].GetxPubKey() == xpub) {
-						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub");
-					}
-				}
-				pubKeyRing.emplace_back("", xpub);
-			}
+    let pubKeyRing: PublicKeyRing[] = [];
+    for (let i = 0; i < cosigners.length; i++) {
+      ErrorChecker.checkCondition(
+        !(
+          typeof cosigners[i] === "string" || !Base58Check.decode(cosigners[i])
+        ),
+        Error.Code.PubKeyFormat,
+        "cosigners format error"
+      );
+      let xpub = cosigners[i];
+      for (let i = 0; i < pubKeyRing.length; ++i) {
+        if (pubKeyRing[i].getxPubKey() === xpub) {
+          ErrorChecker.throwParamException(
+            Error.Code.PubKeyFormat,
+            "Contain same xpub"
+          );
+        }
+      }
+      pubKeyRing.push(new PublicKeyRing(xpub));
+    }
 
-			MasterWallet *masterWallet = new MasterWallet(masterWalletID, mnemonic, passphrase, payPassword,
-															pubKeyRing, m, ConfigPtr(new Config(*_config)), _dataPath,
-															singleAddress, compatible);
-			checkRedundant(masterWallet);
-			_masterWalletMap[masterWalletID] = masterWallet;
-			return masterWallet;
-		}*/
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      payPassword,
+      pubKeyRing,
+      m,
+      new Config(this._config),
+      _dataPath,
+      singleAddress,
+      compatible
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+    return masterWallet;
+  }
 
   getAllMasterWallets(): MasterWallet[] {
     // ArgInfo("{}", GetFunName());
@@ -465,198 +493,230 @@ export class MasterWalletManager {
     return result;
   }
 
+  destroyWallet(masterWalletID: string) {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      const masterWallet = this._masterWalletMap.get(masterWalletID);
+      if (masterWallet !== null) {
+        masterWallet.removeLocalStore();
+        masterWallet.closeAllSubWallets();
+        this._masterWalletMap.delete(masterWallet.getWalletID());
+      }
+    } else {
+      Log.warn("Master wallet is not exist");
+    }
+
+    // ArgInfo("r => {} done", GetFunName());
+  }
+
+  importWalletWithKeystore(
+    masterWalletID: string,
+    keystoreContent: JSONObject,
+    backupPassword: string,
+    payPassword: string
+  ) {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("keystore: *");
+    // ArgInfo("backupPasswd: *");
+    // ArgInfo("payPasswd: *");
+
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkParam(
+      !(typeof keystoreContent === "object" && keystoreContent !== null),
+      Error.Code.KeyStore,
+      "key store should be json object"
+    );
+    ErrorChecker.checkPassword(backupPassword, "Backup");
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
+
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      keystoreContent,
+      backupPassword,
+      payPassword,
+      new Config(this._config),
+      _dataPath
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+    masterWallet.initSubWallets();
+
+    // ArgInfo("r => import with keystore");
+
+    return masterWallet;
+  }
+
+  importWalletWithMnemonic(
+    masterWalletID: string,
+    mnemonic: string,
+    phrasePassword: string,
+    payPassword: string,
+    singleAddress: boolean,
+    timestamp: time_t
+  ): MasterWallet {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("mnemonic: *");
+    // ArgInfo("passphrase: *, empty: {}", phrasePassword.empty());
+    // ArgInfo("payPasswd: *");
+    // ArgInfo("singleAddr: {}", singleAddress);
+    // ArgInfo("timestamp: {}", timestamp);
+
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkParamNotEmpty(mnemonic, "Mnemonic");
+    ErrorChecker.checkPasswordWithNullLegal(phrasePassword, "Phrase");
+    ErrorChecker.checkPassword(payPassword, "Pay");
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
+
+    const lang = Mnemonic.getLanguage(mnemonic);
+    const mnemonicObj = Mnemonic.getInstance(lang);
+    ErrorChecker.checkLogic(
+      !mnemonicObj.isValid(mnemonic),
+      Error.Code.Mnemonic,
+      "Invalid mnemonic"
+    );
+
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      mnemonic,
+      phrasePassword,
+      payPassword,
+      singleAddress,
+      new Config(this._config),
+      _dataPath
+    );
+
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+
+    // ArgInfo("r => import with mnemonic");
+
+    return masterWallet;
+  }
+
+  importReadonlyWallet(
+    masterWalletID: string,
+    walletJson: JSONObject
+  ): MasterWallet {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("walletJson: {}", walletJson.dump());
+
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+
+    ErrorChecker.checkParam(
+      !(walletJson !== null && typeof walletJson === "object"),
+      Error.Code.KeyStore,
+      "wallet json should be json object"
+    );
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
+
+    const masterWallet = new MasterWallet(
+      masterWalletID,
+      walletJson,
+      new Config(this._config),
+      _dataPath
+    );
+
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+    masterWallet.initSubWallets();
+    // ArgInfo("r => import read-only");
+
+    return masterWallet;
+  }
+
   /*
-		void MasterWalletManager::DestroyWallet(const std::string &masterWalletID) {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				MasterWallet *masterWallet = static_cast<MasterWallet *>(_masterWalletMap[masterWalletID]);
-				if (masterWallet) {
-					masterWallet->RemoveLocalStore();
-
-					masterWallet->CloseAllSubWallets();
-					_masterWalletMap.erase(masterWallet->GetWalletID());
-					delete masterWallet;
-				}
-				masterWallet = nullptr;
-			} else {
-				Log::warn("Master wallet is not exist");
-			}
-
-			ArgInfo("r => {} done", GetFunName());
-		}
-
-		IMasterWallet *
-		MasterWalletManager::ImportWalletWithKeystore(const std::string &masterWalletID,
-														const nlohmann::json &keystoreContent,
-														const std::string &backupPassword,
-														const std::string &payPassword) {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-			ArgInfo("keystore: *");
-			ArgInfo("backupPasswd: *");
-			ArgInfo("payPasswd: *");
-
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-
-			ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-			ErrorChecker::CheckParam(!keystoreContent.is_object(), Error::KeyStore, "key store should be json object");
-			ErrorChecker::CheckPassword(backupPassword, "Backup");
-
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				ArgInfo("r => already exist");
-				return _masterWalletMap[masterWalletID];
-			}
-
-
-			MasterWallet *masterWallet = new MasterWallet(masterWalletID, keystoreContent, backupPassword,
-															payPassword, ConfigPtr(new Config(*_config)), _dataPath);
-			checkRedundant(masterWallet);
-			_masterWalletMap[masterWalletID] = masterWallet;
-			masterWallet->InitSubWallets();
-
-			ArgInfo("r => import with keystore");
-
-			return masterWallet;
-		}
-
-		IMasterWallet *MasterWalletManager::ImportWalletWithMnemonic(const std::string &masterWalletID,
-																	 const std::string &mnemonic,
-																	 const std::string &phrasePassword,
-																	 const std::string &payPassword,
-																	 bool singleAddress, time_t timestamp) {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
-			ArgInfo("mnemonic: *");
-			ArgInfo("passphrase: *, empty: {}", phrasePassword.empty());
-			ArgInfo("payPasswd: *");
-			ArgInfo("singleAddr: {}", singleAddress);
-			ArgInfo("timestamp: {}", timestamp);
-
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-
-			ErrorChecker::CheckParamNotEmpty(masterWalletID, "Master wallet ID");
-			ErrorChecker::CheckParamNotEmpty(mnemonic, "Mnemonic");
-			ErrorChecker::CheckPasswordWithNullLegal(phrasePassword, "Phrase");
-			ErrorChecker::CheckPassword(payPassword, "Pay");
-
-			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-				ArgInfo("r => already exist");
-				return _masterWalletMap[masterWalletID];
-			}
-
-			ErrorChecker::CheckLogic(!Mnemonic::Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
-
-			MasterWallet *masterWallet = new MasterWallet(masterWalletID, mnemonic, phrasePassword, payPassword,
-															singleAddress, ConfigPtr(new Config(*_config)),
-															_dataPath);
-			checkRedundant(masterWallet);
-			_masterWalletMap[masterWalletID] = masterWallet;
-
-			ArgInfo("r => import with mnemonic");
-
-			return masterWallet;
-		}
-
-//		IMasterWallet *MasterWalletManager::ImportReadonlyWallet(
-//			const std::string &masterWalletID,
-//			const nlohmann::json &walletJson) {
-//			ArgInfo("{}", GetFunName());
-//			ArgInfo("masterWalletID: {}", masterWalletID);
-//			ArgInfo("walletJson: {}", walletJson.dump());
-//
-//			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-//
-//			ErrorChecker::CheckParam(!walletJson.is_object(), Error::KeyStore, "wallet json should be json object");
-//
-//			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {
-//				ArgInfo("r => already exist");
-//				return _masterWalletMap[masterWalletID];
-//			}
-//
-//			MasterWallet *masterWallet = new MasterWallet(masterWalletID, walletJson, ConfigPtr(new Config(*_config)),
-//														  _dataPath);
-//
-//			checkRedundant(masterWallet);
-//			_masterWalletMap[masterWalletID] = masterWallet;
-//			masterWallet->InitSubWallets();
-//			ArgInfo("r => import read-only");
-//
-//			return masterWallet;
-//		}
-
 		std::string MasterWalletManager::GetVersion() const {
 			ArgInfo("{}", GetFunName());
 			ArgInfo("r => {}", SPVSDK_VERSION_MESSAGE);
 			return SPVSDK_VERSION_MESSAGE;
 		}
+*/
 
-		void MasterWalletManager::FlushData() {
+  flushData() {
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+    this._masterWalletMap.forEach((value) => {
+      if (value !== null) {
+        value.flushData();
+      }
+    });
+  }
 
-			std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(),
-							[](const MasterWalletMap::value_type &item) {
-								if (item.second != nullptr) {
-									MasterWallet *masterWallet = dynamic_cast<MasterWallet *>(item.second);
-									masterWallet->FlushData();
-								}
-							});
-		}
+  setLogLevel(level) {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("level: {}", level);
 
-		void MasterWalletManager::SetLogLevel(const std::string &level) {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("level: {}", level);
+    if (
+      level != "trace" &&
+      level != "debug" &&
+      level != "info" &&
+      level != "warning" &&
+      level != "error" &&
+      level != "critical" &&
+      level != "off"
+    ) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid level"
+      );
+    }
 
-			if (level != "trace" &&
-				level != "debug" &&
-				level != "info" &&
-				level != "warning" &&
-				level != "error" &&
-				level != "critical" &&
-				level != "off") {
-				ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid level");
-			}
+    // TODO
+    // Log.setLevel(spdlog::level::from_str(level));
+  }
 
-			Log::setLevel(spdlog::level::from_str(level));
-		}
+  getAllMasterWalletID(): string[] {
+    // ArgInfo("{}", GetFunName());
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-		std::vector<std::string> MasterWalletManager::GetAllMasterWalletID() const {
-			ArgInfo("{}", GetFunName());
+    let result: string[] = [];
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+    this._masterWalletMap.forEach((value, key) => result.push(key));
 
-			std::vector<std::string> result;
-			std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(),
-							[&result](const MasterWalletMap::value_type &item) {
-								result.push_back(item.first);
-							});
+    let chainID = "";
+    for (let i = 0; i < result.length; ++i) chainID += result[i] + ", ";
 
-			std::string chainID = "";
-			for (size_t i = 0; i < result.size(); ++i)
-				chainID += result[i] + ", ";
+    // ArgInfo("r => {}: {}", GetFunName(), chainID);
 
-			ArgInfo("r => {}: {}", GetFunName(), chainID);
+    return result;
+  }
 
-			return result;
-		}
+  walletLoaded(masterWalletID: string): boolean {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
 
-		bool MasterWalletManager::WalletLoaded(const std::string &masterWalletID) const {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("masterWalletID: {}", masterWalletID);
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
-			boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+    if (!this._masterWalletMap.has(masterWalletID)) {
+      Log.error("master wallet {} not found", masterWalletID);
+      return false;
+    }
 
-			if (_masterWalletMap.find(masterWalletID) == _masterWalletMap.end()) {
-				Log::error("master wallet {} not found", masterWalletID);
-				return false;
-			}
-
-			return _masterWalletMap[masterWalletID] != nullptr;
-		}*/
+    return this._masterWalletMap.get(masterWalletID) != null;
+  }
 
   public getMasterWallet(masterWalletID: string): MasterWallet {
     //ArgInfo("{}", GetFunName());
@@ -672,32 +732,29 @@ export class MasterWalletManager {
     return this.loadMasterWallet(masterWalletID);
   }
 
-  /*void MasterWalletManager::checkRedundant(IMasterWallet *wallet) const {
+  protected checkRedundant(wallet: MasterWallet) {
+    let masterWallet: MasterWallet = wallet;
+    let hasRedundant: boolean = false;
+    this._masterWalletMap.forEach((value, key) => {
+      if (value !== null && !hasRedundant) {
+        hasRedundant = masterWallet.isEqual(value);
+        if (hasRedundant) return;
+      }
+    });
 
-		MasterWallet *masterWallet = static_cast<MasterWallet *>(wallet);
+    if (hasRedundant) {
+      Log.info("{} Destroying redundant wallet", masterWallet.getWalletID());
 
-		bool hasRedundant = false;
-		std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(),
-						[masterWallet, &hasRedundant](const MasterWalletMap::value_type &item) {
-							if (item.second != nullptr) {
-								const MasterWallet *createdWallet = static_cast<const MasterWallet *>(item.second);
-								if (!hasRedundant)
-									hasRedundant = masterWallet->IsEqual(*createdWallet);
-							}
-						});
+      masterWallet.closeAllSubWallets();
+      Log.info("Clearing local", masterWallet.getID());
+      masterWallet.removeLocalStore();
+      masterWallet = null;
+    }
 
-		if (hasRedundant) {
-			Log::info("{} Destroying redundant wallet", masterWallet->GetWalletID());
-
-			masterWallet->CloseAllSubWallets();
-							Log::info("Clearing local", masterWallet->GetID());
-							masterWallet->RemoveLocalStore();
-
-			delete masterWallet;
-			masterWallet = nullptr;
-		}
-
-		ErrorChecker::CheckCondition(hasRedundant, Error::CreateMasterWalletError,
-									 "Master wallet already exist.");
-	} */
+    ErrorChecker.checkCondition(
+      hasRedundant,
+      Error.Code.CreateMasterWalletError,
+      "Master wallet already exist."
+    );
+  }
 }

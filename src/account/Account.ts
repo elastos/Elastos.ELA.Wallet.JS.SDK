@@ -327,7 +327,8 @@ export class Account {
 	}
 */
 
-  public static newFromSingleAddress(
+  // HD standard with mnemonic + passphrase
+  public static newFromMnemonicAndPassphrase(
     storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
