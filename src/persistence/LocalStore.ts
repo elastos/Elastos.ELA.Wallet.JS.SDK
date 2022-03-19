@@ -2,6 +2,7 @@
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { json, JSONArray } from "../types";
+import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { WalletStorage } from "./WalletStorage";
@@ -247,24 +248,22 @@ export class LocalStore {
     //_path(path),
   }
 
-  /* void LocalStore:: ChangePasswd(const std:: string & oldPasswd, const std:: string & newPasswd) {
-				bytes_t bytes = AES:: DecryptCCM(_mnemonic, oldPasswd);
-		_mnemonic = AES:: EncryptCCM(bytes, newPasswd);
+  changePasswd(oldPasswd: string, newPasswd: string) {
+    let bytes = AESDecrypt(this._mnemonic, oldPasswd);
+    this._mnemonic = AESEncrypt(bytes, newPasswd);
 
-		bytes = AES:: DecryptCCM(_xPrivKey, oldPasswd);
-		_xPrivKey = AES:: EncryptCCM(bytes, newPasswd);
+    bytes = AESDecrypt(this._xPrivKey, oldPasswd);
+    this._xPrivKey = AESEncrypt(bytes, newPasswd);
 
-		bytes = AES:: DecryptCCM(_requestPrivKey, oldPasswd);
-		_requestPrivKey = AES:: EncryptCCM(bytes, newPasswd);
+    bytes = AESDecrypt(this._requestPrivKey, oldPasswd);
+    this._requestPrivKey = AESEncrypt(bytes, newPasswd);
 
-		bytes = AES:: DecryptCCM(_seed, oldPasswd);
-		_seed = AES:: EncryptCCM(bytes, newPasswd);
+    bytes = AESDecrypt(this._seed, oldPasswd);
+    this._seed = AESEncrypt(bytes, newPasswd);
 
-		bytes = AES:: DecryptCCM(_singlePrivateKey, oldPasswd);
-		_singlePrivateKey = AES:: EncryptCCM(bytes, newPasswd);
-
-		bytes.clean();
-	} */
+    bytes = AESDecrypt(this._singlePrivateKey, oldPasswd);
+    this._singlePrivateKey = AESEncrypt(bytes, newPasswd);
+  }
 
   public load(): boolean {
     let j = this._walletStorage.loadStore();

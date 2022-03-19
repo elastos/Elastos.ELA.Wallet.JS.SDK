@@ -28,6 +28,7 @@ import { Base58, Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { CoinType } from "../walletcore/cointype";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
+import { DeterministicKey, Version } from "../walletcore/deterministickey";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
 import { PublicKeyRing } from "../walletcore/publickeyring";
@@ -91,14 +92,20 @@ export class Account {
       Log.warn("xpub is empty");
     }
 
-    /* TODO if (!this._localstore.getxPubKeyBitcoin().empty()) {
-			ErrorChecker:: CheckParam(!Base58:: CheckDecode(_localstore -> GetxPubKeyBitcoin(), bytes),
-				Error:: PubKeyFormat, "xpubkeyBitcoin decode error");
-				this._btcMasterPubKey = HDKeychainPtr(new HDKeychain(CTBitcoin, bytes));
-		} else {
-			this._btcMasterPubKey = nullptr;
-			Log:: warn("btcMasterPubKey is empty");
-		} */
+    if (!this._localstore.getxPubKeyBitcoin()) {
+      ErrorChecker.checkParam(
+        !Base58Check.decode(this._localstore.getxPubKeyBitcoin()),
+        Error.Code.PubKeyFormat,
+        "xpubkeyBitcoin decode error"
+      );
+      const deterministicKey = new DeterministicKey(
+        DeterministicKey.BITCOIN_VERSIONS
+      );
+      this._btcMasterPubKey = HDKey.fromKey(deterministicKey, KeySpec.Bitcoin);
+    } else {
+      this._btcMasterPubKey = null;
+      Log.warn("btcMasterPubKey is empty");
+    }
 
     if (this._localstore.getxPubKeyHDPM()) {
       ErrorChecker.checkParam(
@@ -183,149 +190,222 @@ export class Account {
     return account;
   }
 
-  /*
-	Account::Account(const std::string &path, const std::vector<PublicKeyRing> &cosigners, int m,
-					 bool singleAddress, bool compatible) {
-		ErrorChecker::CheckParam(cosigners.size() > MAX_MULTISIGN_COSIGNERS, Error::MultiSign, "Too much signers");
+  public static newFromPublicKeyRings(
+    path: string,
+    cosigners: PublicKeyRing[],
+    m: number,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length > MAX_MULTISIGN_COSIGNERS,
+      Error.Code.MultiSign,
+      "Too much signers"
+    );
 
-		_localstore = LocalStorePtr(new LocalStore(path));
-		_localstore->SetM(m);
-		_localstore->SetN((int)cosigners.size());
-		_localstore->SetSingleAddress(singleAddress);
-		_localstore->SetReadonly(true);
-		_localstore->SetHasPassPhrase(false);
-		_localstore->SetPublicKeyRing(cosigners);
-		_localstore->SetMnemonic("");
-		_localstore->SetxPrivKey("");
-		_localstore->SetxPubKey("");
-		_localstore->SetxPubKeyHDPM("");
-		_localstore->SetRequestPubKey("");
-		_localstore->SetRequestPrivKey("");
-		_localstore->SetOwnerPubKey("");
-		_localstore->SetSeed("");
-		_localstore->SetETHSCPrimaryPubKey("");
-					_localstore->SetxPubKeyBitcoin("");
-					_localstore->SetSinglePrivateKey("");
-					_localstore->SetRipplePrimaryPubKey("");
+    let account = new Account();
+    account._localstore = new LocalStore(path);
+    account._localstore.setM(m);
+    account._localstore.setN(cosigners.length);
+    account._localstore.setSingleAddress(singleAddress);
+    account._localstore.setReadonly(true);
+    account._localstore.setHasPassPhrase(false);
+    account._localstore.setPublicKeyRing(cosigners);
+    account._localstore.setMnemonic("");
+    account._localstore.setxPrivKey("");
+    account._localstore.setxPubKey("");
+    account._localstore.setxPubKeyHDPM("");
+    account._localstore.setRequestPubKey("");
+    account._localstore.setRequestPrivKey("");
+    account._localstore.setOwnerPubKey("");
+    account._localstore.setSeed("");
+    account._localstore.setETHSCPrimaryPubKey("");
+    account._localstore.setxPubKeyBitcoin("");
+    account._localstore.setSinglePrivateKey("");
+    // account._localstore.setRipplePrimaryPubKey("");
 
-		if (compatible) {
-			_localstore->SetDerivationStrategy("BIP44");
-		} else {
-			_localstore->SetDerivationStrategy("BIP45");
-		}
+    if (compatible) {
+      account._localstore.setDerivationStrategy("BIP44");
+    } else {
+      account._localstore.setDerivationStrategy("BIP45");
+    }
 
-		Init();
-	}
+    account.init();
+    return account;
+  }
 
-	Account::Account(const std::string &path, const std::string &xprv, const std::string &payPasswd,
-					 const std::vector<PublicKeyRing> &cosigners, int m, bool singleAddress, bool compatible) {
+  public static newFromXPrivateKey(
+    path: string,
+    xprv: string,
+    payPasswd: string,
+    cosigners: PublicKeyRing[],
+    m: number,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 > MAX_MULTISIGN_COSIGNERS,
+      Error.Code.MultiSign,
+      "Too much signers"
+    );
+    // bytes_t bytes;
+    ErrorChecker.checkLogic(
+      !Base58Check.decode(xprv),
+      Error.Code.InvalidArgument,
+      "Invalid xprv"
+    );
 
-		ErrorChecker::CheckParam(cosigners.size() + 1 > MAX_MULTISIGN_COSIGNERS, Error::MultiSign,
-								 "Too much signers");
-		bytes_t bytes;
-		ErrorChecker::CheckLogic(!Base58::CheckDecode(xprv, bytes), Error::InvalidArgument, "Invalid xprv");
+    const deterministicKey: DeterministicKey = new DeterministicKey(
+      DeterministicKey.ELASTOS_VERSIONS
+    );
+    const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+    const privateKey = rootkey.getPrivateKeyBytes();
 
-		HDKeychain rootkey(CTElastos, bytes);
+    const encryptedxPrvKey: string = AESEncrypt(privateKey, payPasswd);
+    const xPubKey: string = Base58Check.encode(
+      rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+    );
 
-		std::string encryptedxPrvKey = AES::EncryptCCM(bytes, payPasswd);
-		std::string xPubKey = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
+    const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
+    const encryptedRequestPrvKey: string = AESEncrypt(
+      requestKey.getPrivateKeyBytes(),
+      payPasswd
+    );
+    const requestPubKey: string = requestKey
+      .getPrivateKeyBytes()
+      .toString("hex");
 
-		HDKeychain requestKey = rootkey.getChild("1'/0");
-		std::string encryptedRequestPrvKey = AES::EncryptCCM(requestKey.privkey(), payPasswd);
-		std::string requestPubKey = requestKey.pubkey().getHex();
+    const account = new Account();
+    account._localstore = new LocalStore(path);
+    account._localstore.setM(m);
+    account._localstore.setN(cosigners.length + 1);
+    account._localstore.setSingleAddress(singleAddress);
+    account._localstore.setReadonly(false);
+    account._localstore.setHasPassPhrase(false);
+    account._localstore.setPublicKeyRing(cosigners);
+    account._localstore.setMnemonic("");
+    account._localstore.setxPrivKey(encryptedxPrvKey);
+    account._localstore.setxPubKey(xPubKey);
+    account._localstore.setRequestPubKey(requestPubKey);
+    account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+    account._localstore.setOwnerPubKey("");
+    account._localstore.setSeed("");
+    account._localstore.setETHSCPrimaryPubKey("");
+    // account._localstore.setRipplePrimaryPubKey("");
+    account._localstore.setxPubKeyBitcoin("");
+    account._localstore.setSinglePrivateKey("");
 
-		_localstore = LocalStorePtr(new LocalStore(path));
-		_localstore->SetM(m);
-		_localstore->SetN((int)cosigners.size() + 1);
-		_localstore->SetSingleAddress(singleAddress);
-		_localstore->SetReadonly(false);
-		_localstore->SetHasPassPhrase(false);
-		_localstore->SetPublicKeyRing(cosigners);
-		_localstore->SetMnemonic("");
-		_localstore->SetxPrivKey(encryptedxPrvKey);
-		_localstore->SetxPubKey(xPubKey);
-		_localstore->SetRequestPubKey(requestPubKey);
-		_localstore->SetRequestPrivKey(encryptedRequestPrvKey);
-		_localstore->SetOwnerPubKey("");
-		_localstore->SetSeed("");
-		_localstore->SetETHSCPrimaryPubKey("");
-		_localstore->SetRipplePrimaryPubKey("");
-					_localstore->SetxPubKeyBitcoin("");
-					_localstore->SetSinglePrivateKey("");
+    if (compatible) {
+      account._localstore.setDerivationStrategy("BIP44");
+      account._localstore.addPublicKeyRing(new PublicKeyRing("", xPubKey));
+      account._localstore.setxPubKeyHDPM(xPubKey);
+    } else {
+      account._localstore.setDerivationStrategy("BIP45");
+      const xpubPurpose: string = Base58Check.encode(
+        rootkey.deriveWithPath("45'").getPrivateKeyBytes()
+      );
+      account._localstore.addPublicKeyRing(
+        new PublicKeyRing(requestPubKey, xpubPurpose)
+      );
+      account._localstore.setxPubKeyHDPM(xpubPurpose);
+    }
 
-		if (compatible) {
-			_localstore->SetDerivationStrategy("BIP44");
-			_localstore->AddPublicKeyRing(PublicKeyRing("", xPubKey));
-			_localstore->SetxPubKeyHDPM(xPubKey);
-		} else {
-			_localstore->SetDerivationStrategy("BIP45");
-			std::string xpubPurpose = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
-			_localstore->AddPublicKeyRing(PublicKeyRing(requestPubKey, xpubPurpose));
-			_localstore->SetxPubKeyHDPM(xpubPurpose);
-		}
+    account.init();
+    return account;
+  }
 
-		Init();
-	}
+  public static newFromMultiSignMnemonic(
+    path: string,
+    mnemonic: string,
+    passphrase: string,
+    payPasswd: string,
+    cosigners: PublicKeyRing[],
+    m: number,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 > MAX_MULTISIGN_COSIGNERS,
+      Error.Code.MultiSign,
+      "Too much signers"
+    );
 
-	Account::Account(const std::string &path, const std::string &mnemonic, const std::string &passphrase,
-					 const std::string &payPasswd, const std::vector<PublicKeyRing> &cosigners, int m,
-					 bool singleAddress, bool compatible) {
-		ErrorChecker::CheckParam(cosigners.size() + 1 > MAX_MULTISIGN_COSIGNERS, Error::MultiSign,
-								 "Too much signers");
+    const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
+    const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
 
-		bytes_t xprv;
-		uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
-		HDSeed hdseed(seed.bytes());
-		HDKeychain rootkey(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-					HDKeychain stdrootkey(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
-					HDKeychain ethkey = stdrootkey.getChild("44'/60'/0'/0/0");
+    const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
+    const ethkey: HDKey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
 
-		std::string encryptedSeed = AES::EncryptCCM(bytes_t(seed.begin(), seed.size()), payPasswd);
-					std::string encryptedethPrvKey = AES::EncryptCCM(ethkey.privkey(), payPasswd);
-					std::string ethscPubKey = ethkey.uncompressed_pubkey().getHex();
-					std::string ripplePubKey = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
-		std::string encryptedMnemonic = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), payPasswd);
-		std::string encryptedxPrvKey = AES::EncryptCCM(rootkey.extkey(), payPasswd);
-		std::string xPubKey = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
-					std::string xpubBitcoin = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
+    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
+    const encryptedethPrvKey: string = AESEncrypt(
+      ethkey.getPrivateKeyBytes(),
+      payPasswd
+    );
+    const ethscPubKey: string = ethkey.getPublicKeyBytes().toString("hex");
+    const ripplePubKey: string = stdrootkey
+      .deriveWithPath("44'/144'/0'/0/0")
+      .getPublicKeyBytes()
+      .toString("hex");
+    const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
+    const encryptedxPrvKey: string = AESEncrypt(
+      rootkey.getPrivateKeyBytes(),
+      payPasswd
+    );
+    const xPubKey: string = Base58Check.encode(
+      rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+    );
 
-		HDKeychain requestKey = rootkey.getChild("1'/0");
-		std::string encryptedRequestPrvKey = AES::EncryptCCM(requestKey.privkey(), payPasswd);
-		std::string requestPubKey = requestKey.pubkey().getHex();
+    const xpubBitcoin: string = Base58Check.encode(
+      stdrootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+    );
 
-		_localstore = LocalStorePtr(new LocalStore(path));
-		_localstore->SetM(m);
-		_localstore->SetN((int)cosigners.size() + 1);
-		_localstore->SetSingleAddress(singleAddress);
-		_localstore->SetReadonly(false);
-		_localstore->SetHasPassPhrase(!passphrase.empty());
-		_localstore->SetPublicKeyRing(cosigners);
-		_localstore->SetMnemonic(encryptedMnemonic);
-		_localstore->SetxPrivKey(encryptedxPrvKey);
-		_localstore->SetxPubKey(xPubKey);
-		_localstore->SetRequestPubKey(requestPubKey);
-		_localstore->SetRequestPrivKey(encryptedRequestPrvKey);
-		_localstore->SetOwnerPubKey("");
-		_localstore->SetSeed(encryptedSeed);
-		_localstore->SetETHSCPrimaryPubKey(ethscPubKey);
-					_localstore->SetxPubKeyBitcoin(xpubBitcoin);
-					_localstore->SetSinglePrivateKey(encryptedethPrvKey);
-					_localstore->SetRipplePrimaryPubKey(ripplePubKey);
+    const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
+    const encryptedRequestPrvKey: string = AESEncrypt(
+      requestKey.getPrivateKeyBytes(),
+      payPasswd
+    );
+    const requestPubKey: string = requestKey
+      .getPublicKeyBytes()
+      .toString("hex");
 
-		if (compatible) {
-			_localstore->SetDerivationStrategy("BIP44");
-			_localstore->AddPublicKeyRing(PublicKeyRing("", xPubKey));
-			_localstore->SetxPubKeyHDPM(xPubKey);
-		} else {
-			_localstore->SetDerivationStrategy("BIP45");
-			std::string xpubPurpose = Base58::CheckEncode(rootkey.getChild("45'").getPublic().extkey());
-			_localstore->AddPublicKeyRing(PublicKeyRing(requestPubKey, xpubPurpose));
-			_localstore->SetxPubKeyHDPM(xpubPurpose);
-		}
+    const account = new Account();
+    account._localstore = new LocalStore(path);
+    account._localstore.setM(m);
+    account._localstore.setN(cosigners.length + 1);
+    account._localstore.setSingleAddress(singleAddress);
+    account._localstore.setReadonly(false);
+    account._localstore.setHasPassPhrase(passphrase.length !== 0);
+    account._localstore.setPublicKeyRing(cosigners);
+    account._localstore.setMnemonic(encryptedMnemonic);
+    account._localstore.setxPrivKey(encryptedxPrvKey);
+    account._localstore.setxPubKey(xPubKey);
+    account._localstore.setRequestPubKey(requestPubKey);
+    account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+    account._localstore.setOwnerPubKey("");
+    account._localstore.setSeed(encryptedSeed);
+    account._localstore.setETHSCPrimaryPubKey(ethscPubKey);
+    account._localstore.setxPubKeyBitcoin(xpubBitcoin);
+    account._localstore.setSinglePrivateKey(encryptedethPrvKey);
+    // account._localstore.setRipplePrimaryPubKey(ripplePubKey);
 
-		Init();
-	}
-*/
+    if (compatible) {
+      account._localstore.setDerivationStrategy("BIP44");
+      account._localstore.addPublicKeyRing(new PublicKeyRing("", xPubKey));
+      account._localstore.setxPubKeyHDPM(xPubKey);
+    } else {
+      account._localstore.setDerivationStrategy("BIP45");
+      const xpubPurpose: string = Base58Check.encode(
+        rootkey.deriveWithPath("45'").getPublicKeyBytes()
+      );
+      account._localstore.addPublicKeyRing(
+        new PublicKeyRing(requestPubKey, xpubPurpose)
+      );
+      account._localstore.setxPubKeyHDPM(xpubPurpose);
+    }
+
+    account.init();
+    return account;
+  }
 
   // HD standard with mnemonic + passphrase
   public static newFromMnemonicAndPassphrase(
@@ -352,7 +432,10 @@ export class Account {
 
     const ethscPubKey: string = ethkey.getPublicKeyBytes().toString("hex");
 
-    // TODO const ripplePubKey: string = stdrootkey.getChild("44'/144'/0'/0/0").pubkey().getHex();
+    const ripplePubKey: string = stdrootkey
+      .deriveWithPath("44'/144'/0'/0/0")
+      .getPublicKeyBytes()
+      .toString("hex");
 
     const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
     const encryptedxPrvKey: string = AESEncrypt(
@@ -360,7 +443,9 @@ export class Account {
       payPasswd
     );
 
-    // TODO const xpubBitcoin: string = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
+    const xpubBitcoin: string = Base58Check.encode(
+      stdrootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+    );
 
     const xPubKey: string = Base58Check.encode(
       rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
@@ -413,39 +498,48 @@ export class Account {
     return account;
   }
 
+  public static newFromSinglePrivateKey(
+    path: string,
+    singlePrivateKey: string,
+    passwd: string
+  ) {
+    // TODO
+    // should convert singlePrivateKey to hex string
+    const singlePrvKey = singlePrivateKey;
+    const encryptedSinglePrvKey: string = AESEncrypt(singlePrvKey, passwd);
+
+    const deterministicKey = new DeterministicKey(
+      DeterministicKey.BITCOIN_VERSIONS
+    );
+    const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+    const ethscPubKey: string = rootkey.getPublicKeyBytes().toString("hex");
+    const account = new Account();
+    account._localstore = new LocalStore(path);
+    account._localstore.setDerivationStrategy("BIP44");
+    account._localstore.setM(1);
+    account._localstore.setN(1);
+    account._localstore.setSingleAddress(true);
+    account._localstore.setReadonly(false);
+    account._localstore.setHasPassPhrase(false);
+    account._localstore.setPublicKeyRing([]);
+    account._localstore.setMnemonic("");
+    account._localstore.setxPrivKey("");
+    account._localstore.setxPubKey("");
+    account._localstore.setxPubKeyHDPM("");
+    account._localstore.setRequestPubKey("");
+    account._localstore.setRequestPrivKey("");
+    account._localstore.setOwnerPubKey("");
+    account._localstore.setSeed("");
+    account._localstore.setETHSCPrimaryPubKey(ethscPubKey);
+    account._localstore.setxPubKeyBitcoin("");
+    account._localstore.setSinglePrivateKey(encryptedSinglePrvKey);
+    // account._localstore.setRipplePrimaryPubKey("");
+
+    account.init();
+    return account;
+  }
+
   /*
-			Account::Account(const std::string &path, const std::string singlePrivateKey, const std::string &passwd) {
-			bytes_t singlePrvKey;
-			singlePrvKey.setHex(singlePrivateKey);
-
-			std::string encryptedSinglePrvKey = AES::EncryptCCM(singlePrvKey, passwd);
-			Key k(CTBitcoin, singlePrvKey);
-			std::string ethscPubKey = k.PubKey(false).getHex();
-
-					_localstore = LocalStorePtr(new LocalStore(path));
-					_localstore->SetDerivationStrategy("BIP44");
-					_localstore->SetM(1);
-					_localstore->SetN(1);
-					_localstore->SetSingleAddress(true);
-					_localstore->SetReadonly(false);
-					_localstore->SetHasPassPhrase(false);
-					_localstore->SetPublicKeyRing({});
-					_localstore->SetMnemonic("");
-					_localstore->SetxPrivKey("");
-					_localstore->SetxPubKey("");
-					_localstore->SetxPubKeyHDPM("");
-					_localstore->SetRequestPubKey("");
-					_localstore->SetRequestPrivKey("");
-					_localstore->SetOwnerPubKey("");
-					_localstore->SetSeed("");
-					_localstore->SetETHSCPrimaryPubKey(ethscPubKey);
-					_localstore->SetxPubKeyBitcoin("");
-					_localstore->SetSinglePrivateKey(encryptedSinglePrvKey);
-					_localstore->SetRipplePrimaryPubKey("");
-
-					Init();
-	}
-
 #if 0
 	Account::Account(const std::string &path, const nlohmann::json &walletJSON) {
 		_localstore = LocalStorePtr(new LocalStore(path));
@@ -454,64 +548,70 @@ export class Account {
 		Init();
 	}
 #endif
+*/
 
-	Account::Account(const std::string &path, const KeyStore &ks, const std::string &payPasswd) {
+	public static newFromKeyStore(path: string, ks: KeyStore, payPasswd: string) {
 		const ElaNewWalletJson &json = ks.WalletJson();
-
-		_localstore = LocalStorePtr(new LocalStore(path));
+		
+		const account = new Account()
+		account._localstore = new LocalStore(path);
 		bytes_t bytes;
 		std::string str;
 
-		_localstore->SetReadonly(true);
+		account._localstore.setReadonly(true);
 		if (!json.xPrivKey().empty()) {
 			Base58::CheckDecode(json.xPrivKey(), bytes);
 			HDKeychain rootkey(CTElastos, bytes);
-			std::string encrypedPrivKey = AES::EncryptCCM(bytes, payPasswd);
-			_localstore->SetxPrivKey(encrypedPrivKey);
-			_localstore->SetReadonly(false);
+			
+			const encrypedPrivKey: string = AESEncrypt(bytes, payPasswd);
+			account._localstore.setxPrivKey(encrypedPrivKey);
+			account._localstore.setReadonly(false);
 		}
 
 		if (!json.Mnemonic().empty()) {
-			std::string encryptedMnemonic = AES::EncryptCCM(bytes_t(json.Mnemonic().data(), json.Mnemonic().size()), payPasswd);
-			_localstore->SetMnemonic(encryptedMnemonic);
-			_localstore->SetReadonly(false);
+			// TODO
+			// const mnemonic = bytes_t(json.Mnemonic().data(), json.Mnemonic().size())
+			const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
+			account._localstore.setMnemonic(encryptedMnemonic);
+			account._localstore.setReadonly(false);
 		}
 
 		if (!json.RequestPrivKey().empty()) {
 			bytes.setHex(json.RequestPrivKey());
-			_localstore->SetRequestPrivKey(AES::EncryptCCM(bytes, payPasswd));
-							_localstore->SetReadonly(false);
+
+			account._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
+			account._localstore.setReadonly(false);
 		}
 
 		if (!json.GetSeed().empty()) {
 			bytes.setHex(json.GetSeed());
-			_localstore->SetSeed(AES::EncryptCCM(bytes, payPasswd));
-							_localstore->SetReadonly(false);
+			account._localstore.setSeed(AESEncrypt(bytes, payPasswd));
+			account._localstore.setReadonly(false);
 		}
 
 		if (!json.GetSinglePrivateKey().empty()) {
-				bytes.setHex(json.GetSinglePrivateKey());
-				_localstore->SetSinglePrivateKey(AES::EncryptCCM(bytes, payPasswd));
-				_localstore->SetReadonly(false);
+			bytes.setHex(json.GetSinglePrivateKey());
+			account._localstore.setSinglePrivateKey(AESEncrypt(bytes, payPasswd));
+			account._localstore.setReadonly(false);
 		}
 
-					_localstore->SetxPubKeyBitcoin(json.GetxPubKeyBitcoin());
-		_localstore->SetxPubKey(json.xPubKey());
-		_localstore->SetRequestPubKey(json.RequestPubKey());
-		_localstore->SetPublicKeyRing(json.GetPublicKeyRing());
-		_localstore->SetM(json.GetM());
-		_localstore->SetN(json.GetN());
-		_localstore->SetHasPassPhrase(json.HasPassPhrase());
-		_localstore->SetSingleAddress(json.SingleAddress());
-		_localstore->SetDerivationStrategy(json.DerivationStrategy());
-		_localstore->SetxPubKeyHDPM(json.xPubKeyHDPM());
-		_localstore->SetOwnerPubKey(json.OwnerPubKey());
-		_localstore->SetSubWalletInfoList(json.GetCoinInfoList());
-		_localstore->SetETHSCPrimaryPubKey(json.GetETHSCPrimaryPubKey());
-		_localstore->SetRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
+		account._localstore.setxPubKeyBitcoin(json.GetxPubKeyBitcoin());
+		account._localstore.setxPubKey(json.xPubKey());
+		account._localstore.setRequestPubKey(json.RequestPubKey());
+		account._localstore.setPublicKeyRing(json.GetPublicKeyRing());
+		account._localstore.setM(json.GetM());
+		account._localstore.setN(json.GetN());
+		account._localstore.setHasPassPhrase(json.HasPassPhrase());
+		account._localstore.setSingleAddress(json.SingleAddress());
+		account._localstore.setDerivationStrategy(json.DerivationStrategy());
+		account._localstore.setxPubKeyHDPM(json.xPubKeyHDPM());
+		account._localstore.setOwnerPubKey(json.OwnerPubKey());
+		account._localstore.setSubWalletInfoList(json.GetCoinInfoList());
+		account._localstore.setETHSCPrimaryPubKey(json.GetETHSCPrimaryPubKey());
+		account._localstore.setRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
 
-		Init();
-	}*/
+		account.init();
+	}
 
   public RequestPubKey(): bytes_t {
     return this._requestPubKey;
@@ -536,33 +636,29 @@ export class Account {
     return key;
   }
 
-  /*Key Account::RequestPrivKey(const std::string &payPassword) const {
-		if (_localstore->Readonly()) {
-			ErrorChecker::ThrowLogicException(Error::Key, "Readonly wallet without prv key");
+  requestPrivKey(payPassword: string) : DeterministicKey{
+		if (this._localstore.readonly()) {
+			ErrorChecker.throwLogicException(Error.Code.Key, "Readonly wallet without prv key");
 		}
 
-					if (_localstore->GetxPubKeyBitcoin().empty()) {
-							RegenerateKey(payPassword);
-							Init();
-					}
+		if (!this._localstore.getxPubKeyBitcoin()) {
+			this.regenerateKey(payPassword);
+			this.init();
+		}
 
-		bytes_t bytes = AES::DecryptCCM(_localstore->GetRequestPrivKey(), payPassword);
-
-		Key key;
-		key.SetPrvKey(CTElastos, bytes);
-
-		bytes.clean();
-
+		const bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPassword);
+		let key = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS)
+		key.privateKey = bytes
 		return key;
-	}*/
+	}
 
   public masterPubKey(): HDKey {
     return this._xpub;
   }
 
-  /*HDKeychainPtr Account::BitcoinMasterPubKey() const {
-			return _btcMasterPubKey;
-	}*/
+  bitcoinMasterPubKey(): HDKey {
+    return this._btcMasterPubKey;
+  }
 
   public getxPrvKeyString(payPasswd: string): string {
     if (this._localstore.readonly()) {
@@ -589,9 +685,9 @@ export class Account {
     return this._localstore.getxPubKeyHDPM();
   }
 
-  /* public masterPubKeyRing(): PublicKeyRing[] {
-		return this._localstore.getPublicKeyRing();
-	} */
+  public masterPubKeyRing(): PublicKeyRing[] {
+    return this._localstore.getPublicKeyRing();
+  }
 
   public ownerPubKey(): bytes_t {
     ErrorChecker.checkLogic(
@@ -602,21 +698,22 @@ export class Account {
     return this._ownerPubKey;
   }
 
-  /*void Account::ChangePassword(const std::string &oldPasswd, const std::string &newPasswd) {
-		if (!_localstore->Readonly()) {
-			ErrorChecker::CheckPassword(newPasswd, "New");
+  changePassword(oldPasswd: string, newPasswd: string) {
+    if (!this._localstore.readonly()) {
+      ErrorChecker.checkPassword(newPasswd, "New");
 
-							if (_localstore->GetxPubKeyBitcoin().empty()) {
-									RegenerateKey(oldPasswd);
-									Init();
-							}
+      if (this._localstore.getxPubKeyBitcoin().length === 0) {
+        this.regenerateKey(oldPasswd);
+        this.init();
+      }
 
-			_localstore->ChangePasswd(oldPasswd, newPasswd);
+      this._localstore.changePasswd(oldPasswd, newPasswd);
 
-			_localstore->Save();
-		}
-	}
+      this._localstore.save();
+    }
+  }
 
+  /*
 	void Account::ResetPassword(const std::string &mnemonic, const std::string &passphrase, const std::string &newPassword) {
 		if (!_localstore->Readonly()) {
 			ErrorChecker::CheckPassword(newPassword, "New");
@@ -676,44 +773,50 @@ export class Account {
     return this._localstore.singleAddress();
   }
 
-  /*bool Account::Equal(const AccountPtr &account) const {
-		if (GetSignType() != account->GetSignType())
+  equal(account: Account): boolean {
+		if (this.getSignType() != account.getSignType()) {
 			return false;
+		}
+		
 
-					if (_xpub == nullptr && account->MasterPubKey() != nullptr ||
-							_xpub != nullptr && account->MasterPubKey() == nullptr)
-							return false;
+		if (this._xpub == null && account.masterPubKey() != null ||
+			this._xpub != null && account.masterPubKey() == null) {
+				return false;
+			}
+			
 
-		if (_xpub == nullptr && account->MasterPubKey() == nullptr)
-				return GetETHSCPubKey() == account->GetETHSCPubKey();
-
-		if (GetSignType() == MultiSign) {
-			if (_allMultiSigners.size() != account->MultiSignCosigner().size())
+		if (this._xpub == null && account.masterPubKey() == null) {
+			return this.getETHSCPubKey() == account.getETHSCPubKey();
+		}
+			
+		if (this.getSignType() == SignType.MultiSign) {
+			if (this._allMultiSigners.length != account.multiSignCosigner().length)
 				return false;
 
-			for (size_t i = 0; i < _allMultiSigners.size(); ++i) {
-				if (*_allMultiSigners[i] != *account->MultiSignCosigner()[i])
+			for (let i = 0; i < this._allMultiSigners.length; ++i) {
+				if (this._allMultiSigners[i] != account.multiSignCosigner()[i])
 					return false;
 			}
 
 			return true;
 		}
 
-		return *_xpub == *account->MasterPubKey();
+		return this._xpub == account.masterPubKey();
 	}
 
-	int Account::GetM() const {
-		return _localstore->GetM();
+	getM(): number {
+		return this._localstore.getM();
 	}
 
-	int Account::GetN() const {
-		return _localstore->GetN();
+	getN(): number {
+		return this._localstore.getN();
 	}
 
-	std::string Account::DerivationStrategy() const {
-		return _localstore->DerivationStrategy();
+	derivationStrategy(): string {
+		return this._localstore.derivationStrategy();
 	}
 
+	/*
 	nlohmann::json Account::GetPubKeyInfo() const {
 		nlohmann::json j, jCosigners;
 
