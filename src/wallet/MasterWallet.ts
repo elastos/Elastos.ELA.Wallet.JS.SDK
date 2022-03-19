@@ -31,6 +31,13 @@ import { Log } from "../common/Log";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { JSONObject, uint32_t } from "../types";
 import { PublicKeyRing } from "../walletcore/publickeyring";
+import { Address } from "../walletcore/Address";
+import {
+  CHAINID_MAINCHAIN,
+  CHAINID_IDCHAIN,
+  CHAINID_TOKENCHAIN
+} from "../wallet/WalletCommon";
+import { CONFIG_MAINNET } from "../config";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -346,11 +353,13 @@ export class MasterWallet {
     for (let i = 0; i < keys.length; i++) {
       const value = configs[keys[i]];
       if (value.name().length !== 0) {
-        this.insertEthereumNetwork(
+        /* TODO
+        InsertEthereumNetwork(
           value.name(),
           value.chainID(),
           value.networkID()
         );
+				*/
       }
     }
   }
@@ -457,7 +466,7 @@ export class MasterWallet {
         continue;
       }
 
-      let subWallet: ISubWallet = this.subWalletFactoryMethod(
+      let subWallet: SubWallet = this.subWalletFactoryMethod(
         info[i],
         chainConfig,
         this,
@@ -473,27 +482,31 @@ export class MasterWallet {
     }
   }
 
-  /*
-	ISubWallet *MasterWallet::SubWalletFactoryMethod(const CoinInfoPtr &info, const ChainConfigPtr &config,
-													MasterWallet *parent, const std::string &netType) {
+  subWalletFactoryMethod(
+    info: CoinInfo,
+    config: ChainConfig,
+    parent: MasterWallet,
+    netType: string
+  ) {
+    if (info.getChainID() == "ELA") {
+      return new MainchainSubWallet(info, config, parent, netType);
+    } else if (info.getChainID() == "IDChain") {
+      return new IDChainSubWallet(info, config, parent, netType);
+    } else if (info.getChainID() == "BTC") {
+      return new BTCSubWallet(info, config, parent, netType);
+    } else if (info.getChainID().indexOf("ETH") !== -1) {
+      return new EthSidechainSubWallet(info, config, parent, netType);
+      // } else if (info.getChainID() == "XRP") {
+      // return new RippleSubWallet(info, config, parent, netType);
+    } else {
+      ErrorChecker.throwLogicException(
+        Error.Code.InvalidChainID,
+        "Invalid chain ID: " + info.getChainID()
+      );
+    }
 
-		if (info->GetChainID() == "ELA") {
-			return new MainchainSubWallet(info, config, parent, netType);
-		} else if (info->GetChainID() == "IDChain") {
-							return new IDChainSubWallet(info, config, parent, netType);
-					} else if (info->GetChainID() == "BTC") {
-				return new BTCSubWallet(info, config, parent, netType);
-		} else if (info->GetChainID().find("ETH") !=  std::string::npos) {
-							return new EthSidechainSubWallet(info, config, parent, netType);
-//            } else if (info->GetChainID() == "XRP") {
-//			    return new RippleSubWallet(info, config, parent, netType);
-		} else {
-			ErrorChecker::ThrowLogicException(Error::InvalidChainID, "Invalid chain ID: " + info->GetChainID());
-		}
-
-		return nullptr;
-	}
-	*/
+    return null;
+  }
 
   getDataPath(): string {
     return this._account.getDataPath();
@@ -503,99 +516,106 @@ export class MasterWallet {
     return this._account;
   }
 
-  /*	bool MasterWallet::IsAddressValid(const std::string &address) const {
-			ArgInfo("{} {}", _id, GetFunName());
-			ArgInfo("addr: {}", address);
+  isAddressValid(address: string): boolean {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("addr: {}", address);
 
-			bool valid = Address(address).Valid();
-			if (!valid) {
-				valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
-			}
+    let valid: boolean = Address.newFromAddressString(address).valid();
+    if (!valid) {
+      // TODO: valid = addressValidateString(address) == ETHEREUM_BOOLEAN_TRUE;
+    }
 
-			ArgInfo("r => {}", valid);
-			return valid;
-		}
+    // ArgInfo("r => {}", valid);
+    return valid;
+  }
 
-		bool MasterWallet::IsSubWalletAddressValid(const std::string &chainID, const std::string &address) const {
-			ArgInfo("{} {}", _id, GetFunName());
-			ArgInfo("chainID: {}", chainID);
-			ArgInfo("address: {}", address);
+  isSubWalletAddressValid(chainID: string, address: string): boolean {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("chainID: {}", chainID);
+    // ArgInfo("address: {}", address);
 
-						bool valid = false;
-						if (chainID == CHAINID_MAINCHAIN || chainID == CHAINID_IDCHAIN || chainID == CHAINID_TOKENCHAIN) {
-								valid = Address(address).Valid();
-						} else if (chainID == "BTC") {
-								BRAddressParams addrParams;
-								if (_config->GetNetType() == CONFIG_MAINNET) {
-										addrParams = BITCOIN_ADDRESS_PARAMS;
-								} else {
-										addrParams = BITCOIN_TEST_ADDRESS_PARAMS;
-								}
-								valid = BRAddressIsValid(addrParams, address.c_str());
-						} else if (chainID.find("ETH") != std::string::npos) {
-								valid = addressValidateString(address.c_str()) == ETHEREUM_BOOLEAN_TRUE;
-						}
+    let valid: boolean = false;
+    if (
+      chainID === CHAINID_MAINCHAIN ||
+      chainID === CHAINID_IDCHAIN ||
+      chainID === CHAINID_TOKENCHAIN
+    ) {
+      valid = Address.newFromAddressString(address).valid();
+    } else if (chainID === "BTC") {
+      // TODO: BRAddressParams addrParams;
 
-			ArgInfo("r => {}", valid);
-			return valid;
-		}
+      if (this._config.getNetType() === CONFIG_MAINNET) {
+        // TODO: addrParams = BITCOIN_ADDRESS_PARAMS;
+      } else {
+        // TODO: addrParams = BITCOIN_TEST_ADDRESS_PARAMS;
+      }
+      // TODO: valid = BRAddressIsValid(addrParams, address);
+    } else if (chainID.indexOf("ETH") !== -1) {
+      // TODO:  valid = addressValidateString(address) == ETHEREUM_BOOLEAN_TRUE;
+    }
 
-		std::vector<std::string> MasterWallet::GetSupportedChains() const {
-			ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("r => {}", valid);
+    return valid;
+  }
 
-			std::vector<std::string> chainIDs = _config->GetAllChainIDs();
+  getSupportedChains(): string[] {
+    // ArgInfo("{} {}", _id, GetFunName());
 
-			std::string result;
-			for (size_t i = 0; i < chainIDs.size(); ++i) {
-				result += chainIDs[i] + ", ";
-			}
+    let chainIDs: string[] = this._config.getAllChainIDs();
 
-			ArgInfo("r => {}", result);
-			return chainIDs;
-		}
+    let result: string;
+    for (let i = 0; i < chainIDs.length; ++i) {
+      result += chainIDs[i] + ", ";
+    }
 
-		void MasterWallet::ChangePassword(const std::string &oldPassword, const std::string &newPassword) {
-			ArgInfo("{} {}", _id, GetFunName());
-			ArgInfo("old: *");
-			ArgInfo("new: *");
+    // ArgInfo("r => {}", result);
+    return chainIDs;
+  }
 
-			_account->ChangePassword(oldPassword, newPassword);
-		}
+  changePassword(oldPassword: string, newPassword: string) {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("old: *");
+    // ArgInfo("new: *");
 
-		void MasterWallet::ResetPassword(const std::string &mnemonic, const std::string &passphrase,
-										 const std::string &newPassword) {
-			ArgInfo("{} {}", _id, GetFunName());
-			ArgInfo("m: *");
-			ArgInfo("passphrase: *");
-			ArgInfo("passwd: *");
+    this._account.changePassword(oldPassword, newPassword);
+  }
 
-			_account->ResetPassword(mnemonic, passphrase, newPassword);
+  resetPassword(mnemonic: string, passphrase: string, newPassword: string) {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("m: *");
+    // ArgInfo("passphrase: *");
+    // ArgInfo("passwd: *");
 
-			ArgInfo("r => ");
-		}
+    this._account.resetPassword(mnemonic, passphrase, newPassword);
 
-		nlohmann::json MasterWallet::GetBasicInfo() const {
-			ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("r => ");
+  }
 
-			nlohmann::json info = _account->GetBasicInfo();
+  getBasicInfo(): JSONObject {
+    // ArgInfo("{} {}", _id, GetFunName());
 
-			ArgInfo("r => {}", info.dump());
-			return info;
-		}
+    const info: JSONObject = this._account.getBasicInfo();
 
-		bool MasterWallet::IsEqual(const MasterWallet &wallet) const {
-			return _account->Equal(wallet._account);
-		}
+    // ArgInfo("r => {}", info.dump());
+    return info;
+  }
 
-		void MasterWallet::FlushData() {
-			for (WalletMap::const_iterator it = _createdWallets.cbegin(); it != _createdWallets.cend(); ++it) {
-				SubWallet *subWallet = dynamic_cast<SubWallet*>(it->second);
-				if (subWallet)
-					subWallet->FlushData();
-			}
-		}
+  isEqual(wallet: MasterWallet): boolean {
+    return this._account.equal(wallet._account);
+  }
 
-		ChainConfigPtr MasterWallet::GetChainConfig(const std::string &chainID) const {
-			return _config->GetChainConfig(chainID);
-		} */
+  flushData() {
+    this._createdWallets = {};
+    const keys = Object.keys(this._createdWallets);
+    for (let i = 0; i < keys.length; i++) {
+      const subWallet = this._createdWallets[keys[i]];
+      if (subWallet !== null) {
+        subWallet.flushData();
+      }
+    }
+  }
+
+  getChainConfig(chainID: string): ChainConfig {
+    return this._config.getChainConfig(chainID);
+  }
 }
