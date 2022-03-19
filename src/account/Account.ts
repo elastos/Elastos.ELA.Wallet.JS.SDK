@@ -550,7 +550,7 @@ export class Account {
 #endif
 */
 
-	public static newFromKeyStore(path: string, ks: KeyStore, payPasswd: string) {
+  public static newFromKeyStore(path: string, ks: KeyStore, payPasswd: string) {
 		const ElaNewWalletJson &json = ks.WalletJson();
 		
 		const account = new Account()
@@ -611,7 +611,7 @@ export class Account {
 		account._localstore.setRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
 
 		account.init();
-	}
+  }
 
   public RequestPubKey(): bytes_t {
     return this._requestPubKey;
@@ -636,21 +636,24 @@ export class Account {
     return key;
   }
 
-  requestPrivKey(payPassword: string) : DeterministicKey{
-		if (this._localstore.readonly()) {
-			ErrorChecker.throwLogicException(Error.Code.Key, "Readonly wallet without prv key");
-		}
+  requestPrivKey(payPassword: string): DeterministicKey {
+    if (this._localstore.readonly()) {
+      ErrorChecker.throwLogicException(
+        Error.Code.Key,
+        "Readonly wallet without prv key"
+      );
+    }
 
-		if (!this._localstore.getxPubKeyBitcoin()) {
-			this.regenerateKey(payPassword);
-			this.init();
-		}
+    if (!this._localstore.getxPubKeyBitcoin()) {
+      this.regenerateKey(payPassword);
+      this.init();
+    }
 
-		const bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPassword);
-		let key = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS)
-		key.privateKey = bytes
-		return key;
-	}
+    const bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPassword);
+    let key = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
+    key.privateKey = bytes;
+    return key;
+  }
 
   public masterPubKey(): HDKey {
     return this._xpub;
@@ -774,49 +777,49 @@ export class Account {
   }
 
   equal(account: Account): boolean {
-		if (this.getSignType() != account.getSignType()) {
-			return false;
-		}
-		
+    if (this.getSignType() != account.getSignType()) {
+      return false;
+    }
 
-		if (this._xpub == null && account.masterPubKey() != null ||
-			this._xpub != null && account.masterPubKey() == null) {
-				return false;
-			}
-			
+    if (
+      (this._xpub == null && account.masterPubKey() != null) ||
+      (this._xpub != null && account.masterPubKey() == null)
+    ) {
+      return false;
+    }
 
-		if (this._xpub == null && account.masterPubKey() == null) {
-			return this.getETHSCPubKey() == account.getETHSCPubKey();
-		}
-			
-		if (this.getSignType() == SignType.MultiSign) {
-			if (this._allMultiSigners.length != account.multiSignCosigner().length)
-				return false;
+    if (this._xpub == null && account.masterPubKey() == null) {
+      return this.getETHSCPubKey() == account.getETHSCPubKey();
+    }
 
-			for (let i = 0; i < this._allMultiSigners.length; ++i) {
-				if (this._allMultiSigners[i] != account.multiSignCosigner()[i])
-					return false;
-			}
+    if (this.getSignType() == SignType.MultiSign) {
+      if (this._allMultiSigners.length != account.multiSignCosigner().length)
+        return false;
 
-			return true;
-		}
+      for (let i = 0; i < this._allMultiSigners.length; ++i) {
+        if (this._allMultiSigners[i] != account.multiSignCosigner()[i])
+          return false;
+      }
 
-		return this._xpub == account.masterPubKey();
-	}
+      return true;
+    }
 
-	getM(): number {
-		return this._localstore.getM();
-	}
+    return this._xpub == account.masterPubKey();
+  }
 
-	getN(): number {
-		return this._localstore.getN();
-	}
+  getM(): number {
+    return this._localstore.getM();
+  }
 
-	derivationStrategy(): string {
-		return this._localstore.derivationStrategy();
-	}
+  getN(): number {
+    return this._localstore.getN();
+  }
 
-	/*
+  derivationStrategy(): string {
+    return this._localstore.derivationStrategy();
+  }
+
+  /*
 	nlohmann::json Account::GetPubKeyInfo() const {
 		nlohmann::json j, jCosigners;
 
@@ -1309,80 +1312,74 @@ export class Account {
 					pubkey.setHex(_localstore->GetRipplePrimaryPubKey());
 					return pubkey;
 	}
-
-			bytes_t Account::GetSinglePrivateKey(const std::string &passwd) const {
-			return AES::DecryptCCM(_localstore->GetSinglePrivateKey(), passwd);
-	}
-
-			bool Account::HasMnemonic() const {
-		return !_localstore->GetMnemonic().empty();
-	}
-
-	bool Account::HasPassphrase() const {
-		return _localstore->HasPassPhrase();
-	}
-
-	bool Account::VerifyPrivateKey(const std::string &mnemonic, const std::string &passphrase) const {
-		if (!_localstore->Readonly() && _xpub != nullptr) {
-			HDSeed seed(Mnemonic::DeriveSeed(mnemonic, passphrase).bytes());
-			HDKeychain rootkey = HDKeychain(CTElastos, seed.getExtendedKey(CTElastos, true));
-
-			HDKeychain xpub = rootkey.getChild("44'/0'/0'").getPublic();
-			if (xpub.pubkey() == _xpub->pubkey())
-				return true;
-		}
-
-		return false;
-	}
-
-	bool Account::VerifyPassPhrase(const std::string &passphrase, const std::string &payPasswd) const {
-		if (!_localstore->Readonly() && _xpub != nullptr) {
-							if (_localstore->GetxPubKeyBitcoin().empty()) {
-									RegenerateKey(payPasswd);
-									Init();
-							}
-			bytes_t bytes = AES::DecryptCCM(_localstore->GetMnemonic(), payPasswd);
-			std::string mnemonic((char *) &bytes[0], bytes.size());
-
-			uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
-			HDSeed hdseed(seed.bytes());
-			HDKeychain rootkey(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-
-			HDKeychain xpub = rootkey.getChild("44'/0'/0'").getPublic();
-			if (xpub.pubkey() != _xpub->pubkey())
-				return false;
-
-			return true;
-		}
-
-		return false;
-	}
-
-	bool Account::VerifyPayPassword(const std::string &payPasswd) const {
-		if (!_localstore->Readonly()) {
-							if (_localstore->GetxPubKeyBitcoin().empty()) {
-									RegenerateKey(payPasswd);
-									Init();
-							}
-
-							if (!_localstore->GetRequestPrivKey().empty())
-									AES::DecryptCCM(_localstore->GetRequestPrivKey(), payPasswd);
-							else if (!_localstore->GetSeed().empty()) {
-									AES::DecryptCCM(_localstore->GetSeed(), payPasswd);
-							} else if (!_localstore->GetMnemonic().empty()) {
-									AES::DecryptCCM(_localstore->GetMnemonic(), payPasswd);
-							} else if (!_localstore->GetSinglePrivateKey().empty()) {
-									AES::DecryptCCM(_localstore->GetSinglePrivateKey(), payPasswd);
-							} else if (!_localstore->GetxPrivKey().empty()) {
-									AES::DecryptCCM(_localstore->GetxPrivKey(), payPasswd);
-							}
-
-			return true;
-		}
-
-		return false;
-	}
 */
+  getSinglePrivateKey(passwd: string) {
+    return AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
+  }
+
+  hasMnemonic(): boolean {
+    return !!this._localstore.getMnemonic();
+  }
+
+  hasPassphrase(): boolean {
+    return this._localstore.hasPassPhrase();
+  }
+
+  verifyPrivateKey(mnemonic: string, passphrase: string): boolean {
+    if (!this._localstore.readonly() && this._xpub != null) {
+      const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
+      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      if (xpub.getPublicKeyBase58() == this._xpub.getPublicKeyBase58()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  verifyPassPhrase(passphrase: string, payPasswd: string): boolean {
+    if (!this._localstore.readonly() && this._xpub != null) {
+      if (!this._localstore.getxPubKeyBitcoin()) {
+        this.regenerateKey(payPasswd);
+        this.init();
+      }
+      const mnemonic = this._localstore.getMnemonic();
+      const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
+      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      if (xpub.getPublicKeyBase58() != this._xpub.getPublicKeyBase58())
+        return false;
+
+      return true;
+    }
+
+    return false;
+  }
+
+  verifyPayPassword(payPasswd: string): boolean {
+    if (!this._localstore.readonly()) {
+      if (!this._localstore.getxPubKeyBitcoin()) {
+        this.regenerateKey(payPasswd);
+        this.init();
+      }
+
+      if (this._localstore.getRequestPrivKey())
+        AESDecrypt(this._localstore.getRequestPrivKey(), payPasswd);
+      else if (this._localstore.getSeed()) {
+        AESDecrypt(this._localstore.getSeed(), payPasswd);
+      } else if (this._localstore.getMnemonic()) {
+        AESDecrypt(this._localstore.getMnemonic(), payPasswd);
+      } else if (this._localstore.getSinglePrivateKey()) {
+        AESDecrypt(this._localstore.getSinglePrivateKey(), payPasswd);
+      } else if (this._localstore.getxPrivKey()) {
+        AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
   save(): void {
     this._localstore.save();
   }
