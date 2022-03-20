@@ -31,67 +31,152 @@ export const DEPOSIT_OR_WITHDRAW_FEE = 10000;
 
 // TODO: merge methods doc from ISubwallet.h
 export abstract class SubWallet {
-	protected _parent: MasterWallet;
-	protected _info: CoinInfo;
-	protected _config: ChainConfig;
+  protected _parent: MasterWallet;
+  protected _info: CoinInfo;
+  protected _config: ChainConfig;
 
-	/* #define WarnLog() SPVLOG_WARN("SubWallet::{} should not be here", GetFunName())
+  /* #define WarnLog() SPVLOG_WARN("SubWallet::{} should not be here", GetFunName())
 
-			SubWallet::SubWallet(const CoinInfoPtr &info,
-								 const ChainConfigPtr &config,
-								 MasterWallet *parent) :
-				_parent(parent),
-				_info(info),
-				_config(config) {
-			}
+	SubWallet::SubWallet(const CoinInfoPtr &info,
+							const ChainConfigPtr &config,
+							MasterWallet *parent) :
+		_parent(parent),
+		_info(info),
+		_config(config) {}
 
-			SubWallet::~SubWallet() {
-			}
+	SubWallet::~SubWallet() {}
 
-					void SubWallet::FlushData() {
-					WarnLog();
-					}*/
+	void SubWallet::FlushData() { WarnLog(); }
+	*/
 
-	//default implement ISubWallet
-	public getChainID(): string {
-		return this._info.getChainID();
-	}
+  //default implement ISubWallet
 
-	public GetBasicInfo(): json {
-		//ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+  /**
+   * Get the sub wallet chain id.
+   * @return sub wallet chain id.
+   */
+  public getChainID(): string {
+    return this._info.getChainID();
+  }
 
-		return {
-			Info: {},
-			ChainID: this._info.getChainID()
-		}
-	}
+  /**
+   * basic info of sub wallet
+   * @return basic information of current master wallet.
+   *
+   * Such as:
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":0
+   *   },
+   *   "ChainID":"ELA"
+   * }
+   *
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":1
+   *   },
+   *   "ChainID":"IDChain"
+   * }
+   *
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":2
+   *   },
+   *   "ChainID":"TokenChain"
+   * }
+   */
+  public getBasicInfo(): json {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
-	public getAddresses(index: uint32_t, count: uint32_t, internal = false): json {
-		warnLog();
-		return {};
-	}
+    return {
+      Info: {},
+      ChainID: this._info.getChainID()
+    };
+  }
 
-	public getPublicKeys(index: uint32_t, count: uint32_t, internal = false): json {
-		warnLog();
-		return {};
-	}
+  /**
+   * For Elastos-based or btc wallet: Derivate @count addresses from @index.  Note that if create the
+   * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
+   * set @internal to false.
+   * For ETH-based sidechain: Only return a single address. Ignore all parameters.
+   *
+   * @index start from 0.
+   * @count count of addresses we need.
+   * @internal change address for true or normal receive address for false.
+   * @return a new address or addresses as required.
+   */
+  public getAddresses(
+    index: uint32_t,
+    count: uint32_t,
+    internal = false
+  ): json {
+    warnLog();
+    return {};
+  }
 
-	public SignTransaction(tx: json, passwd: string): json {
-		warnLog();
-		return {};
-	}
+  /**
+   * For Elastos-based or btc wallet: Get @count public keys from @index.  Note that if create the
+   * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
+   * set @internal to false.
+   * For ETH-based sidechain: Only return a single public key. Ignore all parameters.
+   *
+   * @param index to specify start index of all public key list.
+   * @param count specifies the count of public keys we need.
+   * @param internal change address for true or normal receive address for false.
+   * @return public keys in json format.
+   */
+  public getPublicKeys(
+    index: uint32_t,
+    count: uint32_t,
+    internal = false
+  ): json {
+    warnLog();
+    return {};
+  }
 
-	public SignDigest(address: string, digest: string, passwd: string): string {
-		warnLog();
-		return "";
-	}
+  /**
+   * Sign a transaction or append sign to a multi-sign transaction and return the content of transaction in json format.
+   * @param tx transaction created by Create*Transaction().
+   * @param passwd use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success return the content of transaction in json format.
+   */
+  public signTransaction(tx: json, passwd: string): json {
+    warnLog();
+    return {};
+  }
 
-	public VerifyDigest(publicKey: string, digest: string, signature: string): boolean {
-		warnLog();
-		return false;
-	}
+  /**
+   * Sign message with private key of did.
+   * @address will sign the digest with private key of this address.
+   * @digest hex string of sha256
+   * @passwd pay password.
+   * @return If success, signature will be returned.
+   */
+  public signDigest(address: string, digest: string, passwd: string): string {
+    warnLog();
+    return "";
+  }
 
-	protected getSubWalletID(): string {
-		return this._parent.getWalletID() + ":" + this._info.getChainID();
-	}
+  /**
+   * Verify signature with specify public key
+   * @pubkey public key hex string.
+   * @digest hex string of sha256.
+   * @signature signature to be verified.
+   * @return true or false.
+   */
+  public verifyDigest(
+    publicKey: string,
+    digest: string,
+    signature: string
+  ): boolean {
+    warnLog();
+    return false;
+  }
+
+  protected getSubWalletID(): string {
+    return this._parent.getWalletID() + ":" + this._info.getChainID();
+  }
 }

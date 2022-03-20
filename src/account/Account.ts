@@ -632,8 +632,7 @@ export class Account {
     }
 
     if (this._localstore.getxPubKeyBitcoin().length === 0) {
-      // TODO
-      // this.regenerateKey(payPasswd);
+      this.regenerateKey(payPasswd);
       this.init();
     }
 
@@ -678,8 +677,7 @@ export class Account {
     }
 
     if (this._localstore.getxPubKeyBitcoin().length === 0) {
-      // TODO
-      // this.regenerateKey(payPasswd);
+      this.regenerateKey(payPasswd);
       this.init();
     }
 

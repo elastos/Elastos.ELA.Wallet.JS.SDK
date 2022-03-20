@@ -24,48 +24,53 @@ import { json } from "../types";
 import { ISubWallet } from "./ISubWallet";
 
 export interface IElastosBaseSubWallet extends ISubWallet {
-    /**
-     * Create a normal transaction and return the content of transaction in json format.
-     * @param inputs UTXO which will be used. eg
-     * [
-     *   {
-     *     "TxHash": "...", // string
-     *     "Index": 123, // int
-     *     "Address": "...", // string
-     *     "Amount": "100000000" // bigint string in SELA
-     *   },
-     *   ...
-     * ]
-     * @param outputs Outputs which we want to send to. If there is change, a new output will be append. eg
-     * [
-     *   {
-     *     "Address": "...", // string
-     *     "Amount": "100000000" // bigint string in SELA
-     *   },
-     *   ...
-     * ]
-     * @param fee Fee amount. Bigint string in SELA
-     * @param memo input memo attribute for describing.
-     * @return If success return the content of transaction in json format.
-     */
-    CreateTransaction(inputs: json, outputs: json, fee: string, memo: string): json;
+  /**
+   * Create a normal transaction and return the content of transaction in json format.
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param outputs Outputs which we want to send to. If there is change, a new output will be append. eg
+   * [
+   *   {
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo input memo attribute for describing.
+   * @return If success return the content of transaction in json format.
+   */
+  createTransaction(
+    inputs: json,
+    outputs: json,
+    fee: string,
+    memo: string
+  ): json;
 
-    /**
-     * Get signers already signed specified transaction.
-     * @param tx a signed transaction to find signed signers.
-     * @return Signed signers in json format. An example of result will be displayed as follows:
-     *
-     * [{"M":3,"N":4,"SignType":"MultiSign","Signers":["02753416fc7c1fb43c91e29622e378cd16243b53577ec971c6c3624a775722491a","0370a77a257aa81f46629865eb8f3ca9cb052fcfd874e8648cfbea1fbf071b0280","030f5bdbee5e62f035f19153c5c32966e0fc72e419c2b4867ba533c43340c86b78"]}]
-     * or
-     * [{"SignType":"Standard","Signers":["0207d8bc14c4bdd79ea4a30818455f705bcc9e17a4b843a5f8f4a95aa21fb03d77"]},{"SignType":"Standard","Signers":["02a58d1c4e4993572caf0133ece4486533261e0e44fb9054b1ea7a19842c35300e"]}]
-     *
-     */
-    GetTransactionSignedInfo(tx: json): json;
+  /**
+   * Get signers already signed specified transaction.
+   * @param tx a signed transaction to find signed signers.
+   * @return Signed signers in json format. An example of result will be displayed as follows:
+   *
+   * [{"M":3,"N":4,"SignType":"MultiSign","Signers":["02753416fc7c1fb43c91e29622e378cd16243b53577ec971c6c3624a775722491a","0370a77a257aa81f46629865eb8f3ca9cb052fcfd874e8648cfbea1fbf071b0280","030f5bdbee5e62f035f19153c5c32966e0fc72e419c2b4867ba533c43340c86b78"]}]
+   * or
+   * [{"SignType":"Standard","Signers":["0207d8bc14c4bdd79ea4a30818455f705bcc9e17a4b843a5f8f4a95aa21fb03d77"]},{"SignType":"Standard","Signers":["02a58d1c4e4993572caf0133ece4486533261e0e44fb9054b1ea7a19842c35300e"]}]
+   *
+   */
+  getTransactionSignedInfo(tx: json): json;
 
-    /**
-     * Convert tx to raw transaction.
-     * @param tx transaction json
-     * @return  tx in hex string format.
-     */
-    ConvertToRawTransaction(tx: string): string;
+  /**
+   * Convert tx to raw transaction.
+   * @param tx transaction json
+   * @return  tx in hex string format.
+   */
+  convertToRawTransaction(tx: string): string;
 }

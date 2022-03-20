@@ -23,98 +23,106 @@
 import { json, uint32_t } from "../types";
 
 export interface ISubWallet {
-	/**
-	 * Destructor.
-	 */
-	//virtual ~ISubWallet() noexcept { }
-	destroy();
+  /**
+   * Destructor.
+   */
+  //virtual ~ISubWallet() noexcept { }
+  destroy();
 
-	/**
-	 * Get the sub wallet chain id.
-	 * @return sub wallet chain id.
-	 */
-	GetChainID(): string;
+  /**
+   * Get the sub wallet chain id.
+   * @return sub wallet chain id.
+   */
+  getChainID(): string;
 
-	/**
-	 * basic info of sub wallet
-	 * @return basic information of current master wallet.
-	 *
-	 * Such as:
-	 * {
-	 *   "Info":{
-	 *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
-	 *     "CoinIndex":0
-	 *   },
-	 *   "ChainID":"ELA"
-	 * }
-	 *
-	 * {
-	 *   "Info":{
-	 *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
-	 *     "CoinIndex":1
-	 *   },
-	 *   "ChainID":"IDChain"
-	 * }
-	 *
-	 * {
-	 *   "Info":{
-	 *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
-	 *     "CoinIndex":2
-	 *   },
-	 *   "ChainID":"TokenChain"
-	 * }
-	 */
-	GetBasicInfo(): json;
+  /**
+   * basic info of sub wallet
+   * @return basic information of current master wallet.
+   *
+   * Such as:
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":0
+   *   },
+   *   "ChainID":"ELA"
+   * }
+   *
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":1
+   *   },
+   *   "ChainID":"IDChain"
+   * }
+   *
+   * {
+   *   "Info":{
+   *     "Account":{"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false},
+   *     "CoinIndex":2
+   *   },
+   *   "ChainID":"TokenChain"
+   * }
+   */
+  getBasicInfo(): json;
 
-	/**
-	 * For Elastos-based or btc wallet: Derivate @count addresses from @index.  Note that if create the
-	 * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
-	 * set @internal to false.
-	 * For ETH-based sidechain: Only return a single address. Ignore all parameters.
-	 *
-	 * @index start from 0.
-	 * @count count of addresses we need.
-	 * @internal change address for true or normal receive address for false.
-	 * @return a new address or addresses as required.
-	 */
-	GetAddresses(index: uint32_t, count: uint32_t, internal: boolean /* TODO = false */): json;
+  /**
+   * For Elastos-based or btc wallet: Derivate @count addresses from @index.  Note that if create the
+   * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
+   * set @internal to false.
+   * For ETH-based sidechain: Only return a single address. Ignore all parameters.
+   *
+   * @index start from 0.
+   * @count count of addresses we need.
+   * @internal change address for true or normal receive address for false.
+   * @return a new address or addresses as required.
+   */
+  getAddresses(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean /* TODO = false */
+  ): json;
 
-	/**
-	 * For Elastos-based or btc wallet: Get @count public keys from @index.  Note that if create the
-	 * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
-	 * set @internal to false.
-	 * For ETH-based sidechain: Only return a single public key. Ignore all parameters.
-	 *
-	 * @param index to specify start index of all public key list.
-	 * @param count specifies the count of public keys we need.
-	 * @param internal change address for true or normal receive address for false.
-	 * @return public keys in json format.
-	 */
-	GetPublicKeys(index: uint32_t, count: uint32_t, internal: boolean /* TODO = false */): json;
+  /**
+   * For Elastos-based or btc wallet: Get @count public keys from @index.  Note that if create the
+   * sub-wallet by setting the singleAddress to true, will always set @index to 0, set @count to 1,
+   * set @internal to false.
+   * For ETH-based sidechain: Only return a single public key. Ignore all parameters.
+   *
+   * @param index to specify start index of all public key list.
+   * @param count specifies the count of public keys we need.
+   * @param internal change address for true or normal receive address for false.
+   * @return public keys in json format.
+   */
+  getPublicKeys(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean /* TODO = false */
+  ): json;
 
-	/**
-	 * Sign a transaction or append sign to a multi-sign transaction and return the content of transaction in json format.
-	 * @param tx transaction created by Create*Transaction().
-	 * @param passwd use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-	 * @return If success return the content of transaction in json format.
-	 */
-	SignTransaction(tx: json, passwd: string): json;
+  /**
+   * Sign a transaction or append sign to a multi-sign transaction and return the content of transaction in json format.
+   * @param tx transaction created by Create*Transaction().
+   * @param passwd use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success return the content of transaction in json format.
+   */
+  signTransaction(tx: json, passwd: string): json;
 
-	/**
-	 * Sign message with private key of did.
-	 * @address will sign the digest with private key of this address.
-	 * @digest hex string of sha256
-	 * @passwd pay password.
-	 * @return If success, signature will be returned.
-	 */
-	SignDigest(address: string, digest: string, passwd: string): string;
+  /**
+   * Sign message with private key of did.
+   * @address will sign the digest with private key of this address.
+   * @digest hex string of sha256
+   * @passwd pay password.
+   * @return If success, signature will be returned.
+   */
+  signDigest(address: string, digest: string, passwd: string): string;
 
-	/**
-	 * Verify signature with specify public key
-	 * @pubkey public key hex string.
-	 * @digest hex string of sha256.
-	 * @signature signature to be verified.
-	 * @return true or false.
-	 */
-	VerifyDigest(pubkey: string, digest: string, signature: string): boolean;
+  /**
+   * Verify signature with specify public key
+   * @pubkey public key hex string.
+   * @digest hex string of sha256.
+   * @signature signature to be verified.
+   * @return true or false.
+   */
+  verifyDigest(pubkey: string, digest: string, signature: string): boolean;
 }

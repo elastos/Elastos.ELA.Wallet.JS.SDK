@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import BigNumber from "bignumber.js";
-import randomInteger from 'random-int';
+import randomInteger from "random-int";
 import { SubAccount } from "../account/SubAccount";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
@@ -12,101 +12,141 @@ import { Payload } from "../transactions/payload/Payload";
 import { Program } from "../transactions/Program";
 import { Transaction, TxVersion } from "../transactions/Transaction";
 import { TransactionInput } from "../transactions/TransactionInput";
-import { OutputArray, TransactionOutput } from "../transactions/TransactionOutput";
+import {
+  OutputArray,
+  TransactionOutput
+} from "../transactions/TransactionOutput";
 import { bytes_t, json, size_t, uint32_t, uint8_t } from "../types";
 import { Address, AddressArray } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
 
 export class Wallet extends Lockable {
-	protected _walletID: string;
-	protected _chainID: string;
-	protected _subAccount: SubAccount;
-	//protected  _database: DatabaseManagerPtr;
+  protected _walletID: string;
+  protected _chainID: string;
+  protected _subAccount: SubAccount;
+  //protected  _database: DatabaseManagerPtr;
 
-	constructor(walletID: string, chainID: string, subAccount: SubAccount) {
-		super();
-		this._walletID = walletID + ":" + chainID;
-		this._chainID = chainID;
-		this._subAccount = subAccount;
-		//_database(database) {
+  constructor(walletID: string, chainID: string, subAccount: SubAccount) {
+    super();
+    this._walletID = walletID + ":" + chainID;
+    this._chainID = chainID;
+    this._subAccount = subAccount;
+    //_database(database) {
 
-		//std::vector<std::string> txHashDPoS, txHashCRC, txHashProposal, txHashDID;
+    //std::vector<std::string> txHashDPoS, txHashCRC, txHashProposal, txHashDID;
 
-		this.loadUsedAddress();
-	}
+    this.loadUsedAddress();
+  }
 
-	public createTransaction(type: uint8_t, payload: Payload, utxo: UTXOSet, outputs: OutputArray, memo: string, fee: BigNumber,
-		changeBack2FirstInput: boolean): Transaction {
+  public createTransaction(
+    type: uint8_t,
+    payload: Payload,
+    utxo: UTXOSet,
+    outputs: OutputArray,
+    memo: string,
+    fee: BigNumber,
+    changeBack2FirstInput: boolean
+  ): Transaction {
+    let memoFixed: string;
+    let totalOutputAmount: BigNumber;
+    let totalInputAmount: BigNumber;
 
-		let memoFixed: string;
-		let totalOutputAmount: BigNumber;
-		let totalInputAmount: BigNumber;
+    let tx = Transaction.newFromParams(type, payload);
+    if (memo) {
+      memoFixed = "type:text,msg:" + memo;
+      tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(memoFixed)));
+    }
 
-		let tx = Transaction.newFromParams(type, payload);
-		if (memo) {
-			memoFixed = "type:text,msg:" + memo;
-			tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(memoFixed)));
-		}
+    tx.addAttribute(
+      new Attribute(
+        Usage.Nonce,
+        Buffer.from(randomInteger(0xffffffff).toString(10))
+      )
+    );
 
-		tx.addAttribute(new Attribute(Usage.Nonce, Buffer.from(randomInteger(0xFFFFFFFF).toString(10))));
+    for (let o of outputs)
+      totalOutputAmount = totalOutputAmount.plus(o.amount());
 
-		for (let o of outputs)
-			totalOutputAmount = totalOutputAmount.plus(o.amount());
+    if (outputs) tx.setOutputs(outputs);
 
-		if (outputs)
-			tx.setOutputs(outputs);
+    //await this.GetLock().runExclusive(() => {
+    // TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
+    for (let u of utxo) {
+      let code: bytes_t;
+      tx.addInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
+      if (!this._subAccount.getCode(u.GetAddress(), code)) {
+        //GetLock().unlock();
+        ErrorChecker.throwParamException(
+          Error.Code.Address,
+          "Can't found code and path for input"
+        );
+      }
+      tx.addUniqueProgram(Program.newFromParams(code, Buffer.alloc(0)));
 
-		//await this.GetLock().runExclusive(() => {
-		// TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
-		for (let u of utxo) {
-			let code: bytes_t;
-			tx.addInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
-			if (!this._subAccount.getCode(u.GetAddress(), code)) {
-				//GetLock().unlock();
-				ErrorChecker.throwParamException(Error.Code.Address, "Can't found code and path for input");
-			}
-			tx.addUniqueProgram(Program.newFromParams(code, Buffer.alloc(0)));
+      totalInputAmount = totalInputAmount.plus(u.GetAmount());
+    }
+    //});
 
-			totalInputAmount = totalInputAmount.plus(u.GetAmount());
-		}
-		//});
+    if (totalInputAmount.lt(totalOutputAmount.plus(fee))) {
+      ErrorChecker.throwLogicException(
+        Error.Code.BalanceNotEnough,
+        "Available balance is not enough"
+      );
+    } else if (totalInputAmount.gt(totalOutputAmount.plus(fee))) {
+      // change
+      let changeAmount: BigNumber = totalInputAmount
+        .minus(totalOutputAmount)
+        .minus(fee);
+      let changeAddress: Address;
+      if (changeBack2FirstInput) {
+        changeAddress = utxo[0].GetAddress();
+      } else {
+        let addresses: AddressArray;
+        this._subAccount.getAddresses(addresses, 0, 1, false);
+        changeAddress = addresses[0];
+      }
+      ErrorChecker.checkParam(
+        !changeAddress.valid(),
+        Error.Code.Address,
+        "invalid change address"
+      );
+      tx.addOutput(
+        TransactionOutput.newFromParams(changeAmount, changeAddress)
+      );
+    }
 
-		if (totalInputAmount.lt(totalOutputAmount.plus(fee))) {
-			ErrorChecker.throwLogicException(Error.Code.BalanceNotEnough, "Available balance is not enough");
-		} else if (totalInputAmount.gt(totalOutputAmount.plus(fee))) {
-			// change
-			let changeAmount: BigNumber = totalInputAmount.minus(totalOutputAmount).minus(fee);
-			let changeAddress: Address;
-			if (changeBack2FirstInput) {
-				changeAddress = utxo[0].GetAddress();
-			} else {
-				let addresses: AddressArray;
-				this._subAccount.getAddresses(addresses, 0, 1, false);
-				changeAddress = addresses[0];
-			}
-			ErrorChecker.checkParam(!changeAddress.valid(), Error.Code.Address, "invalid change address");
-			tx.addOutput(TransactionOutput.newFromParams(changeAmount, changeAddress));
-		}
+    ErrorChecker.checkLogic(
+      tx.getOutputs().length == 0,
+      Error.Code.InvalidArgument,
+      "outputs empty or input amount not enough"
+    );
 
-		ErrorChecker.checkLogic(tx.getOutputs().length == 0, Error.Code.InvalidArgument, "outputs empty or input amount not enough");
+    tx.setFee(fee); // WAS tx.SetFee(fee.getUint64());
+    if (this._chainID == CHAINID_MAINCHAIN) tx.setVersion(TxVersion.V09);
 
-		tx.setFee(fee); // WAS tx.SetFee(fee.getUint64());
-		if (this._chainID == CHAINID_MAINCHAIN)
-			tx.setVersion(TxVersion.V09);
+    return tx;
+  }
 
-		return tx;
-	}
+  public getPublickeys(
+    pubkeys: json,
+    index: uint32_t,
+    count: size_t,
+    internal: boolean
+  ) {
+    this._subAccount.getPublickeys(pubkeys, index, count, internal);
+  }
 
-	public getPublickeys(pubkeys: json, index: uint32_t, count: size_t, internal: boolean) {
-		this._subAccount.getPublickeys(pubkeys, index, count, internal);
-	}
+  public getAddresses(
+    addresses: Address[],
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean
+  ) {
+    this._subAccount.getAddresses(addresses, index, count, internal);
+  }
 
-	public getAddresses(addresses: Address[], index: uint32_t, count: uint32_t, internal: boolean) {
-		this._subAccount.getAddresses(addresses, index, count, internal);
-	}
-
-	/*void Wallet::GetCID(AddressArray &cid, uint32_t index, size_t count, bool internal) const {
+  /*void Wallet::GetCID(AddressArray &cid, uint32_t index, size_t count, bool internal) const {
 	boost::mutex::scoped_lock scopedLock(lock);
 			 _subAccount->GetCID(cid, index, count, false);
 	}
@@ -154,19 +194,19 @@ export class Wallet extends Lockable {
 	return _subAccount->IsCRDepositAddress(addr);
 	}*/
 
-	public getBasicInfo(): json {
-		return this._subAccount.getBasicInfo();
-	}
+  public getBasicInfo(): json {
+    return this._subAccount.getBasicInfo();
+  }
 
-	public getWalletID(): string {
-		return this._walletID;
-	}
+  public getWalletID(): string {
+    return this._walletID;
+  }
 
-	public signTransaction(tx: Transaction, payPassword: string) {
-		this._subAccount.signTransaction(tx, payPassword);
-	}
+  public signTransaction(tx: Transaction, payPassword: string) {
+    this._subAccount.signTransaction(tx, payPassword);
+  }
 
-	/*std::string Wallet::SignWithAddress(const Address &addr, const std::string &msg, const std::string &payPasswd) const {
+  /*std::string Wallet::SignWithAddress(const Address &addr, const std::string &msg, const std::string &payPasswd) const {
 	 boost::mutex::scoped_lock scopedLock(lock);
 	 Key key = _subAccount->GetKeyWithAddress(addr, payPasswd);
 	 return key.Sign(msg).getHex();
@@ -184,6 +224,5 @@ export class Wallet extends Lockable {
 	 return key.Sign(msg);
 	}
 */
-	protected loadUsedAddress() {
-	}
+  protected loadUsedAddress() {}
 }

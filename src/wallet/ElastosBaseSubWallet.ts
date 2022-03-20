@@ -6,7 +6,15 @@ import { ChainConfig } from "../config";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import { TransactionOutput } from "../transactions/TransactionOutput";
-import { bytes_t, json, JSONArray, uint16_t, uint256, uint32_t, uint64_t } from "../types";
+import {
+  bytes_t,
+  json,
+  JSONArray,
+  uint16_t,
+  uint256,
+  uint32_t,
+  uint64_t
+} from "../types";
 import { Address } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
@@ -14,7 +22,11 @@ import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
 import { UTXO, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
-import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./WalletCommon";
+import {
+  CHAINID_IDCHAIN,
+  CHAINID_MAINCHAIN,
+  CHAINID_TOKENCHAIN
+} from "./WalletCommon";
 
 /*
  * Copyright (c) 2019 Elastos Foundation
@@ -40,39 +52,51 @@ import { CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN } from "./Wallet
 
 //type WalletManagerPtr = SpvService;
 
-export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWallet {
-    // protected _walletManager: WalletManagerPtr;
-    private _wallet: Wallet; // WAS: _walletManager: WalletManagerPtr - removed the SPVService, directly call the wallet object insteead
+export class ElastosBaseSubWallet
+  extends SubWallet
+  implements IElastosBaseSubWallet
+{
+  // protected _walletManager: WalletManagerPtr;
+  private _wallet: Wallet; // WAS: _walletManager: WalletManagerPtr - removed the SPVService, directly call the wallet object insteead
 
-    constructor(
-        info: CoinInfo,
-        config: ChainConfig,
-        parent: MasterWallet,
-        netType: string) {
+  constructor(
+    info: CoinInfo,
+    config: ChainConfig,
+    parent: MasterWallet,
+    netType: string
+  ) {
+    super(info, config, parent);
 
-        super(info, config, parent);
+    ErrorChecker.checkParam(
+      !this._parent.getAccount().masterPubKeyHDPMString(),
+      Error.Code.UnsupportOperation,
+      "unsupport to create elastos based wallet"
+    );
+    // TODO boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
+    // TODO subWalletDBPath /= _info->GetChainID() + ".db";
 
-        ErrorChecker.checkParam(this._parent.getAccount().masterPubKeyHDPMString().empty(), Error.Code.UnsupportOperation, "unsupport to create elastos based wallet");
-        // TODO boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
-        // TODO subWalletDBPath /= _info->GetChainID() + ".db";
-
-        /* TODO - replace the spvservice
+    /* TODO - replace the spvservice
          _walletManager = WalletManagerPtr(
                  new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
                                 _config, netType)); */
 
-        let chainID = info.getChainID();
-        if (chainID != CHAINID_MAINCHAIN &&
-            chainID != CHAINID_IDCHAIN &&
-            chainID != CHAINID_TOKENCHAIN) {
-            ErrorChecker.throwParamException(Error.Code.InvalidChainID, "invalid chain ID");
-        }
-
-        let subAccount = new SubAccount(parent.getAccount());
-        this._wallet = new Wallet(this._parent.getID(), chainID, subAccount);
+    let chainID = info.getChainID();
+    if (
+      chainID != CHAINID_MAINCHAIN &&
+      chainID != CHAINID_IDCHAIN &&
+      chainID != CHAINID_TOKENCHAIN
+    ) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidChainID,
+        "invalid chain ID"
+      );
     }
 
-    /*const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
+    let subAccount = new SubAccount(parent.getAccount());
+    this._wallet = new Wallet(this._parent.getID(), chainID, subAccount);
+  }
+
+  /*const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
         return _walletManager;
     }
 
@@ -80,99 +104,126 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         _walletManager->DatabaseFlush();
     }*/
 
-    //default implement ISubWallet
-    public GetBasicInfo(): json {
-        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+  //default implement ISubWallet
+  public GetBasicInfo(): json {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
-        return {
-            Info: this.getWallet().getBasicInfo(),
-            ChainID: this._info.getChainID()
-        };
-    }
+    return {
+      Info: this.getWallet().getBasicInfo(),
+      ChainID: this._info.getChainID()
+    };
+  }
 
-    protected getWallet(): Wallet {
-        return this._wallet;
-    }
+  protected getWallet(): Wallet {
+    return this._wallet;
+  }
 
-    public getAddresses(index: uint32_t, count: uint32_t, internal: boolean): string[] {
-        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        //ArgInfo("index: {}", index);
-        //ArgInfo("count: {}", count);
-        //ArgInfo("internal: {}", internal);
+  public getAddresses(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean
+  ): string[] {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    //ArgInfo("index: {}", index);
+    //ArgInfo("count: {}", count);
+    //ArgInfo("internal: {}", internal);
 
-        ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
+    ErrorChecker.checkParam(
+      index + count <= index,
+      Error.Code.InvalidArgument,
+      "index & count overflow"
+    );
 
-        let addresses: Address[] = [];
-        this.getWallet().getAddresses(addresses, index, count, internal);
+    let addresses: Address[] = [];
+    this.getWallet().getAddresses(addresses, index, count, internal);
 
-        let addressStrings: string[] = [];
-        for (let address of addresses)
-            addressStrings.push(address.string());
+    let addressStrings: string[] = [];
+    for (let address of addresses) addressStrings.push(address.string());
 
-        //ArgInfo("r => {}", j.dump());
+    //ArgInfo("r => {}", j.dump());
 
-        return addressStrings;
-    }
+    return addressStrings;
+  }
 
-    public getPublicKeys(index: uint32_t, count: uint32_t, internal: boolean): json {
-        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        //ArgInfo("index: {}", index);
-        //ArgInfo("count: {}", count);
-        //ArgInfo("internal: {}", internal);
+  public getPublicKeys(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean
+  ): json {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    //ArgInfo("index: {}", index);
+    //ArgInfo("count: {}", count);
+    //ArgInfo("internal: {}", internal);
 
-        ErrorChecker.checkParam(index + count <= index, Error.Code.InvalidArgument, "index & count overflow");
+    ErrorChecker.checkParam(
+      index + count <= index,
+      Error.Code.InvalidArgument,
+      "index & count overflow"
+    );
 
-        nlohmann::json j;
-        this.getWallet().getPublickeys(j, index, count, internal);
+    let j: json;
+    this.getWallet().getPublickeys(j, index, count, internal);
 
-        //ArgInfo("r => {}", j.dump());
-        return j;
-    }
+    //ArgInfo("r => {}", j.dump());
+    return j;
+  }
 
-    public createTransaction(inputsJson: JSONArray, outputsJson: JSONArray, fee: string, memo: string): json {
-        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        //ArgInfo("inputs: {}", inputsJson.dump());
-        //ArgInfo("outputs: {}", outputsJson.dump());
-        //ArgInfo("fee: {}", fee);
-        //ArgInfo("memo: {}", memo);
+  public createTransaction(
+    inputsJson: JSONArray,
+    outputsJson: JSONArray,
+    fee: string,
+    memo: string
+  ): json {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    //ArgInfo("inputs: {}", inputsJson.dump());
+    //ArgInfo("outputs: {}", outputsJson.dump());
+    //ArgInfo("fee: {}", fee);
+    //ArgInfo("memo: {}", memo);
 
-        let wallet = this.getWallet();
+    let wallet = this.getWallet();
 
-        let utxos = new UTXOSet();
-        this.UTXOFromJson(utxos, inputsJson);
+    let utxos = new UTXOSet();
+    this.UTXOFromJson(utxos, inputsJson);
 
-        let outputs: TransactionOutput[] = [];
-        this.outputsFromJson(outputs, outputsJson);
+    let outputs: TransactionOutput[] = [];
+    this.outputsFromJson(outputs, outputsJson);
 
-        let feeAmount = new BigNumber(fee);
+    let feeAmount = new BigNumber(fee);
 
-        let payload = new TransferAsset();
-        let tx = wallet.createTransaction(TransactionType.transferAsset, payload, utxos, outputs, memo, feeAmount);
+    let payload = new TransferAsset();
+    let tx = wallet.createTransaction(
+      TransactionType.transferAsset,
+      payload,
+      utxos,
+      outputs,
+      memo,
+      feeAmount
+    );
 
-        let result: json = {};
-        this.encodeTx(result, tx);
+    let result: json = {};
+    this.encodeTx(result, tx);
 
-        //ArgInfo("r => {}", result.dump());
-        return result;
-    }
+    //ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
-    public SignTransaction(tx: json, payPassword: string): json {
-        /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+  public SignTransaction(tx: json, payPassword: string): json {
+    /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
 
-        let txn = this.decodeTx(tx);
+    let txn = this.decodeTx(tx);
 
-        this.getWallet().signTransaction(txn, payPassword);
+    this.getWallet().signTransaction(txn, payPassword);
 
-        let result: json;
-        this.encodeTx(result, txn);
+    let result: json;
+    this.encodeTx(result, txn);
 
-        //ArgInfo("r => {}", result.dump());
-        return result;
-    }
+    //ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
-    /*std::string ElastosBaseSubWallet::SignDigest(const std::string &address, const std::string &digest, const std::string &payPassword) const {
+  /*std::string ElastosBaseSubWallet::SignDigest(const std::string &address, const std::string &digest, const std::string &payPassword) const {
         ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("address: {}", address);
         ArgInfo("digest: {}", digest);
@@ -200,20 +251,20 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         return r;
     }*/
 
-    public getTransactionSignedInfo(encodedTx: json) {
-        //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        //ArgInfo("tx: {}", encodedTx.dump());
+  public getTransactionSignedInfo(encodedTx: json) {
+    //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    //ArgInfo("tx: {}", encodedTx.dump());
 
-        let tx = this.decodeTx(encodedTx);
+    let tx = this.decodeTx(encodedTx);
 
-        let info = tx.getSignedInfo();
+    let info = tx.getSignedInfo();
 
-        //ArgInfo("r => {}", info.dump());
+    //ArgInfo("r => {}", info.dump());
 
-        return info;
-    }
+    return info;
+  }
 
-    /*std::string ElastosBaseSubWallet::ConvertToRawTransaction(const nlohmann::json &tx) {
+  /*std::string ElastosBaseSubWallet::ConvertToRawTransaction(const nlohmann::json &tx) {
         ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
 
@@ -227,105 +278,150 @@ export class ElastosBaseSubWallet extends SubWallet implements IElastosBaseSubWa
         return rawtx;
     }*/
 
-    // TODO: result as return value
-    protected encodeTx(result: json, tx: Transaction) {
-        let stream = new ByteStream();
-        tx.serialize(stream);
-        const hex = stream.getBytes();
+  // TODO: result as return value
+  protected encodeTx(result: json, tx: Transaction) {
+    let stream = new ByteStream();
+    tx.serialize(stream);
+    const hex = stream.getBytes();
 
-        result["Algorithm"] = "base64";
-        result["ID"] = tx.getHash().toString(16).substr(0, 8);
-        result["Data"] = hex.toString("base64");
-        result["ChainID"] = this.getChainID();
-        result["Fee"] = tx.getFee().toNumber();
+    result["Algorithm"] = "base64";
+    result["ID"] = tx.getHash().toString(16).substr(0, 8);
+    result["Data"] = hex.toString("base64");
+    result["ChainID"] = this.getChainID();
+    result["Fee"] = tx.getFee().toNumber();
+  }
+
+  // TODO: replace json with structured type
+  protected decodeTx(encodedTx: json): Transaction {
+    if (
+      !("Algorithm" in encodedTx) ||
+      !("Data" in encodedTx) ||
+      !("ChainID" in encodedTx)
+    ) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "Invalid input"
+      );
     }
 
-    // TODO: replace json with structured type
-    protected decodeTx(encodedTx: json): Transaction {
-        if (!("Algorithm" in encodedTx) ||
-            !("Data" in encodedTx) ||
-            !("ChainID" in encodedTx)) {
-            ErrorChecker.throwParamException(Error.Code.InvalidArgument, "Invalid input");
-        }
+    let algorithm: string, data: string, chainID: string;
+    let fee: uint64_t = new BigNumber(0);
 
-        let algorithm: string, data: string, chainID: string;
-        let fee: uint64_t = new BigNumber(0);
-
-        try {
-            algorithm = encodedTx["Algorithm"] as string;
-            data = encodedTx["Data"] as string;
-            chainID = encodedTx["ChainID"] as string;
-            if ("Fee" in encodedTx)
-                fee = new BigNumber(encodedTx["Fee"] as string); // WAS encodedTx["Fee"].get<uint64_t>();
-        } catch (e) {
-            ErrorChecker.throwParamException(Error.Code.InvalidArgument, "Invalid input: " + e);
-        }
-
-        if (chainID != this.getChainID()) {
-            ErrorChecker.throwParamException(Error.Code.InvalidArgument,
-                "Invalid input: tx is not belongs to current subwallet");
-        }
-
-        let tx: Transaction = null;
-        if (this.getChainID() == CHAINID_MAINCHAIN) {
-            tx = new Transaction();
-        } else if (this.getChainID() == CHAINID_IDCHAIN || this.getChainID() == CHAINID_TOKENCHAIN) {
-            // TODO tx = new IDTransaction();
-        }
-
-        let rawHex: bytes_t;
-        if (algorithm == "base64") {
-            rawHex = Buffer.from(data, "base64");
-        } else {
-            ErrorChecker.checkCondition(true, Error.Code.InvalidArgument, "Decode tx with unknown algorithm");
-        }
-
-        let stream = new ByteStream(rawHex);
-        ErrorChecker.checkParam(!tx.deserialize(stream), Error.Code.InvalidArgument, "Invalid input: deserialize fail");
-        tx.setFee(fee);
-
-        //SPVLOG_DEBUG("decoded tx: {}", tx->ToJson().dump(4));
-        return tx;
+    try {
+      algorithm = encodedTx["Algorithm"] as string;
+      data = encodedTx["Data"] as string;
+      chainID = encodedTx["ChainID"] as string;
+      if ("Fee" in encodedTx) fee = new BigNumber(encodedTx["Fee"] as string); // WAS encodedTx["Fee"].get<uint64_t>();
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "Invalid input: " + e
+      );
     }
 
-    protected UTXOFromJson(utxo: UTXOSet, j: JSONArray): boolean {
-        for (let utxoJson of j) {
-            utxoJson = utxoJson as json;
-            if (!("TxHash" in utxoJson) ||
-                !("Index" in utxoJson) ||
-                !("Address" in utxoJson) ||
-                !("Amount" in utxoJson)) {
-                ErrorChecker.throwParamException(Error.Code.InvalidArgument, "invalid inputs");
-            }
-
-            let hash: uint256 = new BigNumber(utxoJson["TxHash"] as string, 16);
-            let n: uint16_t = utxoJson["Index"] as uint16_t;
-
-            let address = Address.newFromAddressString(utxoJson["Address"] as string);
-            ErrorChecker.checkParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of inputs");
-
-            let amount = new BigNumber(utxoJson["Amount"] as string); // Base 10
-            ErrorChecker.checkParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of inputs");
-
-            utxo.push(UTXO.newFromParams(hash, n, address, amount));
-        }
-        utxo.sortUTXOs();
-
-        return true;
+    if (chainID != this.getChainID()) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "Invalid input: tx is not belongs to current subwallet"
+      );
     }
 
-    private outputsFromJson(outputs: TransactionOutput[], outputsJson: JSONArray): boolean {
-        for (let outputJson of outputsJson) {
-            let amount = new BigNumber(outputJson["Amount"] as string);
-            ErrorChecker.checkParam(amount.lt(0), Error.Code.InvalidArgument, "invalid amount of outputs");
-
-            let address = Address.newFromAddressString(outputJson["Address"] as string);
-            ErrorChecker.checkParam(!address.valid(), Error.Code.InvalidArgument, "invalid address of outputs");
-
-            let output = TransactionOutput.newFromParams(amount, address);
-            outputs.push(output);
-        }
-        return true;
+    let tx: Transaction = null;
+    if (this.getChainID() == CHAINID_MAINCHAIN) {
+      tx = new Transaction();
+    } else if (
+      this.getChainID() == CHAINID_IDCHAIN ||
+      this.getChainID() == CHAINID_TOKENCHAIN
+    ) {
+      // TODO tx = new IDTransaction();
     }
 
+    let rawHex: bytes_t;
+    if (algorithm == "base64") {
+      rawHex = Buffer.from(data, "base64");
+    } else {
+      ErrorChecker.checkCondition(
+        true,
+        Error.Code.InvalidArgument,
+        "Decode tx with unknown algorithm"
+      );
+    }
+
+    let stream = new ByteStream(rawHex);
+    ErrorChecker.checkParam(
+      !tx.deserialize(stream),
+      Error.Code.InvalidArgument,
+      "Invalid input: deserialize fail"
+    );
+    tx.setFee(fee);
+
+    //SPVLOG_DEBUG("decoded tx: {}", tx->ToJson().dump(4));
+    return tx;
+  }
+
+  protected UTXOFromJson(utxo: UTXOSet, j: JSONArray): boolean {
+    for (let utxoJson of j) {
+      utxoJson = utxoJson as json;
+      if (
+        !("TxHash" in utxoJson) ||
+        !("Index" in utxoJson) ||
+        !("Address" in utxoJson) ||
+        !("Amount" in utxoJson)
+      ) {
+        ErrorChecker.throwParamException(
+          Error.Code.InvalidArgument,
+          "invalid inputs"
+        );
+      }
+
+      let hash: uint256 = new BigNumber(utxoJson["TxHash"] as string, 16);
+      let n: uint16_t = utxoJson["Index"] as uint16_t;
+
+      let address = Address.newFromAddressString(utxoJson["Address"] as string);
+      ErrorChecker.checkParam(
+        !address.valid(),
+        Error.Code.InvalidArgument,
+        "invalid address of inputs"
+      );
+
+      let amount = new BigNumber(utxoJson["Amount"] as string); // Base 10
+      ErrorChecker.checkParam(
+        amount.lt(0),
+        Error.Code.InvalidArgument,
+        "invalid amount of inputs"
+      );
+
+      utxo.push(UTXO.newFromParams(hash, n, address, amount));
+    }
+    utxo.sortUTXOs();
+
+    return true;
+  }
+
+  private outputsFromJson(
+    outputs: TransactionOutput[],
+    outputsJson: JSONArray
+  ): boolean {
+    for (let outputJson of outputsJson) {
+      let amount = new BigNumber(outputJson["Amount"] as string);
+      ErrorChecker.checkParam(
+        amount.lt(0),
+        Error.Code.InvalidArgument,
+        "invalid amount of outputs"
+      );
+
+      let address = Address.newFromAddressString(
+        outputJson["Address"] as string
+      );
+      ErrorChecker.checkParam(
+        !address.valid(),
+        Error.Code.InvalidArgument,
+        "invalid address of outputs"
+      );
+
+      let output = TransactionOutput.newFromParams(amount, address);
+      outputs.push(output);
+    }
+    return true;
+  }
 }
