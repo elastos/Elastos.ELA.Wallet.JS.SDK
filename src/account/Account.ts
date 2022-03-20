@@ -346,7 +346,10 @@ export class Account {
       .deriveWithPath("44'/144'/0'/0/0")
       .getPublicKeyBytes()
       .toString("hex");
-    const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
+    const encryptedMnemonic: string = AESEncrypt(
+      Buffer.from(mnemonic),
+      payPasswd
+    );
     const encryptedxPrvKey: string = AESEncrypt(
       rootkey.getPrivateKeyBytes(),
       payPasswd
@@ -437,7 +440,10 @@ export class Account {
       .getPublicKeyBytes()
       .toString("hex");
 
-    const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
+    const encryptedMnemonic: string = AESEncrypt(
+      Buffer.from(mnemonic),
+      payPasswd
+    );
     const encryptedxPrvKey: string = AESEncrypt(
       rootkey.getPrivateKeyBytes(),
       payPasswd
@@ -551,66 +557,66 @@ export class Account {
 */
 
   public static newFromKeyStore(path: string, ks: KeyStore, payPasswd: string) {
-		const ElaNewWalletJson &json = ks.WalletJson();
-		
-		const account = new Account()
-		account._localstore = new LocalStore(path);
-		bytes_t bytes;
-		std::string str;
+  	const ElaNewWalletJson &json = ks.WalletJson();
 
-		account._localstore.setReadonly(true);
-		if (!json.xPrivKey().empty()) {
-			Base58::CheckDecode(json.xPrivKey(), bytes);
-			HDKeychain rootkey(CTElastos, bytes);
-			
-			const encrypedPrivKey: string = AESEncrypt(bytes, payPasswd);
-			account._localstore.setxPrivKey(encrypedPrivKey);
-			account._localstore.setReadonly(false);
-		}
+  	const account = new Account()
+  	account._localstore = new LocalStore(path);
+  	let bytes: Buffer;
+  	let str: string;
 
-		if (!json.Mnemonic().empty()) {
-			// TODO
-			// const mnemonic = bytes_t(json.Mnemonic().data(), json.Mnemonic().size())
-			const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
-			account._localstore.setMnemonic(encryptedMnemonic);
-			account._localstore.setReadonly(false);
-		}
+  	account._localstore.setReadonly(true);
+  	if (json.xPrivKey()) {
+  		bytes = Base58Check.decode(json.xPrivKey());
+      const deterministicKey = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS)
+      const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos)
 
-		if (!json.RequestPrivKey().empty()) {
-			bytes.setHex(json.RequestPrivKey());
+  		const encrypedPrivKey: string = AESEncrypt(bytes, payPasswd);
+  		account._localstore.setxPrivKey(encrypedPrivKey);
+  		account._localstore.setReadonly(false);
+  	}
 
-			account._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
-			account._localstore.setReadonly(false);
-		}
+  	if (json.Mnemonic()) {
+  		const mnemonic = json.Mnemonic()
+  		const encryptedMnemonic: string = AESEncrypt(Buffer.from(mnemonic), payPasswd);
+  		account._localstore.setMnemonic(encryptedMnemonic);
+  		account._localstore.setReadonly(false);
+  	}
 
-		if (!json.GetSeed().empty()) {
-			bytes.setHex(json.GetSeed());
-			account._localstore.setSeed(AESEncrypt(bytes, payPasswd));
-			account._localstore.setReadonly(false);
-		}
+  	if (json.RequestPrivKey()) {
+  		bytes.setHex(json.RequestPrivKey());
 
-		if (!json.GetSinglePrivateKey().empty()) {
-			bytes.setHex(json.GetSinglePrivateKey());
-			account._localstore.setSinglePrivateKey(AESEncrypt(bytes, payPasswd));
-			account._localstore.setReadonly(false);
-		}
+  		account._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
+  		account._localstore.setReadonly(false);
+  	}
 
-		account._localstore.setxPubKeyBitcoin(json.GetxPubKeyBitcoin());
-		account._localstore.setxPubKey(json.xPubKey());
-		account._localstore.setRequestPubKey(json.RequestPubKey());
-		account._localstore.setPublicKeyRing(json.GetPublicKeyRing());
-		account._localstore.setM(json.GetM());
-		account._localstore.setN(json.GetN());
-		account._localstore.setHasPassPhrase(json.HasPassPhrase());
-		account._localstore.setSingleAddress(json.SingleAddress());
-		account._localstore.setDerivationStrategy(json.DerivationStrategy());
-		account._localstore.setxPubKeyHDPM(json.xPubKeyHDPM());
-		account._localstore.setOwnerPubKey(json.OwnerPubKey());
-		account._localstore.setSubWalletInfoList(json.GetCoinInfoList());
-		account._localstore.setETHSCPrimaryPubKey(json.GetETHSCPrimaryPubKey());
-		account._localstore.setRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
+  	if (json.GetSeed()) {
+  		bytes.setHex(json.GetSeed());
+  		account._localstore.setSeed(AESEncrypt(bytes, payPasswd));
+  		account._localstore.setReadonly(false);
+  	}
 
-		account.init();
+  	if (json.GetSinglePrivateKey()) {
+  		bytes.setHex(json.GetSinglePrivateKey());
+  		account._localstore.setSinglePrivateKey(AESEncrypt(bytes, payPasswd));
+  		account._localstore.setReadonly(false);
+  	}
+
+  	account._localstore.setxPubKeyBitcoin(json.GetxPubKeyBitcoin());
+  	account._localstore.setxPubKey(json.xPubKey());
+  	account._localstore.setRequestPubKey(json.RequestPubKey());
+  	account._localstore.setPublicKeyRing(json.GetPublicKeyRing());
+  	account._localstore.setM(json.GetM());
+  	account._localstore.setN(json.GetN());
+  	account._localstore.setHasPassPhrase(json.HasPassPhrase());
+  	account._localstore.setSingleAddress(json.SingleAddress());
+  	account._localstore.setDerivationStrategy(json.DerivationStrategy());
+  	account._localstore.setxPubKeyHDPM(json.xPubKeyHDPM());
+  	account._localstore.setOwnerPubKey(json.OwnerPubKey());
+  	account._localstore.setSubWalletInfoList(json.GetCoinInfoList());
+  	account._localstore.setETHSCPrimaryPubKey(json.GetETHSCPrimaryPubKey());
+  	account._localstore.setRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
+
+  	account.init();
   }
 
   public RequestPubKey(): bytes_t {
@@ -716,36 +722,57 @@ export class Account {
     }
   }
 
-  /*
-	void Account::ResetPassword(const std::string &mnemonic, const std::string &passphrase, const std::string &newPassword) {
-		if (!_localstore->Readonly()) {
-			ErrorChecker::CheckPassword(newPassword, "New");
+  resetPassword(mnemonic: string, passphrase: string, newPassword: string) {
+    if (!this._localstore.readonly()) {
+      ErrorChecker.checkPassword(newPassword, "New");
+      const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
+      const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
+      const stdrootkey = HDKey.fromMnemonic(
+        mnemonic,
+        passphrase,
+        KeySpec.Bitcoin
+      );
+      const ethkey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
 
-			uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
-			HDSeed hdseed(seed.bytes());
-			HDKeychain rootkey(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-			HDKeychain stdrootkey(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
-							HDKeychain ethkey = stdrootkey.getChild("44'/60'/0'/0/0");
-			std::string xPubKey = Base58::CheckEncode(rootkey.getChild("44'/0'/0'").getPublic().extkey());
-			if (xPubKey != _localstore->GetxPubKey())
-				ErrorChecker::ThrowParamException(Error::InvalidArgument, "xpub not match");
+      const xPubKey: string = Base58Check.encode(
+        rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+      );
+      if (xPubKey != this._localstore.getxPubKey()) {
+        ErrorChecker.throwParamException(
+          Error.Code.InvalidArgument,
+          "xpub not match"
+        );
+      }
 
-			std::string encryptedSinglePrivateKey = AES::EncryptCCM(ethkey.privkey(), newPassword);
-			std::string encryptedSeed = AES::EncryptCCM(bytes_t(seed.begin(), seed.size()), newPassword);
-			std::string encryptedMnemonic = AES::EncryptCCM(bytes_t(mnemonic.data(), mnemonic.size()), newPassword);
-			std::string encryptedxPrvKey = AES::EncryptCCM(rootkey.extkey(), newPassword);
-			HDKeychain requestKey = rootkey.getChild("1'/0");
-			std::string encryptedRequestPrvKey = AES::EncryptCCM(requestKey.privkey(), newPassword);
+      const encryptedSinglePrivateKey: string = AESEncrypt(
+        ethkey.getPrivateKeyBytes(),
+        newPassword
+      );
+      const encryptedSeed: string = AESEncrypt(seed, newPassword);
+      const encryptedMnemonic: string = AESEncrypt(
+        Buffer.from(mnemonic),
+        newPassword
+      );
+      const encryptedxPrvKey: string = AESEncrypt(
+        rootkey.getPrivateKeyBytes(),
+        newPassword
+      );
+      const requestKey = rootkey.deriveWithPath("1'/0");
 
-			_localstore->SetSeed(encryptedSeed);
-			_localstore->SetMnemonic(encryptedMnemonic);
-			_localstore->SetxPrivKey(encryptedxPrvKey);
-			_localstore->SetRequestPrivKey(encryptedRequestPrvKey);
-			_localstore->SetSinglePrivateKey(encryptedSinglePrivateKey);
+      const encryptedRequestPrvKey: string = AESEncrypt(
+        requestKey.getPublicKeyBytes(),
+        newPassword
+      );
 
-			_localstore->Save();
-		}
-	}*/
+      this._localstore.setSeed(encryptedSeed);
+      this._localstore.setMnemonic(encryptedMnemonic);
+      this._localstore.setxPrivKey(encryptedxPrvKey);
+      this._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+      this._localstore.setSinglePrivateKey(encryptedSinglePrivateKey);
+
+      this._localstore.save();
+    }
+  }
 
   public getBasicInfo(): json {
     let j = {};
@@ -819,29 +846,29 @@ export class Account {
     return this._localstore.derivationStrategy();
   }
 
-  /*
-	nlohmann::json Account::GetPubKeyInfo() const {
-		nlohmann::json j, jCosigners;
+  getPubKeyInfo(): JSON {
+    const j: JSON;
+    const jCosigners: string[] = [];
 
-		j["m"] = _localstore->GetM();
-		j["n"] = _localstore->GetN();
-		j["derivationStrategy"] = _localstore->DerivationStrategy();
+    j["m"] = this._localstore.getM();
+    j["n"] = this._localstore.getN();
+    j["derivationStrategy"] = this._localstore.derivationStrategy();
 
-		if (_localstore->GetN() > 1 && _localstore->Readonly()) {
-			j["xPubKey"] = nlohmann::json();
-			j["xPubKeyHDPM"] = nlohmann::json();
-		} else {
-			j["xPubKey"] = _localstore->GetxPubKey();
-			j["xPubKeyHDPM"] = _localstore->GetxPubKeyHDPM();
-		}
+    if (this._localstore.getN() > 1 && this._localstore.readonly()) {
+      j["xPubKey"] = null;
+      j["xPubKeyHDPM"] = null;
+    } else {
+      j["xPubKey"] = this._localstore.getxPubKey();
+      j["xPubKeyHDPM"] = this._localstore.getxPubKeyHDPM();
+    }
 
-		for (size_t i = 0; i < _localstore->GetPublicKeyRing().size(); ++i)
-			jCosigners.push_back(_localstore->GetPublicKeyRing()[i].GetxPubKey());
+    for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i)
+      jCosigners.push(this._localstore.getPublicKeyRing()[i].getxPubKey());
 
-		j["publicKeyRing"] = jCosigners;
+    j["publicKeyRing"] = jCosigners;
 
-		return j;
-	}*/
+    return j;
+  }
 
   public multiSignSigner(): HDKey {
     ErrorChecker.checkLogic(
@@ -1163,156 +1190,197 @@ export class Account {
 		return true;
 	}
 #endif
-
-	std::string Account::ExportMnemonic(const std::string &payPasswd) const {
-		if (_localstore->Readonly()) {
-			ErrorChecker::ThrowLogicException(Error::UnsupportOperation, "Readonly wallet can not export mnemonic");
-		}
-
-					if (_localstore->GetxPubKeyBitcoin().empty()) {
-							RegenerateKey(payPasswd);
-							Init();
-					}
-
-					std::string m;
-
-		std::string encryptedMnemonic = _localstore->GetMnemonic();
-					if (!encryptedMnemonic.empty()) {
-							bytes_t bytes = AES::DecryptCCM(encryptedMnemonic, payPasswd);
-							m = std::string((char *) bytes.data(), bytes.size());
-					}
-
-		return m;
-	}
-
-			void Account::RegenerateKey(const std::string &payPasswd) const {
-					Log::info("Doing regenerate pubkey...");
-					std::vector<PublicKeyRing> pubkeyRing = _localstore->GetPublicKeyRing();
-
-					HDKeychain rootkey, stdrootkey;
-					bytes_t bytes;
-					uint512 seed;
-					std::string tmpstr;
-					bool haveSeed = false, haveRootkey = false, havestdrootkey = false;
-
-					if (_localstore->GetSeed().empty() && !_localstore->GetMnemonic().empty() &&
-							(!_localstore->HasPassPhrase() || (_localstore->HasPassPhrase() && !_localstore->GetPassPhrase().empty()))) {
-
-							bytes = AES::DecryptCCM(_localstore->GetMnemonic(), payPasswd);
-							std::string mnemonic = std::string((char *) &bytes[0], bytes.size());
-							bytes = AES::DecryptCCM(_localstore->GetPassPhrase(), payPasswd);
-							std::string passphrase = std::string((char *)&bytes[0], bytes.size());
-							seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
-							_localstore->SetSeed(AES::EncryptCCM(seed.bytes(), payPasswd));
-							haveSeed = true;
-
-							if (!_localstore->GetPassPhrase().empty())
-									_localstore->SetHasPassPhrase(true);
-							_localstore->SetPassPhrase("");
-					} else if (!_localstore->GetSeed().empty()) {
-							bytes = AES::DecryptCCM(_localstore->GetSeed(), payPasswd);
-							seed = bytes;
-							haveSeed = true;
-					}
-
-					if (_localstore->GetxPrivKey().empty() && haveSeed) {
-							HDSeed hdseed(seed.bytes());
-							rootkey = HDKeychain(CTElastos, hdseed.getExtendedKey(CTElastos, true));
-							// encrypt private key
-							_localstore->SetxPrivKey(AES::EncryptCCM(rootkey.extkey(), payPasswd));
-							haveRootkey = true;
-					} else if (!_localstore->GetxPrivKey().empty()) {
-							bytes = AES::DecryptCCM(_localstore->GetxPrivKey(), payPasswd);
-							rootkey = HDKeychain(CTElastos, bytes);
-							haveRootkey = true;
-					}
-
-					if (_localstore->GetRequestPrivKey().empty() && haveRootkey) {
-							HDKeychain requestKey = rootkey.getChild("1'/0");
-							bytes = requestKey.privkey();
-							_localstore->SetRequestPrivKey(AES::EncryptCCM(bytes, payPasswd));
-							_localstore->SetRequestPubKey(requestKey.pubkey().getHex());
-					}
-
-					// master public key
-					if (_localstore->GetxPubKey().empty() && haveRootkey) {
-							HDKeychain xpub = rootkey.getChild("44'/0'/0'").getPublic();
-							_localstore->SetxPubKey(Base58::CheckEncode(xpub.extkey()));
-					}
-
-					if (!havestdrootkey && haveSeed) {
-							HDSeed hdseed(seed.bytes());
-							stdrootkey = HDKeychain(CTBitcoin, hdseed.getExtendedKey(CTBitcoin, true));
-							havestdrootkey = true;
-					}
-					// bitcoin master public key
-					if (_localstore->GetxPubKeyBitcoin().empty() && havestdrootkey) {
-							tmpstr = Base58::CheckEncode(stdrootkey.getChild("44'/0'/0'").getPublic().extkey());
-							_localstore->SetxPubKeyBitcoin(tmpstr);
-					}
-					// eth primary public key
-					if ((_localstore->GetETHSCPrimaryPubKey().empty() || _localstore->GetSinglePrivateKey().empty()) && havestdrootkey) {
-							HDKeychain ethkey = stdrootkey.getChild("44'/60'/0'/0/0");
-							tmpstr = ethkey.uncompressed_pubkey().getHex();
-							_localstore->SetETHSCPrimaryPubKey(tmpstr);
-							_localstore->SetSinglePrivateKey(AES::EncryptCCM(ethkey.privkey(), payPasswd));
-					}
-					// ripple primary public key
-					if (_localstore->GetRipplePrimaryPubKey().empty() && havestdrootkey) {
-							HDKeychain ripplekey = stdrootkey.getChild("44'/144'/0'/0/0");
-							_localstore->SetRipplePrimaryPubKey(ripplekey.pubkey().getHex());
-					}
-
-					if (_localstore->GetxPubKeyHDPM().empty() && haveRootkey) {
-							HDKeychain xpubHDPM = rootkey.getChild("45'").getPublic();
-							_localstore->SetxPubKeyHDPM(Base58::CheckEncode(xpubHDPM.extkey()));
-					}
-
-					// 44'/coinIndex'/account'/change/index
-					if (_localstore->GetOwnerPubKey().empty() && haveRootkey) {
-							bytes = rootkey.getChild("44'/0'/1'/0/0").pubkey();
-							_localstore->SetOwnerPubKey(bytes.getHex());
-					}
-
-					if (_localstore->GetN() > 1 && !_localstore->GetxPubKey().empty()) {
-							for (auto it = pubkeyRing.begin(); it != pubkeyRing.end(); ++it) {
-									if (_localstore->GetxPubKey() == (*it).GetxPubKey() ||
-											_localstore->GetxPubKeyHDPM() == (*it).GetxPubKey()) {
-											pubkeyRing.erase(it);
-											break;
-									}
-							}
-
-							if (_localstore->DerivationStrategy() == "BIP44") {
-									pubkeyRing.emplace_back(_localstore->GetRequestPubKey(), _localstore->GetxPubKey());
-							} else {
-									pubkeyRing.emplace_back(_localstore->GetRequestPubKey(), _localstore->GetxPubKeyHDPM());
-							}
-							_localstore->SetPublicKeyRing(pubkeyRing);
-					}
-
-					_localstore->Save();
-			}
-
-	uint512 Account::GetSeed(const std::string &payPasswd) const {
-		uint512 seed;
-		bytes_t bytes = AES::DecryptCCM(_localstore->GetSeed(), payPasswd);
-		memcpy(seed.begin(), bytes.data(), MIN(bytes.size(), seed.size()));
-		return seed;
-	}
-
-	bytes_t Account::GetETHSCPubKey() const {
-		bytes_t pubkey;
-		pubkey.setHex(_localstore->GetETHSCPrimaryPubKey());
-		return pubkey;
-	}
-
-			bytes_t Account::GetRipplePubKey() const {
-					bytes_t pubkey;
-					pubkey.setHex(_localstore->GetRipplePrimaryPubKey());
-					return pubkey;
-	}
 */
+
+  exportMnemonic(payPasswd: string): string {
+    if (this._localstore.readonly()) {
+      ErrorChecker.throwLogicException(
+        Error.Code.UnsupportOperation,
+        "Readonly wallet can not export mnemonic"
+      );
+    }
+
+    if (this._localstore.getxPubKeyBitcoin()) {
+      this.regenerateKey(payPasswd);
+      this.init();
+    }
+
+    let m: string;
+
+    const encryptedMnemonic = this._localstore.getMnemonic();
+    if (encryptedMnemonic) {
+      const bytes = AESDecrypt(encryptedMnemonic, payPasswd);
+      m = bytes.toString();
+    }
+
+    return m;
+  }
+
+  regenerateKey(payPasswd: string) {
+    Log.info("Doing regenerate pubkey...");
+    let pubkeyRing: PublicKeyRing[] = this._localstore.getPublicKeyRing();
+
+    let rootkey: HDKey;
+    let stdrootkey: HDKey;
+    let seed: Buffer;
+    let tmpstr: string;
+    let haveSeed = false;
+    let haveRootkey = false;
+    let havestdrootkey = false;
+
+    if (
+      !this._localstore.getSeed() &&
+      this._localstore.getMnemonic() &&
+      (!this._localstore.hasPassPhrase() ||
+        (this._localstore.hasPassPhrase() && this._localstore.getPassPhrase()))
+    ) {
+      const mnemonic = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
+
+      const passphrase: string = AESDecrypt(
+        this._localstore.getPassPhrase(),
+        payPasswd
+      );
+
+      seed = Mnemonic.toSeed(mnemonic, passphrase);
+      this._localstore.setSeed(AESEncrypt(seed, payPasswd));
+      haveSeed = true;
+
+      if (this._localstore.getPassPhrase()) {
+        this._localstore.setHasPassPhrase(true);
+      }
+
+      this._localstore.setPassPhrase("");
+    } else if (this._localstore.getSeed()) {
+      const bytes = AESDecrypt(this._localstore.getSeed(), payPasswd);
+      seed = bytes;
+      haveSeed = true;
+    }
+
+    if (!this._localstore.getxPrivKey() && haveSeed) {
+      rootkey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
+      // encrypt private key
+      this._localstore.setxPrivKey(
+        AESEncrypt(rootkey.getPrivateKeyBytes(), payPasswd)
+      );
+      haveRootkey = true;
+    } else if (this._localstore.getxPrivKey()) {
+      const bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+      const deterministicKey = new DeterministicKey(
+        DeterministicKey.ELASTOS_VERSIONS
+      );
+      deterministicKey.privateKey = bytes;
+      rootkey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+      haveRootkey = true;
+    }
+
+    if (!this._localstore.getRequestPrivKey() && haveRootkey) {
+      const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
+      const bytes = requestKey.getPrivateKeyBytes();
+      this._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
+      this._localstore.setRequestPubKey(
+        requestKey.getPublicKeyBytes().toString("hex")
+      );
+    }
+
+    // master public key
+    if (!this._localstore.getxPubKey() && haveRootkey) {
+      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      this._localstore.setxPubKey(Base58Check.encode(xpub.getPublicKeyBytes()));
+    }
+
+    if (!havestdrootkey && haveSeed) {
+      stdrootkey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
+      havestdrootkey = true;
+    }
+
+    // bitcoin master public key
+    if (!this._localstore.getxPubKeyBitcoin() && havestdrootkey) {
+      tmpstr = Base58Check.encode(
+        stdrootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+      );
+      this._localstore.setxPubKeyBitcoin(tmpstr);
+    }
+
+    // eth primary public key
+    if (
+      (!this._localstore.getETHSCPrimaryPubKey() ||
+        !this._localstore.getSinglePrivateKey()) &&
+      havestdrootkey
+    ) {
+      const ethkey: HDKey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
+      tmpstr = ethkey.getPublicKeyBytes().toString("hex");
+      this._localstore.setETHSCPrimaryPubKey(tmpstr);
+      this._localstore.setSinglePrivateKey(
+        AESEncrypt(ethkey.getPrivateKeyBytes(), payPasswd)
+      );
+    }
+
+    // ripple primary public key
+    if (!this._localstore.getRipplePrimaryPubKey() && havestdrootkey) {
+      const ripplekey: HDKey = stdrootkey.deriveWithPath("44'/144'/0'/0/0");
+      this._localstore.setRipplePrimaryPubKey(
+        ripplekey.getPublicKeyBytes().toString("hex")
+      );
+    }
+
+    if (!this._localstore.getxPubKeyHDPM() && haveRootkey) {
+      const xpubHDPM: HDKey = rootkey.deriveWithPath("45'");
+      this._localstore.setxPubKeyHDPM(
+        Base58Check.encode(xpubHDPM.getPublicKeyBytes())
+      );
+    }
+
+    // 44'/coinIndex'/account'/change/index
+    if (!this._localstore.getOwnerPubKey() && haveRootkey) {
+      const bytes = rootkey.deriveWithPath("44'/0'/1'/0/0").getPublicKeyBytes();
+      this._localstore.setOwnerPubKey(bytes.toString("hex"));
+    }
+
+    if (this._localstore.getN() > 1 && this._localstore.getxPubKey()) {
+      pubkeyRing = pubkeyRing.filter((item) => {
+        !(
+          this._localstore.getxPubKey() == item.getxPubKey() ||
+          this._localstore.getxPubKeyHDPM() == item.getxPubKey()
+        );
+      });
+
+      if (this._localstore.derivationStrategy() == "BIP44") {
+        pubkeyRing.push(
+          new PublicKeyRing(
+            this._localstore.getRequestPubKey(),
+            this._localstore.getxPubKey()
+          )
+        );
+      } else {
+        pubkeyRing.push(
+          new PublicKeyRing(
+            this._localstore.getRequestPubKey(),
+            this._localstore.getxPubKeyHDPM()
+          )
+        );
+      }
+      this._localstore.setPublicKeyRing(pubkeyRing);
+    }
+
+    this._localstore.save();
+  }
+
+  getSeed(payPasswd: string): Buffer {
+    const seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
+    const bytes = Buffer.from(seed);
+    return bytes;
+  }
+
+  getETHSCPubKey(): Buffer {
+    const pubkey = Buffer.from(this._localstore.getETHSCPrimaryPubKey());
+    return pubkey;
+  }
+
+  getRipplePubKey(): Buffer {
+    const pubkey = Buffer.from(this._localstore.getRipplePrimaryPubKey());
+    return pubkey;
+  }
+
   getSinglePrivateKey(passwd: string) {
     return AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
   }
