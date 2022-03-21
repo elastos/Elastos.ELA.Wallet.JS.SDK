@@ -25,7 +25,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
 import { bytes_t, json, JSONArray, size_t, uint256, uint32_t } from "../types";
-import { Address, Prefix, SignType } from "../walletcore/Address";
+import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
 import {
   HDKey,
   SEQUENCE_EXTERNAL_CHAIN,
@@ -96,8 +96,7 @@ export class SubAccount {
 
   getCID(cids: Address[], index: uint32_t, count: size_t, internal: boolean) {
     if (this._parent.getSignType() !== AccountSignType.MultiSign) {
-      let addresses: Address[];
-      this.getAddresses(addresses, index, count, internal);
+      const addresses: Address[] = this.getAddresses(index, count, internal);
 
       for (let addr of addresses) {
         const cid = Address.newFromAddress(addr);
@@ -108,11 +107,10 @@ export class SubAccount {
   }
 
   public getPublickeys(
-    jout: JSONArray,
     index: uint32_t,
     count: size_t,
     internal: boolean
-  ) {
+  ): JSONArray | json {
     if (this._parent.singleAddress()) {
       index = 0;
       count = 1;
@@ -138,7 +136,7 @@ export class SubAccount {
         count = 0;
         Log.error("keychains is empty when derivate address");
       }
-
+      let jout: json;
       jout["m"] = this._parent.getM();
       let jpubkeys: JSONArray;
       while (count--) {
@@ -159,25 +157,27 @@ export class SubAccount {
         index++;
       }
       jout["pubkeys"] = jpubkeys;
+      return jout;
     } else {
       let keychain: HDKey = this._parent.masterPubKey().deriveWithIndex(chain);
-
-      while (count--)
+      let jout: JSONArray;
+      while (count--) {
         jout.push(
           keychain
             .deriveWithIndex(index++)
             .getPublicKeyBytes()
             .toString("hex")
         );
+      }
+      return jout;
     }
   }
 
   public getAddresses(
-    addresses: Address[] /* (out TODO) */,
     index: uint32_t,
     count: uint32_t,
     internal: boolean
-  ) {
+  ): AddressArray {
     if (this._parent.singleAddress()) {
       index = 0;
       count = 1;
@@ -237,9 +237,10 @@ export class SubAccount {
       }
     }
 
-    addresses.length = 0;
+    let addresses: Address[] = [];
     for (let i = index; i < index + count; i++) addresses.push(addrChain[i]);
     // WAS addresses.assign(addrChain.begin() + index, addrChain.begin() + index + count);
+    return addresses;
   }
 
   ownerPubKey(): bytes_t {
@@ -255,18 +256,18 @@ export class SubAccount {
   }
 
   private findPrivateKey(
-    key: HDKey,
     type: SignType,
     pubkeys: bytes_t[],
     payPasswd: string
-  ): boolean {
+  ): { found: boolean; key?: HDKey } {
+    let key: HDKey;
     let root = this._parent.rootKey(payPasswd);
     // for special path
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let pubkey of pubkeys) {
         if (pubkey.equals(this._parent.ownerPubKey())) {
           key = root.deriveWithPath("44'/0'/1'/0/0");
-          return true;
+          return { found: true, key };
         }
       }
     }
@@ -291,19 +292,17 @@ export class SubAccount {
           for (let p of pubkeys) {
             if (bipkeyIndex.getPublicKeyBytes() == p) {
               key = bipkeyIndex;
-              return true;
+              return { found: true, key };
             }
           }
         }
       }
     }
 
-    return false;
+    return { found: false };
   }
 
   public signTransaction(tx: Transaction, payPasswd: string) {
-    let addr: string;
-    let key: DeterministicKey;
     let signature: bytes_t;
     let stream = new ByteStream();
 
@@ -335,19 +334,25 @@ export class SubAccount {
         "Invalid redeem script"
       );
 
-      let found = this.findPrivateKey(key, type, publicKeys, payPasswd);
+      let rs: { found: boolean; key?: HDKey } = this.findPrivateKey(
+        type,
+        publicKeys,
+        payPasswd
+      );
       ErrorChecker.checkLogic(
-        !found,
+        !rs.found,
         Error.Code.PrivateKeyNotFound,
         "Private key not found"
       );
 
+      let privateKey: string = rs.key.getPrivateKeyBase58();
+      const key = DeterministicKey.fromExtendedKey(privateKey);
       stream.reset();
       if (programs[i].getParameter().length > 0) {
         let verifyStream = new ByteStream(programs[i].getParameter());
         while (verifyStream.readVarBytes(signature)) {
           ErrorChecker.checkLogic(
-            key.verify(md, signature),
+            key.verify(Buffer.from(md.toString()), signature),
             Error.Code.AlreadySigned,
             "Already signed"
           );
@@ -355,13 +360,13 @@ export class SubAccount {
         stream.writeBytes(programs[i].getParameter());
       }
 
-      signature = key.sign(md);
+      signature = key.sign(Buffer.from(md.toString()));
       stream.writeVarBytes(signature);
       programs[i].setParameter(stream.getBytes());
     }
   }
 
-  getKeyWithAddress(addr: Address, payPasswd: string): HDKey {
+  getKeyWithAddress(addr: Address, payPasswd: string): DeterministicKey {
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       this._chainAddressCached.forEach((value, key) => {
         let chain: uint32_t = key;
@@ -373,11 +378,13 @@ export class SubAccount {
           let did = Address.newFromAddress(cid);
           did.convertToDID();
           if (addr == address || addr == cid || addr == did) {
-            return this._parent
+            const privateKey = this._parent
               .rootKey(payPasswd)
               .deriveWithPath("44'/0'/0'")
               .deriveWithIndex(chain)
-              .deriveWithIndex(i);
+              .deriveWithIndex(i)
+              .getPrivateKeyBase58();
+            return DeterministicKey.fromExtendedKey(privateKey);
           }
         }
       });
@@ -387,12 +394,16 @@ export class SubAccount {
       Error.Code.PrivateKeyNotFound,
       "private key not found"
     );
-    return Key();
+    return new DeterministicKey();
   }
 
-  deriveOwnerKey(payPasswd: string): HDKey {
+  deriveOwnerKey(payPasswd: string): DeterministicKey {
     // 44'/coinIndex'/account'/change/index
-    return this._parent.rootKey(payPasswd).deriveWithPath("44'/0'/1'/0/0");
+    const privateKey = this._parent
+      .rootKey(payPasswd)
+      .deriveWithPath("44'/0'/1'/0/0")
+      .getPrivateKeyBase58();
+    return DeterministicKey.fromExtendedKey(privateKey);
   }
 
   deriveDIDKey(payPasswd: string): HDKey {

@@ -15,7 +15,7 @@ import {
   uint32_t,
   uint64_t
 } from "../types";
-import { Address } from "../walletcore/Address";
+import { Address, AddressArray } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
@@ -134,8 +134,11 @@ export class ElastosBaseSubWallet
       "index & count overflow"
     );
 
-    let addresses: Address[] = [];
-    this.getWallet().getAddresses(addresses, index, count, internal);
+    const addresses: AddressArray = this.getWallet().getAddresses(
+      index,
+      count,
+      internal
+    );
 
     let addressStrings: string[] = [];
     for (let address of addresses) addressStrings.push(address.string());

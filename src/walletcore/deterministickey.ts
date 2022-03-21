@@ -22,304 +22,325 @@
 
 // NOTE: Ideally the nodejs build should use the native buffer, browser should use the polyfill.
 // Buf haven't found a way to make this work for typescript files at the rollup build level.
-import * as assert from 'assert';
-import * as bs58check from 'bs58';
+import * as assert from "assert";
+import * as bs58check from "bs58";
 import { Buffer } from "buffer";
 // import * as crypto from 'crypto';
-import * as crypto from 'crypto-browserify';
-import { Secp256 } from './secp256';
+import * as crypto from "crypto-browserify";
+import { Secp256 } from "./secp256";
 
-
-const MASTER_SECRET = Buffer.from('Bitcoin seed', 'utf8');
+const MASTER_SECRET = Buffer.from("Bitcoin seed", "utf8");
 
 export interface Version {
-    curve: string,
-    private: number;
-    public: number;
+  curve: string;
+  private: number;
+  public: number;
 }
 
 export interface HDKeyJSON {
-    xpriv: string;
-    xpub: string;
+  xpriv: string;
+  xpub: string;
 }
 
 export class DeterministicKey {
-    public static ELASTOS_VERSIONS: Version = { curve: Secp256.CURVE_R1, private: 0x0488ade4, public: 0x0488b21e };
-    public static BITCOIN_VERSIONS: Version = { curve: Secp256.CURVE_K1, private: 0x0488ade4, public: 0x0488b21e };
-    public static ETHEREUM_VERSIONS: Version = { curve: Secp256.CURVE_K1, private: 0x0488ade4, public: 0x0488b21e };
-    
-    public static LEN = 78;
-    public static HARDENED_OFFSET = 0x80000000;
+  d;
+  public static ELASTOS_VERSIONS: Version = {
+    curve: Secp256.CURVE_R1,
+    private: 0x0488ade4,
+    public: 0x0488b21e
+  };
+  public static BITCOIN_VERSIONS: Version = {
+    curve: Secp256.CURVE_K1,
+    private: 0x0488ade4,
+    public: 0x0488b21e
+  };
+  public static ETHEREUM_VERSIONS: Version = {
+    curve: Secp256.CURVE_K1,
+    private: 0x0488ade4,
+    public: 0x0488b21e
+  };
 
-    static fromMasterSeed(seedBuffer: Buffer, versions?: Version) {
-        const I = crypto
-            .createHmac('sha512', MASTER_SECRET)
-            .update(seedBuffer)
-            .digest();
-        const IL = I.slice(0, 32);
-        const IR = I.slice(32);
+  public static LEN = 78;
+  public static HARDENED_OFFSET = 0x80000000;
 
-        const hdkey = new DeterministicKey(versions);
-        hdkey.chainCode = IR;
-        hdkey.privateKey = IL;
+  static fromMasterSeed(seedBuffer: Buffer, versions?: Version) {
+    const I = crypto
+      .createHmac("sha512", MASTER_SECRET)
+      .update(seedBuffer)
+      .digest();
+    const IL = I.slice(0, 32);
+    const IR = I.slice(32);
 
-        return hdkey;
+    const hdkey = new DeterministicKey(versions);
+    hdkey.chainCode = IR;
+    hdkey.privateKey = IL;
+
+    return hdkey;
+  }
+
+  // https://en.bitcoin.it/wiki/BIP_0032
+  static fromExtendedKey(base58key: string, versions?: any) {
+    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+    versions = versions || DeterministicKey.ELASTOS_VERSIONS;
+    const hdkey = new DeterministicKey(versions);
+
+    const keyBuffer = bs58check.decode(base58key);
+
+    const version = keyBuffer.readUInt32BE(0);
+    assert.ok(
+      version === versions.private || version === versions.public,
+      "Version mismatch: does not match private or public"
+    );
+
+    hdkey.depth = keyBuffer.readUInt8(4);
+    hdkey.parentFingerprint = keyBuffer.readUInt32BE(5);
+    hdkey.index = keyBuffer.readUInt32BE(9);
+    hdkey.chainCode = keyBuffer.slice(13, 45);
+
+    const key = keyBuffer.slice(45);
+    if (key.readUInt8(0) === 0) {
+      // private
+      assert.ok(
+        version === versions.private,
+        "Version mismatch: version does not match private"
+      );
+      hdkey.privateKey = key.slice(1, 33); // cut off first 0x0 byte + remove the 4 bytes checksum in the end
+    } else {
+      assert.ok(
+        version === versions.public,
+        "Version mismatch: version does not match public"
+      );
+      hdkey.publicKey = key.slice(0, 33); // Remove the 4 bytes checksum in the end
     }
 
-    // https://en.bitcoin.it/wiki/BIP_0032
-    static fromExtendedKey(base58key: string, versions?: any) {
-        // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
-        versions = versions || DeterministicKey.ELASTOS_VERSIONS;
-        const hdkey = new DeterministicKey(versions);
+    return hdkey;
+  }
 
-        const keyBuffer = bs58check.decode(base58key);
+  static fromJSON(obj: HDKeyJSON) {
+    return DeterministicKey.fromExtendedKey(obj.xpriv);
+  }
 
-        const version = keyBuffer.readUInt32BE(0);
-        assert.ok(
-            version === versions.private || version === versions.public,
-            'Version mismatch: does not match private or public'
-        );
+  versions: Version;
+  depth: number;
+  index: number;
+  _privateKey: Buffer | null;
+  _publicKey: Buffer | null;
+  _identifier: Buffer;
+  chainCode: any;
+  _fingerprint: number;
+  parentFingerprint: number;
+  curve: Secp256;
 
-        hdkey.depth = keyBuffer.readUInt8(4);
-        hdkey.parentFingerprint = keyBuffer.readUInt32BE(5);
-        hdkey.index = keyBuffer.readUInt32BE(9);
-        hdkey.chainCode = keyBuffer.slice(13, 45);
+  constructor(versions?: Version) {
+    this.versions = versions || DeterministicKey.ELASTOS_VERSIONS;
+    this.depth = 0;
+    this.index = 0;
+    this._privateKey = null;
+    this._publicKey = null;
+    this.chainCode = null;
+    this._fingerprint = 0;
+    this.parentFingerprint = 0;
+    this.curve = new Secp256(versions.curve);
+  }
 
-        const key = keyBuffer.slice(45);
-        if (key.readUInt8(0) === 0) {
-            // private
-            assert.ok(version === versions.private, 'Version mismatch: version does not match private');
-            hdkey.privateKey = key.slice(1, 33); // cut off first 0x0 byte + remove the 4 bytes checksum in the end
-        } else {
-            assert.ok(version === versions.public, 'Version mismatch: version does not match public');
-            hdkey.publicKey = key.slice(0, 33); // Remove the 4 bytes checksum in the end
-        }
+  get fingerprint() {
+    return this._fingerprint;
+  }
 
-        return hdkey;
+  get identifier() {
+    return this._identifier;
+  }
+
+  get pubKeyHash() {
+    return this.identifier;
+  }
+
+  get privateKey() {
+    return this._privateKey;
+  }
+
+  set privateKey(value: Buffer | null) {
+    if (value === null) {
+      throw new Error("Can not directly set privateKey to null.");
     }
 
-    static fromJSON(obj: HDKeyJSON) {
-        return DeterministicKey.fromExtendedKey(obj.xpriv);
+    assert.equal(value.length, 32, "Private key must be 32 bytes.");
+    assert.ok(
+      this.curve.privateKeyVerify(value) === true,
+      "Invalid private key"
+    );
+
+    this._privateKey = value;
+    this._publicKey = this.curve.publicKeyCreate(value, true);
+    this._identifier = hash160(this.publicKey!);
+    this._fingerprint = this._identifier.slice(0, 4).readUInt32BE(0);
+  }
+
+  get publicKey() {
+    return this._publicKey;
+  }
+
+  set publicKey(value: Buffer | null) {
+    if (value === null) {
+      throw new Error("Can not directly set privateKey to null.");
     }
 
-    versions: Version;
-    depth: number;
-    index: number;
-    _privateKey: Buffer | null;
-    _publicKey: Buffer | null;
-    _identifier: Buffer;
-    chainCode: any;
-    _fingerprint: number;
-    parentFingerprint: number;
-    curve: Secp256;
+    assert.ok(
+      value.length === 33 || value.length === 65,
+      "Public key must be 33 or 65 bytes."
+    );
+    assert.ok(this.curve.publicKeyVerify(value) === true, "Invalid public key");
 
-    constructor(versions?: Version, ) {
-        this.versions = versions || DeterministicKey.ELASTOS_VERSIONS;
-        this.depth = 0;
-        this.index = 0;
-        this._privateKey = null;
-        this._publicKey = null;
-        this.chainCode = null;
-        this._fingerprint = 0;
-        this.parentFingerprint = 0;
-        this.curve = new Secp256(versions.curve);
+    this._publicKey = this.curve.publicKeyConvert(value, true); // force compressed point
+    this._identifier = hash160(this.publicKey!);
+    this._fingerprint = this._identifier.slice(0, 4).readUInt32BE(0);
+    this._privateKey = null;
+  }
+
+  get publicKeyHex() {
+    //return this.curve.publicKeyConvert(this._publicKey, false);
+    return this.curve.publicKeyHex(this._publicKey);
+  }
+
+  get privateExtendedKey() {
+    if (this._privateKey)
+      return bs58check.encode(
+        serialize(
+          this,
+          this.versions.private,
+          Buffer.concat([Buffer.alloc(1, 0), this.privateKey!])
+        )
+      );
+    else return null;
+  }
+
+  get publicExtendedKey() {
+    return bs58check.encode(
+      serialize(this, this.versions.public, this.publicKey!)
+    );
+  }
+
+  derive(path: string): DeterministicKey {
+    if (path === "m" || path === "M" || path === "m'" || path === "M'") {
+      return this;
     }
 
-    get fingerprint() {
-        return this._fingerprint;
+    const entries = path.split("/");
+    let hdkey: DeterministicKey = this;
+    entries.forEach(function (c, i) {
+      if (i === 0) {
+        assert.ok(/^[mM]{1}/.test(c), 'Path must start with "m" or "M"');
+        return;
+      }
+
+      const hardened = c.length > 1 && c[c.length - 1] === "'";
+      let childIndex = parseInt(c, 10); // & (HARDENED_OFFSET - 1)
+      assert.ok(childIndex < DeterministicKey.HARDENED_OFFSET, "Invalid index");
+      if (hardened) {
+        childIndex += DeterministicKey.HARDENED_OFFSET;
+      }
+
+      hdkey = hdkey.deriveChild(childIndex);
+    });
+
+    return hdkey;
+  }
+
+  deriveChild(index: number): DeterministicKey {
+    const isHardened = index >= DeterministicKey.HARDENED_OFFSET;
+    const indexBuffer = Buffer.allocUnsafe(4);
+    indexBuffer.writeUInt32BE(index, 0);
+
+    let data: Buffer;
+
+    if (isHardened) {
+      // Hardened child
+      assert.ok(this.privateKey, "Could not derive hardened child key");
+
+      let pk = this.privateKey!;
+      const zb = Buffer.alloc(1, 0);
+      pk = Buffer.concat([zb, pk]);
+
+      // data = 0x00 || ser256(kpar) || ser32(index)
+      data = Buffer.concat([pk, indexBuffer]);
+    } else {
+      // Normal child
+      // data = serP(point(kpar)) || ser32(index)
+      //      = serP(Kpar) || ser32(index)
+      data = Buffer.concat([this.publicKey!, indexBuffer]);
     }
 
-    get identifier() {
-        return this._identifier;
+    const I = crypto.createHmac("sha512", this.chainCode).update(data).digest();
+    const IL = I.slice(0, 32);
+    const IR = I.slice(32);
+
+    const hd = new DeterministicKey(this.versions);
+
+    // Private parent key -> private child key
+    if (this.privateKey) {
+      // ki = parse256(IL) + kpar (mod n)
+      try {
+        hd.privateKey = this.curve.privateKeyTweakAdd(this.privateKey, IL);
+        // throw if IL >= n || (privateKey + IL) === 0
+      } catch (err) {
+        // In case parse256(IL) >= n or ki == 0, one should proceed with the next value for i
+        return this.deriveChild(index + 1);
+      }
+      // Public parent key -> public child key
+    } else {
+      // Ki = point(parse256(IL)) + Kpar
+      //    = G*IL + Kpar
+      try {
+        hd.publicKey = this.curve.publicKeyTweakAdd(this.publicKey!, IL, true);
+        // throw if IL >= n || (g**IL + publicKey) is infinity
+      } catch (err) {
+        // In case parse256(IL) >= n or Ki is the point at infinity, one should proceed with the next value for i
+        return this.deriveChild(index + 1);
+      }
     }
 
-    get pubKeyHash() {
-        return this.identifier;
-    }
+    hd.chainCode = IR;
+    hd.depth = this.depth + 1;
+    hd.parentFingerprint = this.fingerprint; // .readUInt32BE(0)
+    hd.index = index;
 
-    get privateKey() {
-        return this._privateKey;
-    }
+    return hd;
+  }
 
-    set privateKey(value: Buffer | null) {
-        if (value === null) {
-            throw new Error('Can not directly set privateKey to null.');
-        }
+  sign(hash: Buffer) {
+    return this.curve.sign(hash, this.privateKey!).signature;
+  }
 
-        assert.equal(value.length, 32, 'Private key must be 32 bytes.');
-        assert.ok(this.curve.privateKeyVerify(value) === true, 'Invalid private key');
+  verify(hash: Buffer, signature: Buffer) {
+    return this.curve.verify(hash, signature, this.publicKey!);
+  }
 
-        this._privateKey = value;
-        this._publicKey = this.curve.publicKeyCreate(value, true);
-        this._identifier = hash160(this.publicKey!);
-        this._fingerprint = this._identifier.slice(0, 4).readUInt32BE(0);
-    }
-
-    get publicKey() {
-        return this._publicKey;
-    }
-
-    set publicKey(value: Buffer | null) {
-        if (value === null) {
-            throw new Error('Can not directly set privateKey to null.');
-        }
-
-        assert.ok(value.length === 33 || value.length === 65, 'Public key must be 33 or 65 bytes.');
-        assert.ok(this.curve.publicKeyVerify(value) === true, 'Invalid public key');
-
-        this._publicKey = this.curve.publicKeyConvert(value, true); // force compressed point
-        this._identifier = hash160(this.publicKey!);
-        this._fingerprint = this._identifier.slice(0, 4).readUInt32BE(0);
-        this._privateKey = null;
-    }
-
-    get publicKeyHex() {
-        //return this.curve.publicKeyConvert(this._publicKey, false);
-        return this.curve.publicKeyHex(this._publicKey);
-    }
-
-    get privateExtendedKey() {
-        if (this._privateKey)
-            return bs58check.encode(
-                serialize(this, this.versions.private, Buffer.concat([Buffer.alloc(1, 0), this.privateKey!]))
-            );
-        else return null;
-    }
-
-    get publicExtendedKey() {
-        return bs58check.encode(serialize(this, this.versions.public, this.publicKey!));
-    }
-
-    derive(path: string): DeterministicKey {
-        if (path === 'm' || path === 'M' || path === "m'" || path === "M'") {
-            return this;
-        }
-
-        const entries = path.split('/');
-        let hdkey: DeterministicKey = this;
-        entries.forEach(function (c, i) {
-            if (i === 0) {
-                assert.ok(/^[mM]{1}/.test(c), 'Path must start with "m" or "M"');
-                return;
-            }
-
-            const hardened = c.length > 1 && c[c.length - 1] === "'";
-            let childIndex = parseInt(c, 10); // & (HARDENED_OFFSET - 1)
-            assert.ok(childIndex < DeterministicKey.HARDENED_OFFSET, 'Invalid index');
-            if (hardened) {
-                childIndex += DeterministicKey.HARDENED_OFFSET;
-            }
-
-            hdkey = hdkey.deriveChild(childIndex);
-        });
-
-        return hdkey;
-    }
-
-    deriveChild(index: number): DeterministicKey {
-        const isHardened = index >= DeterministicKey.HARDENED_OFFSET;
-        const indexBuffer = Buffer.allocUnsafe(4);
-        indexBuffer.writeUInt32BE(index, 0);
-
-        let data: Buffer;
-
-        if (isHardened) {
-            // Hardened child
-            assert.ok(this.privateKey, 'Could not derive hardened child key');
-
-            let pk = this.privateKey!;
-            const zb = Buffer.alloc(1, 0);
-            pk = Buffer.concat([zb, pk]);
-
-            // data = 0x00 || ser256(kpar) || ser32(index)
-            data = Buffer.concat([pk, indexBuffer]);
-        } else {
-            // Normal child
-            // data = serP(point(kpar)) || ser32(index)
-            //      = serP(Kpar) || ser32(index)
-            data = Buffer.concat([this.publicKey!, indexBuffer]);
-        }
-
-        const I = crypto
-            .createHmac('sha512', this.chainCode)
-            .update(data)
-            .digest();
-        const IL = I.slice(0, 32);
-        const IR = I.slice(32);
-
-        const hd = new DeterministicKey(this.versions);
-
-        // Private parent key -> private child key
-        if (this.privateKey) {
-            // ki = parse256(IL) + kpar (mod n)
-            try {
-                hd.privateKey = this.curve.privateKeyTweakAdd(this.privateKey, IL);
-                // throw if IL >= n || (privateKey + IL) === 0
-            } catch (err) {
-                // In case parse256(IL) >= n or ki == 0, one should proceed with the next value for i
-                return this.deriveChild(index + 1);
-            }
-            // Public parent key -> public child key
-        } else {
-            // Ki = point(parse256(IL)) + Kpar
-            //    = G*IL + Kpar
-            try {
-                hd.publicKey = this.curve.publicKeyTweakAdd(this.publicKey!, IL, true);
-                // throw if IL >= n || (g**IL + publicKey) is infinity
-            } catch (err) {
-                // In case parse256(IL) >= n or Ki is the point at infinity, one should proceed with the next value for i
-                return this.deriveChild(index + 1);
-            }
-        }
-
-        hd.chainCode = IR;
-        hd.depth = this.depth + 1;
-        hd.parentFingerprint = this.fingerprint; // .readUInt32BE(0)
-        hd.index = index;
-
-        return hd;
-    }
-
-    sign(hash: Buffer) {
-        return this.curve.sign(hash, this.privateKey!).signature;
-    }
-
-    verify(hash: Buffer, signature: Buffer) {
-        return this.curve.verify(hash, signature, this.publicKey!);
-    }
-
-    toJSON(): HDKeyJSON {
-        return {
-            xpriv: this.privateExtendedKey,
-            xpub: this.publicExtendedKey
-        };
-    }
+  toJSON(): HDKeyJSON {
+    return {
+      xpriv: this.privateExtendedKey,
+      xpub: this.publicExtendedKey
+    };
+  }
 }
 
 function serialize(hdkey: DeterministicKey, version: number, key: Buffer) {
-    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
-    const buffer = Buffer.allocUnsafe(DeterministicKey.LEN);
+  // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+  const buffer = Buffer.allocUnsafe(DeterministicKey.LEN);
 
-    buffer.writeUInt32BE(version, 0);
-    buffer.writeUInt8(hdkey.depth, 4);
+  buffer.writeUInt32BE(version, 0);
+  buffer.writeUInt8(hdkey.depth, 4);
 
-    const fingerprint = hdkey.depth ? hdkey.parentFingerprint : 0x00000000;
-    buffer.writeUInt32BE(fingerprint, 5);
-    buffer.writeUInt32BE(hdkey.index, 9);
+  const fingerprint = hdkey.depth ? hdkey.parentFingerprint : 0x00000000;
+  buffer.writeUInt32BE(fingerprint, 5);
+  buffer.writeUInt32BE(hdkey.index, 9);
 
-    hdkey.chainCode.copy(buffer, 13);
-    key.copy(buffer, 45);
+  hdkey.chainCode.copy(buffer, 13);
+  key.copy(buffer, 45);
 
-    return buffer;
+  return buffer;
 }
 
 function hash160(buf: Buffer) {
-    const sha = crypto
-        .createHash('sha256')
-        .update(buf)
-        .digest();
-    return crypto
-        .createHash('rmd160')
-        .update(sha)
-        .digest();
+  const sha = crypto.createHash("sha256").update(buf).digest();
+  return crypto.createHash("rmd160").update(sha).digest();
 }

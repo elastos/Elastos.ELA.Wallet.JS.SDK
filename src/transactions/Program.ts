@@ -7,7 +7,6 @@ import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
 import { bytes_t, json, size_t, uint256, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
-import { CoinType } from "../walletcore/cointype";
 import { DeterministicKey } from "../walletcore/deterministickey";
 
 export type ProgramPtr = Program;
@@ -38,7 +37,9 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public verifySignature(md: uint256): boolean {
-    let key: DeterministicKey;
+    let key: DeterministicKey = new DeterministicKey(
+      DeterministicKey.ELASTOS_VERSIONS
+    );
     let signatureCount: uint8_t = 0;
 
     let publicKeys: bytes_t[] = [];
@@ -53,8 +54,8 @@ export class Program extends ELAMessage implements JsonSerializer {
     while (stream.readVarBytes(signature)) {
       let verified = false;
       for (let i = 0; i < publicKeys.length; ++i) {
-        key.setPubKey(CoinType.CTElastos, publicKeys[i]);
-        if (key.verify(md, signature)) {
+        key.publicKey = publicKeys[i];
+        if (key.verify(Buffer.from(md.toString()), signature)) {
           verified = true;
           break;
         }
@@ -100,15 +101,17 @@ export class Program extends ELAMessage implements JsonSerializer {
       return info;
     }
 
-    let key: DeterministicKey;
+    let key: DeterministicKey = new DeterministicKey(
+      DeterministicKey.ELASTOS_VERSIONS
+    );
     let stream = new ByteStream(this._parameter);
     let signature: bytes_t = Buffer.alloc(0);
     let signers: string[] = [];
     while (stream.readVarBytes(signature)) {
       for (let i = 0; i < publicKeys.length; ++i) {
-        key.setPubKey(CoinType.CTElastos, publicKeys[i]);
-        if (key.verify(md, signature)) {
-          signers.push(publicKeys[i].getHex());
+        key.publicKey = publicKeys[i];
+        if (key.verify(Buffer.from(md.toString()), signature)) {
+          signers.push(publicKeys[i].toString("hex"));
           break;
         }
       }
@@ -135,7 +138,7 @@ export class Program extends ELAMessage implements JsonSerializer {
     return info;
   }
 
-  protected decodePublicKey(pubkeys: bytes_t[]): SignType {
+  decodePublicKey(pubkeys: bytes_t[]): SignType {
     if (this._code.length < 33 + 2) return SignType.SignTypeInvalid;
 
     let signType = this._code[this._code.length - 1];
