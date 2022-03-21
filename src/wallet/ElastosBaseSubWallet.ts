@@ -105,7 +105,7 @@ export class ElastosBaseSubWallet
     }*/
 
   //default implement ISubWallet
-  public GetBasicInfo(): json {
+  public getBasicInfo(): json {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
     return {
@@ -207,7 +207,7 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  public SignTransaction(tx: json, payPassword: string): json {
+  public signTransaction(tx: json, payPassword: string): json {
     /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
