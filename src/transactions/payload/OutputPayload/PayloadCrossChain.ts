@@ -21,134 +21,148 @@
  */
 
 import { Log } from "../../../common/Log";
+import { OutputPayload } from "./OutputPayload";
+import {
+  size_t,
+  uint8_t,
+  bytes_t,
+  sizeof_uint8_t,
+  sizeof_uint64_t,
+  json
+} from "../../../types";
+import { ByteStream } from "../../../common/bytestream";
+import BigNumber from "bignumber.js";
 
-export class PayloadCrossChain {
-  /*
-	PayloadCrossChain::PayloadCrossChain() {
+export class PayloadCrossChain extends OutputPayload {
+  private _version: uint8_t;
+  private _targetAddress: string;
+  private _targetAmount: BigNumber;
+  private _targetData: bytes_t;
 
-	}
+  constructor() {
+    super();
+  }
 
-	PayloadCrossChain::PayloadCrossChain(uint8_t version, const std::string &addr, const BigInt &amount, const bytes_t &data) :
-		_version(version),
-		_targetAddress(addr),
-		_targetAmount(amount),
-		_targetData(data) {
-	}
+  public static newFromParams(
+    version: uint8_t,
+    addr: string,
+    amount: BigNumber,
+    data: bytes_t
+  ) {
+    let payloadCrossChain = new PayloadCrossChain();
+    payloadCrossChain._version = version;
+    payloadCrossChain._targetAddress = addr;
+    payloadCrossChain._targetAmount = amount;
+    payloadCrossChain._targetData = data;
+  }
 
-	PayloadCrossChain::~PayloadCrossChain() {
+  version(): uint8_t {
+    return this._version;
+  }
 
-	}
+  targetAddress(): string {
+    return this._targetAddress;
+  }
 
-	uint8_t PayloadCrossChain::Version() const {
-		return _version;
-	}
+  targetAmount(): BigNumber {
+    return this._targetAmount;
+  }
 
-	const std::string &PayloadCrossChain::TargetAddress() const {
-		return _targetAddress;
-	}
+  targetData(): bytes_t {
+    return this._targetData;
+  }
 
-	const BigInt &PayloadCrossChain::TargetAmount() const {
-		return _targetAmount;
-	}
+  estimateSize(): size_t {
+    let size: size_t = 0;
+    let stream = new ByteStream();
 
-	const bytes_t &PayloadCrossChain::TargetData() const {
-		return _targetData;
-	}
+    size += sizeof_uint8_t();
+    size += stream.writeVarUInt(this._targetAddress.length);
+    size += this._targetAddress.length;
+    size += sizeof_uint64_t();
+    size += stream.writeVarUInt(this._targetData.length);
+    size += this._targetData.length;
 
-	size_t PayloadCrossChain::EstimateSize() const {
-		size_t size = 0;
-		ByteStream stream;
+    return size;
+  }
 
-		size += sizeof(_version);
-		size += stream.WriteVarUint(_targetAddress.size());
-		size += _targetAddress.size();
-		size += sizeof(uint64_t);
-		size += stream.WriteVarUint(_targetData.size());
-		size += _targetData.size();
+  serialize(stream: ByteStream) {
+    stream.writeUInt8(this._version);
+    stream.writeVarString(this._targetAddress);
+    stream.writeBigNumber(this._targetAmount);
+    stream.writeVarBytes(this._targetData);
+  }
 
-		return size;
-	}
+  deserialize(stream: ByteStream): boolean {
+    this._version = stream.readUInt8();
+    if (this._version === null) {
+      Log.error("deser op version");
+      return false;
+    }
 
-	void PayloadCrossChain::Serialize(ByteStream &stream) const {
-		stream.WriteUint8(_version);
-		stream.WriteVarString(_targetAddress);
-		stream.WriteUint64(_targetAmount.getUint64());
-		stream.WriteVarBytes(_targetData);
-	}
+    this._targetAddress = stream.readVarString();
+    if (!this._targetAddress) {
+      Log.error("deser op address");
+      return false;
+    }
 
-	bool PayloadCrossChain::Deserialize(const ByteStream &stream) {
-		if (!stream.ReadUint8(_version)) {
-			Log::error("deser op version");
-			return false;
-		}
+    // not sure
+    let amount = stream.readUInt64();
+    if (!amount) {
+      Log.error("deser op amount");
+      return false;
+    }
+    this._targetAmount = new BigNumber(amount);
 
-		if (!stream.ReadVarString(_targetAddress)) {
-			Log::error("deser op address");
-			return false;
-		}
+    if (!stream.readVarBytes(this._targetData)) {
+      Log.error("deser op data");
+      return false;
+    }
 
-		uint64_t amount = 0;
-		if (!stream.ReadUint64(amount)) {
-			Log::error("deser op amount");
-			return false;
-		}
-		_targetAmount.setUint64(amount);
+    return true;
+  }
 
-		if (!stream.ReadVarBytes(_targetData)) {
-			Log::error("deser op data");
-			return false;
-		}
+  toJson() {
+    let j: json;
+    j["Version"] = this._version;
+    j["TargetAddress"] = this._targetAddress;
+    j["TargetAmount"] = this._targetAmount.toNumber();
+    j["TargetData"] = this._targetData.toString("hex");
+    return j;
+  }
 
-		return true;
-	}
+  fromJson(j: json) {
+    this._version = j["Version"] as uint8_t;
+    this._targetAddress = j["TargetAddress"] as string;
+    this._targetAmount = new BigNumber(j["TargetAmount"] as number);
+    this._targetData = Buffer.from(j["TargetData"] as string, "hex");
+  }
 
-	nlohmann::json PayloadCrossChain::ToJson() const {
-		nlohmann::json j;
-		j["Version"] = _version;
-		j["TargetAddress"] = _targetAddress;
-		j["TargetAmount"] = _targetAmount.getDec();
-		j["TargetData"] = _targetData.getHex();
-		return j;
-	}
+  copyPayloadCrossChain(payload: PayloadCrossChain) {
+    try {
+      this._version = payload._version;
+      this._targetAddress = payload._targetAddress;
+      this._targetAmount = payload._targetAmount;
+      this._targetData = payload._targetData;
+      return this;
+    } catch (err) {
+      Log.error("payload is not instance of PayloadCrossChain");
+    }
+  }
 
-	void PayloadCrossChain::FromJson(const nlohmann::json &j) {
-		_version = j["Version"];
-		_targetAddress = j["TargetAddress"];
-		_targetAmount.setDec(j["TargetAmount"].get<std::string>());
-		_targetData.setHex(j["TargetData"].get<std::string>());
-	}
+  equals(payload: PayloadCrossChain): boolean {
+    try {
+      const p = payload;
+      return (
+        this._version == p._version &&
+        this._targetAddress == p._targetAddress &&
+        this._targetAmount.isEqualTo(p._targetAmount) &&
+        this._targetData.toString() == p._targetData.toString()
+      );
+    } catch (error) {
+      Log.error("payload is not instance of PayloadCrossChain");
+    }
 
-	IOutputPayload &PayloadCrossChain::operator=(const IOutputPayload &payload) {
-		try {
-			const PayloadCrossChain &payloadCrossChain = dynamic_cast<const PayloadCrossChain &>(payload);
-			operator=(payloadCrossChain);
-		} catch (const std::bad_cast &e) {
-			Log::error("payload is not instance of PayloadVote");
-		}
-
-		return *this;
-	}
-
-	PayloadCrossChain &PayloadCrossChain::operator=(const PayloadCrossChain &payload) {
-		_version = payload._version;
-		_targetAddress = payload._targetAddress;
-		_targetAmount = payload._targetAmount;
-		_targetData = payload._targetData;
-		return *this;
-	}
-
-	bool PayloadCrossChain::operator==(const IOutputPayload &payload) const {
-		try {
-			const PayloadCrossChain &p = dynamic_cast<const PayloadCrossChain &>(payload);
-			return _version == p._version &&
-						_targetAddress == p._targetAddress &&
-						_targetAmount == p._targetAmount &&
-						_targetData == p._targetData;
-		} catch (const std::bad_cast &e) {
-			Log::error("payload is not instance of PayloadCrossChain");
-		}
-
-		return false;
-	}
-	*/
+    return false;
+  }
 }

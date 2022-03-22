@@ -7,18 +7,21 @@ import { JsonSerializer } from "../../../common/JsonSerializer";
 import { ELAMessage } from "../../../ELAMessage";
 import { bytes_t, json } from "../../../types";
 
-export abstract class OutputPayload extends ELAMessage implements JsonSerializer {
-	public getData(): bytes_t {
-		let stream: ByteStream;
-		this.serialize(stream);
+export abstract class OutputPayload
+  extends ELAMessage
+  implements JsonSerializer
+{
+  public getData(): bytes_t {
+    let stream: ByteStream;
+    this.serialize(stream);
 
-		return stream.getBytes();
-	}
+    return stream.getBytes();
+  }
 
-	public abstract toJson(): json;
-	public abstract fromJson(j: json);
+  public abstract toJson(): json;
+  public abstract fromJson(j: json);
 
-	// TODO virtual IOutputPayload &operator=(const IOutputPayload &payload) = 0;
+  // TODO virtual IOutputPayload &operator=(const IOutputPayload &payload) = 0;
 
-	public abstract equals(payload: OutputPayload): boolean;
+  public abstract equals(payload: OutputPayload): boolean;
 }

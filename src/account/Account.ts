@@ -844,8 +844,8 @@ export class Account {
     return this._localstore.derivationStrategy();
   }
 
-  getPubKeyInfo(): JSON {
-    const j: JSON;
+  getPubKeyInfo(): json {
+    const j: json;
     const jCosigners: string[] = [];
 
     j["m"] = this._localstore.getM();
