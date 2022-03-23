@@ -22,7 +22,7 @@
 
 import { warnLog } from "../common/Log";
 import { ChainConfig } from "../config";
-import { json, uint32_t } from "../types";
+import { json, JSONValue, uint32_t } from "../types";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import type { MasterWallet } from "./MasterWallet";
 
@@ -112,9 +112,9 @@ export abstract class SubWallet {
     index: uint32_t,
     count: uint32_t,
     internal = false
-  ): json {
+  ): JSONValue {
     warnLog();
-    return {};
+    return;
   }
 
   /**
@@ -132,7 +132,7 @@ export abstract class SubWallet {
     index: uint32_t,
     count: uint32_t,
     internal = false
-  ): json {
+  ): JSONValue {
     warnLog();
     return {};
   }

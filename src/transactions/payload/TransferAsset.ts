@@ -5,47 +5,40 @@
 import { ByteStream } from "../../common/bytestream";
 import { json, size_t, uint8_t } from "../../types";
 import { Payload } from "./Payload";
+import { Log } from "../../common/Log";
 
-export class TransferAsset {
+export class TransferAsset extends Payload {
+  newFromTransferAsset(payload: TransferAsset) {
+    return this.copyTransferAsset(payload);
+  }
 
-	/* TransferAsset::TransferAsset(const TransferAsset &payload) {
-		operator=(payload);
-	} */
+  public estimateSize(version: uint8_t): size_t {
+    return 0;
+  }
 
-	public estimateSize(version: uint8_t): size_t {
-		return 0;
-	}
+  public serialize(ostream: ByteStream, version: uint8_t) {}
 
-	public serialize(ostream: ByteStream, version: uint8_t) {
-	}
+  public eserialize(istream: ByteStream, version: uint8_t): boolean {
+    return true;
+  }
 
-	public eserialize(istream: ByteStream, version: uint8_t): boolean {
-		return true;
-	}
+  public toJson(version: uint8_t): json {
+    return {};
+  }
 
-	public toJson(version: uint8_t): json {
-		return {};
-	}
+  public fromJson(j: json, version: uint8_t) {}
 
-	public fromJson(j: json, version: uint8_t) {
-	}
+  copyTransferAsset(payload: TransferAsset): TransferAsset {
+    try {
+      return this;
+    } catch (e) {
+      Log.error("payload is not instance of TransferAsset");
+    }
 
-	/* IPayload & TransferAsset:: operator = (const IPayload &payload) {
-try {
-	const TransferAsset & payloadTransferAsset = dynamic_cast <const TransferAsset&> (payload);
-	operator = (payloadTransferAsset);
-} catch (const std:: bad_cast & e) {
-	Log:: error("payload is not instance of TransferAsset");
-}
+    return this;
+  }
 
-return * this;
-} */
-
-	/* TransferAsset & TransferAsset:: operator = (const TransferAsset &payload) {
-		return * this;
-	} */
-
-	public equals(payload: Payload, version: uint8_t): boolean {
-		return payload instanceof TransferAsset;
-	}
+  public equals(payload: Payload, version: uint8_t): boolean {
+    return payload instanceof TransferAsset;
+  }
 }

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { json, uint32_t } from "../types";
+import { json, JSONValue, uint32_t } from "../types";
 
 export interface ISubWallet {
   /**
@@ -81,7 +81,7 @@ export interface ISubWallet {
     index: uint32_t,
     count: uint32_t,
     internal: boolean /* TODO = false */
-  ): json;
+  ): JSONValue;
 
   /**
    * For Elastos-based or btc wallet: Get @count public keys from @index.  Note that if create the
@@ -98,7 +98,7 @@ export interface ISubWallet {
     index: uint32_t,
     count: uint32_t,
     internal: boolean /* TODO = false */
-  ): json;
+  ): JSONValue;
 
   /**
    * Sign a transaction or append sign to a multi-sign transaction and return the content of transaction in json format.

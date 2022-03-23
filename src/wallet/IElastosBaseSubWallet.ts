@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { json } from "../types";
+import { json, JSONArray } from "../types";
 import { ISubWallet } from "./ISubWallet";
 
 export interface IElastosBaseSubWallet extends ISubWallet {
@@ -49,8 +49,8 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * @return If success return the content of transaction in json format.
    */
   createTransaction(
-    inputs: json,
-    outputs: json,
+    inputs: JSONArray,
+    outputs: JSONArray,
     fee: string,
     memo: string
   ): json;
@@ -65,7 +65,7 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * [{"SignType":"Standard","Signers":["0207d8bc14c4bdd79ea4a30818455f705bcc9e17a4b843a5f8f4a95aa21fb03d77"]},{"SignType":"Standard","Signers":["02a58d1c4e4993572caf0133ece4486533261e0e44fb9054b1ea7a19842c35300e"]}]
    *
    */
-  getTransactionSignedInfo(tx: json): json;
+  getTransactionSignedInfo(tx: json): JSONArray;
 
   /**
    * Convert tx to raw transaction.

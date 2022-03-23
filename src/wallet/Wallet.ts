@@ -20,6 +20,7 @@ import {
   bytes_t,
   json,
   JSONArray,
+  JSONValue,
   size_t,
   uint256,
   uint32_t,
@@ -56,7 +57,7 @@ export class Wallet extends Lockable {
     outputs: OutputArray,
     memo: string,
     fee: BigNumber,
-    changeBack2FirstInput: boolean
+    changeBack2FirstInput?: boolean
   ): Transaction {
     let memoFixed: string;
     let totalOutputAmount: BigNumber;
@@ -142,7 +143,7 @@ export class Wallet extends Lockable {
   }
 
   public getPublickeys(index: uint32_t, count: size_t, internal: boolean) {
-    const pubkeys: JSONArray | json = this._subAccount.getPublickeys(
+    const pubkeys: JSONValue = this._subAccount.getPublickeys(
       index,
       count,
       internal

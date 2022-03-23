@@ -10,6 +10,7 @@ import {
   bytes_t,
   json,
   JSONArray,
+  JSONValue,
   uint16_t,
   uint256,
   uint32_t,
@@ -17,6 +18,7 @@ import {
 } from "../types";
 import { Address, AddressArray } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
+import { DeterministicKey } from "../walletcore/deterministickey";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
@@ -65,7 +67,7 @@ export class ElastosBaseSubWallet
     parent: MasterWallet,
     netType: string
   ) {
-    super(info, config, parent);
+    super();
 
     ErrorChecker.checkParam(
       !this._parent.getAccount().masterPubKeyHDPMString(),
@@ -104,6 +106,8 @@ export class ElastosBaseSubWallet
         _walletManager->DatabaseFlush();
     }*/
 
+  destroy() {}
+
   //default implement ISubWallet
   public getBasicInfo(): json {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
@@ -122,7 +126,7 @@ export class ElastosBaseSubWallet
     index: uint32_t,
     count: uint32_t,
     internal: boolean
-  ): string[] {
+  ): JSONValue {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("index: {}", index);
     //ArgInfo("count: {}", count);
@@ -140,7 +144,7 @@ export class ElastosBaseSubWallet
       internal
     );
 
-    let addressStrings: string[] = [];
+    let addressStrings: JSONValue = [];
     for (let address of addresses) addressStrings.push(address.string());
 
     //ArgInfo("r => {}", j.dump());
@@ -152,7 +156,7 @@ export class ElastosBaseSubWallet
     index: uint32_t,
     count: uint32_t,
     internal: boolean
-  ): json {
+  ): JSONValue {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("index: {}", index);
     //ArgInfo("count: {}", count);
@@ -164,8 +168,7 @@ export class ElastosBaseSubWallet
       "index & count overflow"
     );
 
-    let j: json;
-    this.getWallet().getPublickeys(j, index, count, internal);
+    let j: JSONValue = this.getWallet().getPublickeys(index, count, internal);
 
     //ArgInfo("r => {}", j.dump());
     return j;
@@ -226,33 +229,42 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  /*std::string ElastosBaseSubWallet::SignDigest(const std::string &address, const std::string &digest, const std::string &payPassword) const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("address: {}", address);
-        ArgInfo("digest: {}", digest);
-        ArgInfo("payPasswd: *");
+  signDigest(address: string, digest: string, payPassword: string): string {
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("address: {}", address);
+    // ArgInfo("digest: {}", digest);
+    // ArgInfo("payPasswd: *");
 
-        ErrorChecker::CheckParam(digest.size() != 64, Error::InvalidArgument, "invalid digest");
-        Address didAddress(address);
-        std::string signature = _walletManager->GetWallet()->SignDigestWithAddress(didAddress, uint256(digest), payPassword);
+    ErrorChecker.checkParam(
+      digest.length != 64,
+      Error.Code.InvalidArgument,
+      "invalid digest"
+    );
+    const didAddress: Address = Address.newFromAddressString(address);
+    const signature: string = this._wallet.signDigestWithAddress(
+      didAddress,
+      new BigNumber(digest),
+      payPassword
+    );
 
-        ArgInfo("r => {}", signature);
+    // ArgInfo("r => {}", signature);
 
-        return signature;
-    }
+    return signature;
+  }
 
-    bool ElastosBaseSubWallet::VerifyDigest(const std::string &publicKey, const std::string &digest, const std::string &signature) const {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("publicKey: {}", publicKey);
-        ArgInfo("digest: {}", digest);
-        ArgInfo("signature: {}", signature);
+  verifyDigest(publicKey: string, digest: string, signature: string): boolean {
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("publicKey: {}", publicKey);
+    // ArgInfo("digest: {}", digest);
+    // ArgInfo("signature: {}", signature);
 
-        Key k(CTElastos, bytes_t(publicKey));
-        bool r = k.Verify(uint256(digest), bytes_t(signature));
+    const k = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
+    k.publicKey = Buffer.from(publicKey);
+    const r: boolean = k.verify(Buffer.from(digest), Buffer.from(signature));
 
-        ArgInfo("r => {}", r);
-        return r;
-    }*/
+    // ArgInfo("r => {}", r);
+    return r;
+  }
 
   public getTransactionSignedInfo(encodedTx: json) {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
@@ -267,19 +279,19 @@ export class ElastosBaseSubWallet
     return info;
   }
 
-  /*std::string ElastosBaseSubWallet::ConvertToRawTransaction(const nlohmann::json &tx) {
-        ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-        ArgInfo("tx: {}", tx.dump());
+  convertToRawTransaction(tx) {
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("tx: {}", tx.dump());
 
-        TransactionPtr txn = DecodeTx(tx);
-        ByteStream stream;
-        txn->Serialize(stream);
-        std::string rawtx = stream.GetBytes().getHex();
+    let txn: Transaction = this.decodeTx(tx);
+    let stream = new ByteStream();
+    txn.serialize(stream);
+    let rawtx: string = stream.getBytes().toString("hex");
 
-        ArgInfo("r => {}", rawtx);
+    // ArgInfo("r => {}", rawtx);
 
-        return rawtx;
-    }*/
+    return rawtx;
+  }
 
   // TODO: result as return value
   protected encodeTx(result: json, tx: Transaction) {

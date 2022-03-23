@@ -24,7 +24,15 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
-import { bytes_t, json, JSONArray, size_t, uint256, uint32_t } from "../types";
+import {
+  bytes_t,
+  json,
+  JSONArray,
+  JSONValue,
+  size_t,
+  uint256,
+  uint32_t
+} from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
 import {
   HDKey,
@@ -110,7 +118,7 @@ export class SubAccount {
     index: uint32_t,
     count: size_t,
     internal: boolean
-  ): JSONArray | json {
+  ): JSONValue {
     if (this._parent.singleAddress()) {
       index = 0;
       count = 1;
