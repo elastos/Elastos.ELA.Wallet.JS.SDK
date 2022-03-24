@@ -95,7 +95,7 @@ export class ElastosBaseSubWallet
     }
 
     let subAccount = new SubAccount(parent.getAccount());
-    this._wallet = new Wallet(this._parent.getID(), chainID, subAccount);
+    this._wallet = new Wallet(parent.getID(), chainID, subAccount);
   }
 
   /*const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
@@ -145,7 +145,9 @@ export class ElastosBaseSubWallet
     );
 
     let addressStrings: JSONValue = [];
-    for (let address of addresses) addressStrings.push(address.string());
+    for (let address of addresses) {
+      addressStrings.push(address.string());
+    }
 
     //ArgInfo("r => {}", j.dump());
 

@@ -1,4 +1,38 @@
+import BigNumber from "bignumber.js";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
+import { json, JSONArray, uint8_t, uint64_t } from "../types";
+import { CoinInfo } from "../walletcore/CoinInfo";
+import { MasterWallet } from "./MasterWallet";
+import { ChainConfig } from "../Config";
+import { Wallet } from "./Wallet";
+import { UTXOSet } from "./UTXO";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
+import {
+  CHAINID_MAINCHAIN,
+  CHAINID_IDCHAIN,
+  CHAINID_TOKENCHAIN
+} from "./WalletCommon";
+import { Address, Prefix } from "../walletcore/Address";
+import {
+  TransferCrossChainVersion,
+  TransferCrossChainVersionV1,
+  TransferInfo,
+  TransferCrossChainAsset
+} from "../transactions/payload/TransferCrossChainAsset";
+import {
+  OutputArray,
+  TransactionOutput,
+  Type
+} from "../transactions/TransactionOutput";
+import { Asset } from "../transactions/Asset";
+import { Transaction, TransactionType } from "../transactions/Transaction";
+import { DEPOSIT_OR_WITHDRAW_FEE } from "./SubWallet";
+import {
+  PayloadCrossChain,
+  CrossChainOutputVersion
+} from "../transactions/payload/OutputPayload/PayloadCrossChain";
+import { Payload } from "../transactions/payload/Payload";
+import { DeterministicKey } from "../walletcore/deterministickey";
 
 /*
  * Copyright (c) 2019 Elastos Foundation
@@ -26,138 +60,203 @@ export const DEPOSIT_MIN_ELA = 5000;
 
 // TODO: Migrate all COMMENTS from the C++ IMainchainSubWallet interface here.
 export class MainchainSubWallet extends ElastosBaseSubWallet {
+  constructor(
+    info: CoinInfo,
+    config: ChainConfig,
+    parent: MasterWallet,
+    netType: string
+  ) {
+    super(info, config, parent, netType);
+  }
 
-	/*
+  /**
+   * Deposit token from the main chain to side chains, such as ID chain or token chain, etc
+   *
+   * @version 0x00 means old deposit tx, 0x01 means new deposit tx, other value will throw exception.
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * NOTE:  (utxo input amount) >= amount + 10000 sela + fee
+   * @param sideChainID Chain id of the side chain
+   * @param amount The amount that will be deposit to the side chain.
+   * @param sideChainAddress Receive address of side chain
+   * @param lockAddress Generate from genesis block hash
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string
+   * @return The transaction in JSON format to be signed and published
+   */
 
-			MainchainSubWallet::MainchainSubWallet(const CoinInfoPtr &info,
-													 const ChainConfigPtr &config,
-													 MasterWallet *parent,
-													 const std::string &netType) :
-									ElastosBaseSubWallet(info, config, parent, netType) {
-			}
+  createDepositTransaction(
+    version: uint8_t,
+    inputsJson: JSONArray,
+    sideChainID: string,
+    amount: string,
+    sideChainAddress: string,
+    lockAddress: string,
+    fee: string,
+    memo: string
+  ) {
+    // WalletPtr wallet = _walletManager->GetWallet();
+    let wallet: Wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("version: {}", version);
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("sideChainID: {}", sideChainID);
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("sideChainAddr: {}", sideChainAddress);
+    // ArgInfo("lockAddress: {}", lockAddress);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-			MainchainSubWallet::~MainchainSubWallet() {
-			}
+    let utxos = new UTXOSet();
+    this.UTXOFromJson(utxos, inputsJson);
 
-			nlohmann::json MainchainSubWallet::CreateDepositTransaction(uint8_t version,
-																																			const nlohmann::json &inputsJson,
-																		const std::string &sideChainID,
-																		const std::string &amount,
-																		const std::string &sideChainAddress,
-																																			const std::string &lockAddress,
-																		const std::string &fee,
-																		const std::string &memo) const {
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("version: {}", version);
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("sideChainID: {}", sideChainID);
-				ArgInfo("amount: {}", amount);
-				ArgInfo("sideChainAddr: {}", sideChainAddress);
-				ArgInfo("lockAddress: {}", lockAddress);
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
+    if (
+      version != TransferCrossChainVersion &&
+      version != TransferCrossChainVersionV1
+    )
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid version"
+      );
+    let payloadVersion: uint8_t = version;
+    ErrorChecker.checkBigIntAmount(amount);
+    ErrorChecker.checkParam(
+      sideChainID == CHAINID_MAINCHAIN,
+      Error.Code.InvalidArgument,
+      "can not be mainChain"
+    );
 
-							UTXOSet utxos;
-							UTXOFromJson(utxos, inputsJson);
+    let bgAmount = new BigNumber(amount);
+    let feeAmount = new BigNumber(fee);
 
-							if (version != TransferCrossChainVersion && version != TransferCrossChainVersionV1)
-									ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid version");
-				uint8_t payloadVersion = version;
-				ErrorChecker::CheckBigIntAmount(amount);
-				ErrorChecker::CheckParam(sideChainID == CHAINID_MAINCHAIN, Error::InvalidArgument, "can not be mainChain");
+    if (sideChainID == CHAINID_IDCHAIN || sideChainID == CHAINID_TOKENCHAIN) {
+      let addressValidate = Address.newFromAddressString(sideChainAddress);
+      ErrorChecker.checkParam(
+        !addressValidate.valid(),
+        Error.Code.Address,
+        "invalid standard address"
+      );
+    } else if (sideChainID.indexOf("ETH") !== -1) {
+      // TODO
+      // ErrorChecker.checkParam(addressValidateString(sideChainAddress) != ETHEREUM_BOOLEAN_TRUE, Error.Code.Address, "invalid ethsc address");
+    } else {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid chain id"
+      );
+    }
 
-				BigInt bgAmount, feeAmount;
-				bgAmount.setDec(amount);
-				feeAmount.setDec(fee);
+    let payload: Payload;
+    let outputs: OutputArray;
+    let receiveAddr = Address.newFromAddressString(lockAddress);
 
-				if (sideChainID == CHAINID_IDCHAIN || sideChainID == CHAINID_TOKENCHAIN) {
-					Address addressValidate(sideChainAddress);
-					ErrorChecker::CheckParam(!addressValidate.Valid(), Error::Address, "invalid standard address");
-				} else if (sideChainID.find("ETH") != std::string::npos) {
-					ErrorChecker::CheckParam(addressValidateString(sideChainAddress.c_str()) != ETHEREUM_BOOLEAN_TRUE, Error::Address, "invalid ethsc address");
-				} else {
-						ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid chain id");
-				}
+    if (payloadVersion == TransferCrossChainVersion) {
+      let info = TransferInfo.newFromParams(sideChainAddress, 0, bgAmount);
+      payload = TransferCrossChainAsset.newFromParams([info]);
+      outputs.push(
+        TransactionOutput.newFromParams(
+          bgAmount.plus(DEPOSIT_OR_WITHDRAW_FEE),
+          receiveAddr
+        )
+      );
+    } else if (payloadVersion == TransferCrossChainVersionV1) {
+      payload = new TransferCrossChainAsset();
+      let outputPayload = PayloadCrossChain.newFromParams(
+        CrossChainOutputVersion,
+        sideChainAddress,
+        bgAmount,
+        Buffer.alloc(0)
+      );
 
-				PayloadPtr payload;
-				OutputArray outputs;
-				Address receiveAddr(lockAddress);
+      outputs.push(
+        TransactionOutput.newFromParams(
+          bgAmount.plus(DEPOSIT_OR_WITHDRAW_FEE),
+          receiveAddr,
+          Asset.getELAAssetID(),
+          Type.CrossChain,
+          outputPayload
+        )
+      );
+    }
 
-				if (payloadVersion == TransferCrossChainVersion) {
-					TransferInfo info(sideChainAddress, 0, bgAmount);
-					payload = PayloadPtr(new TransferCrossChainAsset({info}));
-					outputs.emplace_back(OutputPtr(new TransactionOutput(bgAmount + DEPOSIT_OR_WITHDRAW_FEE, receiveAddr)));
-				} else if (payloadVersion == TransferCrossChainVersionV1) {
-					payload = PayloadPtr(new TransferCrossChainAsset());
-					OutputPayloadPtr outputPayload(new PayloadCrossChain(CrossChainOutputVersion, sideChainAddress, bgAmount, bytes_t()));
-					outputs.emplace_back(OutputPtr(new TransactionOutput(bgAmount + DEPOSIT_OR_WITHDRAW_FEE, receiveAddr, Asset::GetELAAssetID(), TransactionOutput::CrossChain, outputPayload)));
-				}
+    const tx: Transaction = wallet.createTransaction(
+      TransactionType.transferCrossChainAsset,
+      payload,
+      utxos,
+      outputs,
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(payloadVersion);
 
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::transferCrossChainAsset, payload, utxos, outputs, memo, feeAmount);
-				tx->SetPayloadVersion(payloadVersion);
+    let result: json;
+    this.encodeTx(result, tx);
 
-				nlohmann::json result;
-				EncodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
+  getDepositAddress(pubkey: string): string {
+    const pub = Buffer.from(pubkey, "hex");
+    let depositAddress = Address.newWithPubKey(Prefix.PrefixDeposit, pub);
+    return depositAddress.string();
+  }
 
-					std::string MainchainSubWallet::GetDepositAddress(const std::string &pubkey) const {
-					bytes_t pub;
-					pub.setHex(pubkey);
-							Address depositAddress(PrefixDeposit, pub);
-							return depositAddress.String();
-			}
+  generateProducerPayload(
+    ownerPublicKey: string,
+    nodePublicKey: string,
+    nickName: string,
+    url: string,
+    ipAddress: string,
+    location: uint64_t,
+    payPasswd: string
+  ) {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("ownerPubKey: {}", ownerPublicKey);
+    // ArgInfo("nodePubKey: {}", nodePublicKey);
+    // ArgInfo("nickName: {}", nickName);
+    // ArgInfo("url: {}", url);
+    // ArgInfo("ipAddress: {}", ipAddress);
+    // ArgInfo("location: {}", location);
+    // ArgInfo("payPasswd: *");
 
-			nlohmann::json MainchainSubWallet::GenerateProducerPayload(
-				const std::string &ownerPublicKey,
-				const std::string &nodePublicKey,
-				const std::string &nickName,
-				const std::string &url,
-				const std::string &ipAddress,
-				uint64_t location,
-				const std::string &payPasswd) const {
+    ErrorChecker.checkPassword(payPasswd, "Generate payload");
 
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-				ArgInfo("ownerPubKey: {}", ownerPublicKey);
-				ArgInfo("nodePubKey: {}", nodePublicKey);
-				ArgInfo("nickName: {}", nickName);
-				ArgInfo("url: {}", url);
-				ArgInfo("ipAddress: {}", ipAddress);
-				ArgInfo("location: {}", location);
-				ArgInfo("payPasswd: *");
+    let verifyPubKey = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
+    let ownerPubKey = Buffer.from(ownerPublicKey);
+    verifyPubKey.publicKey = ownerPubKey;
 
-				ErrorChecker::CheckPassword(payPasswd, "Generate payload");
+    let nodePubKey = Buffer.from(nodePublicKey);
+    verifyPubKey.publicKey = nodePubKey;
 
-				Key verifyPubKey;
-				bytes_t ownerPubKey = bytes_t(ownerPublicKey);
-				verifyPubKey.SetPubKey(CTElastos, ownerPubKey);
+    // ProducerInfo pr;
+    // pr.SetPublicKey(ownerPubKey);
+    // pr.SetNodePublicKey(nodePubKey);
+    // pr.SetNickName(nickName);
+    // pr.SetUrl(url);
+    // pr.SetAddress(ipAddress);
+    // pr.SetLocation(location);
 
-				bytes_t nodePubKey = bytes_t(nodePublicKey);
-				verifyPubKey.SetPubKey(CTElastos, nodePubKey);
+    // ByteStream ostream;
+    // pr.SerializeUnsigned(ostream, 0);
+    // bytes_t prUnsigned = ostream.GetBytes();
 
-				ProducerInfo pr;
-				pr.SetPublicKey(ownerPubKey);
-				pr.SetNodePublicKey(nodePubKey);
-				pr.SetNickName(nickName);
-				pr.SetUrl(url);
-				pr.SetAddress(ipAddress);
-				pr.SetLocation(location);
+    // pr.SetSignature(_walletManager->GetWallet()->SignWithOwnerKey(prUnsigned, payPasswd));
 
-				ByteStream ostream;
-				pr.SerializeUnsigned(ostream, 0);
-				bytes_t prUnsigned = ostream.GetBytes();
+    // nlohmann::json payloadJson = pr.ToJson(0);
 
-				pr.SetSignature(_walletManager->GetWallet()->SignWithOwnerKey(prUnsigned, payPasswd));
-
-				nlohmann::json payloadJson = pr.ToJson(0);
-
-				ArgInfo("r => {}", payloadJson.dump());
-				return payloadJson;
-			}
-
+    // ArgInfo("r => {}", payloadJson.dump());
+    // return payloadJson;
+  }
+  /*
 			nlohmann::json MainchainSubWallet::GenerateCancelProducerPayload(
 				const std::string &ownerPublicKey,
 				const std::string &payPasswd) const {
@@ -235,42 +334,38 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 				ArgInfo("r => {}", result.dump());
 				return result;
 			}
+	
 
-					nlohmann::json MainchainSubWallet::CreateUpdateProducerTransaction(const nlohmann::json &inputsJson,
-																																						 const nlohmann::json &payloadJson,
-																																						 const std::string &fee,
-																																						 const std::string &memo) const {
-
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJson.dump());
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				PayloadPtr payload = PayloadPtr(new ProducerInfo());
-				try {
-					payload->FromJson(payloadJson, 0);
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-														"Payload format err: " + std::string(e.what()));
-				}
-
-				BigInt feeAmount;
-				feeAmount.setDec(fee);
-
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::updateProducer, payload, utxo, {}, memo, feeAmount);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-
+  createUpdateProducerTransaction(
+    inputsJson: json,
+    payloadJson: json,
+    fee: string,
+    memo: string
+  ) {
+    // WalletPtr wallet = _walletManager->GetWallet();
+    // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJson.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+    // UTXOSet utxo;
+    // UTXOFromJson(utxo, inputsJson);
+    // PayloadPtr payload = PayloadPtr(new ProducerInfo());
+    // try {
+    // 	payload->FromJson(payloadJson, 0);
+    // } catch (const nlohmann::detail::exception &e) {
+    // 	ErrorChecker::ThrowParamException(Error::JsonFormatError,
+    // 										"Payload format err: " + std::string(e.what()));
+    // }
+    // BigInt feeAmount;
+    // feeAmount.setDec(fee);
+    // TransactionPtr tx = wallet->CreateTransaction(Transaction::updateProducer, payload, utxo, {}, memo, feeAmount);
+    // nlohmann::json result;
+    // EncodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+    // return result;
+  }
+  
 			nlohmann::json MainchainSubWallet::CreateCancelProducerTransaction(
 				const nlohmann::json &inputsJson,
 				const nlohmann::json &payloadJson,

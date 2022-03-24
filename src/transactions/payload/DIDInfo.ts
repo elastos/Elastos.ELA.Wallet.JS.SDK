@@ -214,7 +214,7 @@ export class DIDPubKeyInfo {
 		*/
 
   toJson(version: uint8_t): json {
-    let j: json;
+    let j: json = {};
 
     j["id"] = this._id;
     j["type"] = this._type;

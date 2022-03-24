@@ -38,6 +38,7 @@ import {
   CHAINID_TOKENCHAIN
 } from "../wallet/WalletCommon";
 import { CONFIG_MAINNET } from "../config";
+import { MainchainSubWallet } from "./MainchainSubWallet";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -301,7 +302,6 @@ export class MasterWallet {
     );
 
     const info = new CoinInfo();
-
     info.setChainID(chainID);
 
     let subWallet = this.subWalletFactoryMethod(
@@ -413,8 +413,10 @@ export class MasterWallet {
     this._account.setSubWalletInfoList(coinInfo);
     this._account.save();
 
-    const keyStore: KeyStore = this._account.exportKeystore(payPassword);
-    const j: JSONObject = keyStore.Export(backupPassword, true);
+    let j: JSONObject = {};
+    // TODO
+    // const keyStore: KeyStore = this._account.exportKeystore(payPassword);
+    // j = keyStore.Export(backupPassword, true);
 
     // ArgInfo("r => *");
     return j;
@@ -491,11 +493,14 @@ export class MasterWallet {
     if (info.getChainID() == "ELA") {
       return new MainchainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "IDChain") {
-      return new IDChainSubWallet(info, config, parent, netType);
+      // TODO
+      // return new IDChainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "BTC") {
-      return new BTCSubWallet(info, config, parent, netType);
+      // TODO
+      // return new BTCSubWallet(info, config, parent, netType);
     } else if (info.getChainID().indexOf("ETH") !== -1) {
-      return new EthSidechainSubWallet(info, config, parent, netType);
+      // TODO
+      // return new EthSidechainSubWallet(info, config, parent, netType);
       // } else if (info.getChainID() == "XRP") {
       // return new RippleSubWallet(info, config, parent, netType);
     } else {

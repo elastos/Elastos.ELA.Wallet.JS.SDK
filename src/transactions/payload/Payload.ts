@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import { ByteStream } from "../../common/bytestream";
-import { bytes_t, json, size_t, uint8_t } from "../../types";
+import { bytes_t, json, JSONValue, size_t, uint8_t } from "../../types";
 
 export abstract class Payload {
   public getData(version: uint8_t): bytes_t {
@@ -24,9 +24,9 @@ export abstract class Payload {
     return true;
   }
 
-  abstract toJson(version: uint8_t): json;
+  abstract toJson(version: uint8_t): JSONValue;
 
-  abstract fromJson(j: json, version: uint8_t);
+  abstract fromJson(j: JSONValue, version: uint8_t);
 
   //abstract IPayload & operator=(const IPayload &payload) = 0;
 

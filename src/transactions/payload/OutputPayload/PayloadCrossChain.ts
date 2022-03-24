@@ -33,6 +33,8 @@ import {
 import { ByteStream } from "../../../common/bytestream";
 import BigNumber from "bignumber.js";
 
+export const CrossChainOutputVersion = 0x0;
+
 export class PayloadCrossChain extends OutputPayload {
   private _version: uint8_t;
   private _targetAddress: string;
@@ -54,6 +56,7 @@ export class PayloadCrossChain extends OutputPayload {
     payloadCrossChain._targetAddress = addr;
     payloadCrossChain._targetAmount = amount;
     payloadCrossChain._targetData = data;
+    return payloadCrossChain;
   }
 
   version(): uint8_t {

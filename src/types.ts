@@ -26,11 +26,13 @@ export interface JSONObject {
 
 export type JSONValue = string | number | boolean | JSONObject | JSONArray;
 
-export interface JSONArray extends Array<string | number | boolean | JSONObject | JSONArray> { }
+export interface JSONArray
+  extends Array<string | number | boolean | JSONObject | JSONArray> {}
 export type json = JSONObject;
 
 // Sizes in bytes to compensate the fact that JS doesn't know types bytes sizes like c++
 export const sizeof_uint8_t = () => 1;
+export const sizeof_uint16_t = () => 2;
 export const sizeof_uint256_t = () => 32;
 export const sizeof_uint64_t = () => 8;
 export const sizeof_uint168_t = () => 21;
