@@ -33,6 +33,7 @@ import {
 import { WalletStorage } from "../persistence/WalletStorage";
 import { json, JSONArray, JSONObject, time_t, uint32_t } from "../types";
 import { HDKey } from "../walletcore/hdkey";
+import { DeterministicKey } from "../walletcore/deterministickey";
 import { MasterWallet } from "./MasterWallet";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
@@ -41,18 +42,16 @@ import { Base58Check } from "../walletcore/base58";
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
 const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
 
-/* type MasterWalletMap = {
-	[walletID: string]: MasterWallet
-} */
-
-type MasterWalletMap = Map<string, MasterWallet>;
+// type MasterWalletMap = {
+//   [walletID: string]: MasterWallet;
+// };
 
 export class MasterWalletManager {
   protected _lock: Lockable;
   protected _config: Config;
-  protected _rootPath: string;
-  protected _dataPath: string;
-  protected _masterWalletMap: MasterWalletMap;
+  // protected _rootPath: string;
+  // protected _dataPath: string;
+  protected _masterWalletMap: Map<string, MasterWallet> = new Map();
   private _storage: WalletStorage;
 
   constructor(
@@ -111,36 +110,29 @@ export class MasterWalletManager {
 				boost:: filesystem:: create_directory(_dataPath); */
     }
 
-    this.loadMasterWalletID();
+    this.loadMasterWalletID(storage);
   }
 
   destory() {}
 
-  protected loadMasterWalletID() {
-    /* 
-			boost::filesystem::path rootpath(_dataPath);
-			for (directory_iterator it(rootpath); it != directory_iterator(); ++it) {
-
-				path temp = *it;
-				if (!exists(temp) || !is_directory(temp)) {
-					continue;
-				}
-
-				std::string masterWalletID = temp.filename().string();
-				if (exists((*it) / LOCAL_STORE_FILE) || exists((*it) / MASTER_WALLET_STORE_FILE)) {
-					_masterWalletMap[masterWalletID] = nullptr;
-				}
-			}
-		*/
+  protected loadMasterWalletID(storage: WalletStorage) {
+    const masterWalletIDs = storage.masterWalletIDs;
+    for (let i = 0; i < masterWalletIDs.length; i++) {
+      let masterWalletID = masterWalletIDs[i];
+      this._masterWalletMap.set(masterWalletID, null);
+    }
   }
 
-  protected loadMasterWallet(storage: WalletStorage): MasterWallet {
-    const masterWalletID = storage.masterWalletID;
+  protected loadMasterWallet(masterWalletID: string): MasterWallet {
     Log.info("loading wallet: {} ...", masterWalletID);
 
     let masterWallet: MasterWallet;
     try {
-      masterWallet = MasterWallet.newFromStorage(storage, this._config);
+      masterWallet = MasterWallet.newFromStorage(
+        masterWalletID,
+        this._config,
+        this._storage
+      );
       masterWallet.initSubWallets();
       this._masterWalletMap.set(masterWalletID, masterWallet);
     } catch (error) {
@@ -161,14 +153,12 @@ export class MasterWalletManager {
   }
 
   createMasterWallet(
-    // storage: WalletStorage,
+    masterWalletID: string,
     mnemonic: string,
     passphrase: string,
     passwd: string,
     singleAddress: boolean
   ): MasterWallet {
-    const masterWalletID = this._storage.masterWalletID;
-
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("mnemonic: *");
@@ -196,14 +186,16 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
+    this._storage.currentMasterWalletID = masterWalletID;
+
     const masterWallet = MasterWallet.newFromMnemonic(
-      this._storage,
+      masterWalletID,
       mnemonic,
       passphrase,
       passwd,
       singleAddress,
-      this._config
-      // _dataPath
+      this._config,
+      this._storage
     );
 
     // this.checkRedundant(masterWallet);
@@ -230,13 +222,13 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromSinglePrivateKey(
       masterWalletID,
       singlePrivateKey,
       passwd,
       this._config,
-      this._dataPath // TODO
+      this._storage
     );
     this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
@@ -302,12 +294,13 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromPublicKeyRings(
       masterWalletID,
       pubKeyRing,
       m,
       this._config,
-      this._dataPath, // TODO
+      this._storage, // TODO
       singleAddress,
       compatible
     );
@@ -386,7 +379,7 @@ export class MasterWalletManager {
       pubKeyRing,
       m,
       this._config,
-      this._dataPath, // TODO
+      this._storage,
       singleAddress,
       compatible
     );
@@ -467,7 +460,7 @@ export class MasterWalletManager {
       pubKeyRing,
       m,
       this._config,
-      this._dataPath, // TODO
+      this._storage,
       singleAddress,
       compatible
     );
@@ -539,14 +532,14 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
       backupPassword,
       payPassword,
       this._config,
-      this._dataPath
+      this._storage
     );
     this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
@@ -593,14 +586,15 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromMnemonic(
-      masterWalletID, // TODO
+      masterWalletID,
       mnemonic,
       phrasePassword,
       payPassword,
       singleAddress,
-      this._config
-      // this._dataPath // TODO
+      this._config,
+      this._storage
     );
 
     this.checkRedundant(masterWallet);
@@ -632,10 +626,11 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
+    /* This method is not supported by the C++ repo
     const masterWallet = new MasterWallet(
       masterWalletID,
       walletJson,
-      new Config(this._config),
+      this._config,
       _dataPath
     );
 
@@ -645,6 +640,7 @@ export class MasterWalletManager {
     // ArgInfo("r => import read-only");
 
     return masterWallet;
+    */
   }
 
   /*

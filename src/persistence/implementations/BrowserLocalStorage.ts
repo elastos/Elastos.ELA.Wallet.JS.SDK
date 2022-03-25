@@ -2,14 +2,17 @@ import { json, JSONObject } from "../../types";
 import { WalletStorage } from "../WalletStorage";
 
 export class BrowserLocalStorage implements WalletStorage {
-  masterWalletID = null;
+  currentMasterWalletID: string;
+  masterWalletIDs: string[];
 
   constructor(id: string) {
-    this.masterWalletID = id;
+    this.currentMasterWalletID = id;
   }
 
-  public loadStore(): json {
-    const data = window.localStorage.getItem(this.masterWalletID);
+  loadStore(id?: string): json {
+    const data = window.localStorage.getItem(
+      id ? id : this.currentMasterWalletID
+    );
     if (!data) return {};
     try {
       return JSON.parse(data);
@@ -18,8 +21,9 @@ export class BrowserLocalStorage implements WalletStorage {
     }
   }
 
-  public saveStore(j: JSONObject) {
+  saveStore(j: JSONObject) {
     // use local storage to save wallet info and setup masterWalletID
-    window.localStorage.setItem(this.masterWalletID, JSON.stringify(j));
+    window.localStorage.setItem(this.currentMasterWalletID, JSON.stringify(j));
+    this.masterWalletIDs.push(this.currentMasterWalletID);
   }
 }

@@ -738,7 +738,7 @@ export class Transaction {
     return new BigNumber(SHA256.encodeToString(stream.getBytes())); // WAS uint256(sha256(stream.GetBytes()));
   }
 
-  public static initPayload(type: uint8_t): Payload {
+  initPayload(type: uint8_t): Payload {
     let payload: Payload = null;
 
     if (type == TransactionType.coinBase) {

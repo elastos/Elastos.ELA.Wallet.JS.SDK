@@ -580,11 +580,13 @@ export class VerifiableCredential {
     }
 
     if (j["credentialSubject"]) {
-      this._credentialSubject = j["credentialSubject"].fromJson(version);
+      // TODO
+      // this._credentialSubject = j["credentialSubject"].fromJson(version);
     }
 
     if (j["proof"]) {
-      this._proof.fromJson(j["proof"], version);
+      // TODO
+      // this._proof.fromJson(j["proof"], version);
     }
   }
 }
@@ -778,9 +780,10 @@ export class DIDPayloadInfo {
           DeterministicKey.ELASTOS_VERSIONS
         );
         key.publicKey = pubkey;
-        if (key.verify(this.toOrderedJson(), signature)) {
-          verifiedSign = true;
-        }
+        // TODO
+        // if (key.verify(this.toOrderedJson(), signature)) {
+        //   verifiedSign = true;
+        // }
         break;
       }
     }

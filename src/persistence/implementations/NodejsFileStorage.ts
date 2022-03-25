@@ -2,7 +2,9 @@ import { json, JSONObject } from "../../types";
 import { WalletStorage } from "../WalletStorage";
 
 export class NodejsFileStorage implements WalletStorage {
-  masterWalletID = null;
+  currentMasterWalletID: string;
+  masterWalletIDs: string[];
+
   public loadStore(): json {
     /* TODO fs::path filepath = _path;
   filepath /= LOCAL_STORE_FILE;

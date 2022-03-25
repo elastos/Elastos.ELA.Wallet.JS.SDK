@@ -32,11 +32,12 @@ import { uint64_t, json } from "../types";
 import { ErrorChecker, Error } from "../common/ErrorChecker";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
+import { ChainConfig } from "../Config";
+import { Account } from "../account/Account";
 
-export class EthSidechainSubWallet
-  extends SubWallet
-  implements IEthSidechainSubWallet
-{
+export class EthSidechainSubWallet {
+  // extends SubWallet
+  // implements IEthSidechainSubWallet
   createTransfer(
     targetAddress: string,
     amount: string,
@@ -45,7 +46,7 @@ export class EthSidechainSubWallet
     gasPriceUnit: EthereumAmountUnit,
     gasLimit: string,
     nonce: uint64_t
-  ): json {
+  ) {
     /*
     ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     ArgInfo("target: {}", targetAddress);
@@ -132,7 +133,8 @@ export class EthSidechainSubWallet
     return {};
   }
 
-  exportPrivateKey(payPassword: string): string {
+  exportPrivateKey(payPassword: string) {
+    /*
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("payPasswd: *");
     let k: HDKey = this.getPrivateKey(payPassword);
@@ -141,31 +143,33 @@ export class EthSidechainSubWallet
     return prvkeystring;
   }
 
-  /*
-        EthSidechainSubWallet::EthSidechainSubWallet(const CoinInfoPtr &info,
-													 const ChainConfigPtr &config,
-													 MasterWallet *parent,
-													 const std::string &netType) :
-													 SubWallet(info, config, parent) {
-			AccountPtr account = _parent->GetAccount();
-			bytes_t pubkey = account->GetETHSCPubKey();
-			if (pubkey.empty()) {
-				if (!account->HasMnemonic() || account->Readonly()) {
-					ErrorChecker::ThrowParamException(Error::UnsupportOperation, "unsupport operation: ethsc pubkey is empty");
+  
+       constructor (info: CoinInfo,
+													 config: ChainConfig,
+													 parent: MasterWallet,
+													 netType: string)  {
+														 super()
+			let account: Account = this._parent.getAccount();
+			let pubkey = account.getETHSCPubKey();
+			if (pubkey.length === 0) {
+				if (!account.hasMnemonic() || account.readonly()) {
+					ErrorChecker.throwParamException(Error.Code.UnsupportOperation, "unsupport operation: ethsc pubkey is empty");
 				} else {
-                    ErrorChecker::ThrowParamException(Error::Other, "need to call IMasterWallet::VerifyPayPassword() or re-import wallet first");
+                    ErrorChecker.throwParamException(Error.Code.Other, "need to call IMasterWallet::VerifyPayPassword() or re-import wallet first");
 				}
 			}
 
-            std::string netName = info->GetChainID() + "-" + netType;
-            BREthereumNetwork net = FindEthereumNetwork(netName.c_str());
-            ErrorChecker::CheckParam(net == NULL, Error::InvalidArgument, "network config not found");
-            EthereumNetworkPtr network(new EthereumNetwork(net));
+      
+			let netName: string = info.getChainID() + "-" + netType;
+			let net: BREthereumNetwork = FindEthereumNetwork(netName.c_str());
+			ErrorChecker.checkParam(net == NULL, Error.Code.InvalidArgument, "network config not found");
+			EthereumNetworkPtr network(new EthereumNetwork(net));
 			_client = ClientPtr(new EthereumClient(network, parent->GetDataPath(), pubkey));
 			_client->_ewm->getWallet()->setDefaultGasPrice(5000000000);
-		}
+      */
+  }
 
-		/*
+  /*
 		nlohmann::json EthSidechainSubWallet::GetBasicInfo() const {
 			ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
@@ -291,7 +295,9 @@ export class EthSidechainSubWallet
             return prvkey;
 		}
 */
-  getPrivateKey(passwd: string): HDKey {
+
+  /*
+  private getPrivateKey(passwd: string): HDKey {
     let k: HDKey;
     let seed: Buffer = this._parent.getAccount().getSeed(passwd);
     if (seed.length !== 0) {
@@ -316,4 +322,5 @@ export class EthSidechainSubWallet
     }
     return k;
   }
+  */
 }

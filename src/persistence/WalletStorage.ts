@@ -5,11 +5,12 @@ import { json } from "../types";
  */
 export interface WalletStorage {
   // The unique identification of a wallet
-  masterWalletID: string | null;
+  currentMasterWalletID: string | null;
+  masterWalletIDs: string[] | null;
   /**
    * Loads a saved store and returns it as json.
    */
-  loadStore(): json;
+  loadStore(masterWalletID?: string): json;
   /**
    * Saves the given local store JSON representation to persistent storage.
    */

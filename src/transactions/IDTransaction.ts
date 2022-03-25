@@ -32,9 +32,11 @@ export class IDTransaction extends Transaction {
       // deprecated
       // payload = new RegisterIdentification();
     } else if (didTransaction == type) {
-      payload = new DIDInfo();
+      // TODO
+      // payload = new DIDInfo();
     } else {
-      payload = Transaction.initPayload(type);
+      const transaction = new Transaction();
+      payload = transaction.initPayload(type);
     }
 
     return payload;

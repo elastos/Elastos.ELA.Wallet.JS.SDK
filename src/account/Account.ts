@@ -182,16 +182,16 @@ export class Account {
 	}
 	*/
 
-  public static newFromAccount(storage: WalletStorage) {
+  public static newFromAccount(id: string, storage: WalletStorage) {
     let account = new Account();
     account._localstore = new LocalStore(storage);
-    account._localstore.load();
+    account._localstore.load(id);
     account.init();
     return account;
   }
 
   public static newFromPublicKeyRings(
-    path: string,
+    storage: WalletStorage,
     cosigners: PublicKeyRing[],
     m: number,
     singleAddress: boolean,
@@ -204,7 +204,7 @@ export class Account {
     );
 
     let account = new Account();
-    account._localstore = new LocalStore(path);
+    account._localstore = new LocalStore(storage);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length);
     account._localstore.setSingleAddress(singleAddress);
@@ -235,7 +235,7 @@ export class Account {
   }
 
   public static newFromXPrivateKey(
-    path: string,
+    storage: WalletStorage,
     xprv: string,
     payPasswd: string,
     cosigners: PublicKeyRing[],
@@ -276,7 +276,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(path);
+    account._localstore = new LocalStore(storage);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length + 1);
     account._localstore.setSingleAddress(singleAddress);
@@ -315,7 +315,7 @@ export class Account {
   }
 
   public static newFromMultiSignMnemonic(
-    path: string,
+    storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
     payPasswd: string,
@@ -372,7 +372,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(path);
+    account._localstore = new LocalStore(storage);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length + 1);
     account._localstore.setSingleAddress(singleAddress);
@@ -505,7 +505,7 @@ export class Account {
   }
 
   public static newFromSinglePrivateKey(
-    path: string,
+    storage: WalletStorage,
     singlePrivateKey: string,
     passwd: string
   ) {
@@ -520,7 +520,7 @@ export class Account {
     const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
     const ethscPubKey: string = rootkey.getPublicKeyBytes().toString("hex");
     const account = new Account();
-    account._localstore = new LocalStore(path);
+    account._localstore = new LocalStore(storage);
     account._localstore.setDerivationStrategy("BIP44");
     account._localstore.setM(1);
     account._localstore.setN(1);
@@ -556,11 +556,12 @@ export class Account {
 #endif
 */
 
-  public static newFromKeyStore(path: string, ks: KeyStore, payPasswd: string) {
+  /* TODO: try to migrate KeyStore later
+  public static newFromKeyStore(storage: WalletStorage, ks: KeyStore, payPasswd: string) {
   	const ElaNewWalletJson &json = ks.WalletJson();
 
   	const account = new Account()
-  	account._localstore = new LocalStore(path);
+  	account._localstore = new LocalStore(storage);
   	let bytes: Buffer;
   	let str: string;
 
@@ -619,6 +620,7 @@ export class Account {
   	account.init();
   }
 
+*/
   public RequestPubKey(): bytes_t {
     return this._requestPubKey;
   }
@@ -845,7 +847,7 @@ export class Account {
   }
 
   getPubKeyInfo(): json {
-    const j: json;
+    const j: json = {};
     const jCosigners: string[] = [];
 
     j["m"] = this._localstore.getM();
@@ -1314,12 +1316,14 @@ export class Account {
     }
 
     // ripple primary public key
+    /*
     if (!this._localstore.getRipplePrimaryPubKey() && havestdrootkey) {
       const ripplekey: HDKey = stdrootkey.deriveWithPath("44'/144'/0'/0/0");
       this._localstore.setRipplePrimaryPubKey(
         ripplekey.getPublicKeyBytes().toString("hex")
       );
     }
+    */
 
     if (!this._localstore.getxPubKeyHDPM() && haveRootkey) {
       const xpubHDPM: HDKey = rootkey.deriveWithPath("45'");
@@ -1374,10 +1378,12 @@ export class Account {
     return pubkey;
   }
 
+  /*
   getRipplePubKey(): Buffer {
     const pubkey = Buffer.from(this._localstore.getRipplePrimaryPubKey());
     return pubkey;
   }
+  */
 
   getSinglePrivateKey(passwd: string) {
     return AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
@@ -1454,8 +1460,7 @@ export class Account {
     this._localstore.remove();
   }
 
-  /*
-	std::string Account::GetDataPath() const {
-		return _localstore->GetDataPath();
-	}*/
+  getDataPath(): string {
+    return this._localstore.getDataPath();
+  }
 }

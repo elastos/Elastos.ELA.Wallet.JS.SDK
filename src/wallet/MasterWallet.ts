@@ -39,6 +39,7 @@ import {
 } from "../wallet/WalletCommon";
 import { CONFIG_MAINNET } from "../config";
 import { MainchainSubWallet } from "./MainchainSubWallet";
+import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -53,29 +54,29 @@ export class MasterWallet {
   private constructor() {}
 
   public static newFromStorage(
-    storage: WalletStorage,
-    config: Config
-    // dataPath: string
+    id: string,
+    config: Config,
+    storage: WalletStorage
   ) {
     let masterWallet = new MasterWallet();
-    masterWallet._id = storage.masterWalletID;
+    masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = Account.newFromAccount(storage);
+    masterWallet._account = Account.newFromAccount(id, storage);
     // this.setupNetworkParameters();
     return masterWallet;
   }
 
   public static newFromMnemonic(
-    storage: WalletStorage, // masterWalletID
+    id: string, // masterWalletID
     mnemonic: string,
     passphrase: string,
     passwd: string,
     singleAddress: boolean,
-    config: Config
-    // dataPath: string
+    config: Config,
+    storage: WalletStorage
   ) {
     let masterWallet = new MasterWallet();
-    masterWallet._id = storage.masterWalletID;
+    masterWallet._id = id;
     masterWallet._config = config;
 
     masterWallet._account = Account.newFromMnemonicAndPassphrase(
@@ -96,13 +97,13 @@ export class MasterWallet {
     singlePrivateKey: string,
     passwd: string,
     config: Config,
-    dataPath: string
+    storage: WalletStorage
   ) {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = new Account(
-      dataPath + "/" + _id,
+    masterWallet._account = Account.newFromSinglePrivateKey(
+      storage,
       singlePrivateKey,
       passwd
     );
@@ -117,8 +118,9 @@ export class MasterWallet {
     backupPassword: string,
     payPasswd: string,
     config: Config,
-    dataPath: string
+    storage: WalletStorage
   ) {
+    // TODO
     // KeyStore keystore;
     // keystore.Import(keystoreContent, backupPassword);
 
@@ -126,12 +128,13 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
 
-    masterWallet._account = new Account(
-      dataPath + "/" + _id,
-      keystore,
-      payPasswd
-    );
-    masterWallet._account.save();
+    // TODO
+    // masterWallet._account = Account.newFromKeyStore(
+    //   storage,
+    //   keystore,
+    //   payPasswd
+    // );
+    // masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
@@ -141,7 +144,7 @@ export class MasterWallet {
     pubKeyRings: PublicKeyRing[],
     m: uint32_t,
     config: Config,
-    dataPath: string,
+    storage: WalletStorage,
     singleAddress: boolean,
     compatible: boolean
   ): MasterWallet {
@@ -153,8 +156,8 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = new Account(
-      dataPath + "/" + _id,
+    masterWallet._account = Account.newFromPublicKeyRings(
+      storage,
       pubKeyRings,
       m,
       singleAddress,
@@ -172,7 +175,7 @@ export class MasterWallet {
     cosigners: PublicKeyRing[],
     m: uint32_t,
     config: Config,
-    dataPath: string,
+    storage: WalletStorage,
     singleAddress: boolean,
     compatible: boolean
   ) {
@@ -184,8 +187,8 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = new Account(
-      dataPath + "/" + _id,
+    masterWallet._account = Account.newFromXPrivateKey(
+      storage,
       xprv,
       payPassword,
       cosigners,
@@ -206,7 +209,7 @@ export class MasterWallet {
     cosigners: PublicKeyRing[],
     m: uint32_t,
     config: Config,
-    dataPath: string,
+    storage: WalletStorage,
     singleAddress: boolean,
     compatible: boolean
   ) {
@@ -218,8 +221,8 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = new Account(
-      dataPath + "/" + _id,
+    masterWallet._account = Account.newFromMultiSignMnemonic(
+      storage,
       mnemonic,
       passphrase,
       payPasswd,
@@ -615,7 +618,8 @@ export class MasterWallet {
     for (let i = 0; i < keys.length; i++) {
       const subWallet = this._createdWallets[keys[i]];
       if (subWallet !== null) {
-        subWallet.flushData();
+        // TODO
+        // subWallet.flushData();
       }
     }
   }

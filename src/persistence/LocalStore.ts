@@ -265,8 +265,8 @@ export class LocalStore {
     this._singlePrivateKey = AESEncrypt(bytes, newPasswd);
   }
 
-  public load(): boolean {
-    let j = this._walletStorage.loadStore();
+  public load(id: string): boolean {
+    let j = this._walletStorage.loadStore(id);
 
     ErrorChecker.checkLogic(
       !j || j === {},
@@ -291,11 +291,11 @@ export class LocalStore {
     */
   }
 
-  /*
-	const std:: string & LocalStore:: GetDataPath() const {
-		return _path;
-			}
+  getDataPath(): string {
+    return this._walletStorage.currentMasterWalletID;
+  }
 
+  /*
 	void LocalStore:: SaveTo(const std:: string & path) {
 		_path = path;
 		Save();
