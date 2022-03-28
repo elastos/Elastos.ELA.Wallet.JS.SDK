@@ -43,7 +43,6 @@ export interface HDKeyJSON {
 }
 
 export class DeterministicKey {
-  d;
   public static ELASTOS_VERSIONS: Version = {
     curve: Secp256.CURVE_R1,
     private: 0x0488ade4,

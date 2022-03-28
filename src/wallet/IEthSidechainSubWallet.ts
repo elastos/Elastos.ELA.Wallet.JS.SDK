@@ -23,10 +23,12 @@
 import { uint64_t, json } from "../types";
 import { ISubWallet } from "./ISubWallet";
 
-export enum EthereumAmountUnit {
+export enum EthereumAmountType {
   TOKEN_DECIMAL = 0,
-  TOKEN_INTEGER = 1,
+  TOKEN_INTEGER = 1
+}
 
+export enum EthereumAmountUnit {
   ETHER_WEI = 0,
   ETHER_GWEI = 3,
   ETHER_ETHER = 6
