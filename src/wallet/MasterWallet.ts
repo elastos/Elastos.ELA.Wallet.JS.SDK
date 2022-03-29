@@ -40,6 +40,7 @@ import {
 import { CONFIG_MAINNET } from "../config";
 import { MainchainSubWallet } from "./MainchainSubWallet";
 import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
+import { EthereumNetworks } from "./EthereumNetwork";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -62,7 +63,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromAccount(id, storage);
-    // this.setupNetworkParameters();
+    masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
@@ -288,7 +289,7 @@ export class MasterWallet {
     ErrorChecker.checkParam(
       chainID.length > 128,
       Error.Code.InvalidArgument,
-      "Chain ID sould less than 128"
+      "Chain ID should less than 128"
     );
 
     if (this._createdWallets[chainID]) {
@@ -356,13 +357,11 @@ export class MasterWallet {
     for (let i = 0; i < keys.length; i++) {
       const value = configs[keys[i]];
       if (value.name().length !== 0) {
-        /* TODO
-        InsertEthereumNetwork(
+        EthereumNetworks.insertEthereumNetwork(
           value.name(),
           value.chainID(),
           value.networkID()
         );
-				*/
       }
     }
   }

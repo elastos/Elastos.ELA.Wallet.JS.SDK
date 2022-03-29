@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { MasterWallet } from "./MasterWallet";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { Log } from "../common/Log";
@@ -30,12 +30,18 @@ import {
   EthereumAmountType
 } from "./IEthSidechainSubWallet";
 import { SubWallet } from "./SubWallet";
-import { uint64_t, json } from "../types";
+import { uint64_t, json, uint32_t, JSONArray } from "../types";
 import { ErrorChecker, Error } from "../common/ErrorChecker";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { ChainConfig } from "../Config";
 import { Account } from "../account/Account";
+import {
+  EthereumNetwork,
+  EthereumNetworks,
+  EthereumNetworkRecord
+} from "./EthereumNetwork";
+import { EthereumWallet } from "./EthereumWallet";
 
 namespace EthereumAmount {
   export enum Unit {
@@ -52,6 +58,8 @@ export class EthSidechainSubWallet
   extends SubWallet
   implements IEthSidechainSubWallet
 {
+  private _wallet: EthereumWallet;
+
   constructor(
     info: CoinInfo,
     config: ChainConfig,
@@ -75,10 +83,11 @@ export class EthSidechainSubWallet
       }
     }
 
-    let chainID: string = info.getChainID();
-    const net = ethers.providers.getNetwork(parseInt(chainID));
+    const netName: string = info.getChainID() + "-" + netType;
+    const net: EthereumNetworkRecord | null =
+      EthereumNetworks.findEthereumNetwork(netName);
     ErrorChecker.checkParam(
-      net == null,
+      net === null,
       Error.Code.InvalidArgument,
       "network config not found"
     );
@@ -86,7 +95,12 @@ export class EthSidechainSubWallet
     // EthereumNetworkPtr network(new EthereumNetwork(net));
     // this._client = new EthereumClient(network, parent->GetDataPath(), pubkey);
     // this._client->_ewm->getWallet()->setDefaultGasPrice(5000000000);
+
+    this._wallet = new EthereumWallet(net, pubkey);
+    this._wallet.setDefaultGasPrice(BigNumber.from("5000000000"));
   }
+
+  destroy() {}
 
   createTransfer(
     targetAddress: string,
@@ -188,53 +202,40 @@ export class EthSidechainSubWallet
     return prvkeystring;
   }
 
-  /*
-		nlohmann::json EthSidechainSubWallet::GetBasicInfo() const {
-			ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+  getBasicInfo(): json {
+    let j: json;
+    let jinfo: json;
 
-			EthereumWalletPtr wallet = _client->_ewm->getWallet();
-			nlohmann::json j, jinfo;
+    jinfo["Symbol"] = this._wallet.getSymbol();
+    jinfo["GasLimit"] = this._wallet.getDefaultGasLimit().toString();
+    jinfo["GasPrice"] = this._wallet.getDefaultGasPrice().toString();
+    jinfo["Account"] = this._wallet.getPrimaryAddress();
+    jinfo["HoldsEther"] = this._wallet.walletHoldsEther();
 
-			jinfo["Symbol"] = wallet->getSymbol();
-			jinfo["GasLimit"] = wallet->getDefaultGasLimit();
-			jinfo["GasPrice"] = wallet->getDefaultGasPrice();
-			jinfo["Account"] = wallet->getAccount()->getPrimaryAddress();
-			jinfo["HoldsEther"] = wallet->walletHoldsEther();
-
-			j["Info"] = jinfo;
-			j["ChainID"] = _info->GetChainID();
-
-			ArgInfo("r => {}", j.dump());
-			return j;
-		}
-
-    nlohmann::json EthSidechainSubWallet::GetAddresses(uint32_t index, uint32_t count, bool internal) const {
-      ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-
-      std::string addr = _client->_ewm->getWallet()->getAccount()->getPrimaryAddress();
-      nlohmann::json j;
-      j.push_back(addr);
-
-      ArgInfo("r => {}", j.dump());
-
-      return j;
-    }
-
-    nlohmann::json EthSidechainSubWallet::GetPublicKeys(uint32_t index, uint32_t count, bool internal) const {
-    ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-    ArgInfo("index: {}", index);
-    ArgInfo("count: {}", count);
-    ArgInfo("internal: {}", internal);
-
-    std::string pubkey = _client->_ewm->getWallet()->getAccount()->getPrimaryAddressPublicKey().getHex();
-    nlohmann::json j;
-    j.push_back(pubkey);
-
-    ArgInfo("r => {}", j.dump());
+    j["Info"] = jinfo;
+    j["ChainID"] = this._wallet.getChainID();
 
     return j;
   }
-*/
+
+  getAddresses(index: uint32_t, count: uint32_t, internal: boolean): JSONArray {
+    let addr: string = this._wallet.getPrimaryAddress();
+    let j: JSONArray;
+    j.push(addr);
+    return j;
+  }
+
+  getPublicKeys(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean
+  ): JSONArray {
+    let pubkey: string = this._wallet.getPrimaryAddressPublicKey();
+    let j: JSONArray;
+    j.push(pubkey);
+    return j;
+  }
+
   signTransaction(tx: json, passwd: string): json {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("tx: {}", tx.dump());
@@ -260,40 +261,41 @@ export class EthSidechainSubWallet
 				ErrorChecker::ThrowParamException(Error::InvalidArgument, "get 'ID' of json failed");
 			}
 
-            BRKey prvkey = GetBRPrivateKey(passwd);
+      BRKey prvkey = GetBRPrivateKey(passwd);
 			_client->_ewm->getWallet()->signWithPrivateKey(transfer, prvkey);
 
-            std::string rawtx = transfer->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_SIGNED);
+      std::string rawtx = transfer->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_SIGNED);
 			nlohmann::json j;
 			j["Hash"] = transfer->getOriginationTransactionHash();
 			j["Fee"] = transfer->getFee(amountUnit);
 			j["Unit"] = amountUnit;
-            j["TxSigned"] = rawtx;
+      j["TxSigned"] = rawtx;
 
 			ArgInfo("r => {}", j.dump());
 			return j;
     */
   }
 
-  /*
   signDigest(address: string, digest: string, passwd: string): string {
-    std::string addr = _client->_ewm->getWallet()->getAccount()->getPrimaryAddress();
-    ErrorChecker.checkParam(addr != address, Error.Code.InvalidArgument, "Invalid address");
+    const addr: string = this._wallet.getPrimaryAddress();
+    ErrorChecker.checkParam(
+      addr != address,
+      Error.Code.InvalidArgument,
+      "Invalid address"
+    );
 
-    Key k = GetPrivateKey(passwd);
-    std::string sig = k.SignDER(uint256(digest)).getHex();
+    // Key k = GetPrivateKey(passwd);
+    // std::string sig = k.SignDER(uint256(digest)).getHex();
 
-    return sig;
+    // return sig;
   }
 
   verifyDigest(pubkey: string, digest: string, signature: string): boolean {
-    Key k(CTBitcoin, pubkey);
-    bool r = k.VerifyDER(uint256(digest), signature);
-
-    ArgInfo("r => {}", r);
-
-    return r;
-  }*/
+    // Key k(CTBitcoin, pubkey);
+    // bool r = k.VerifyDER(uint256(digest), signature);
+    // ArgInfo("r => {}", r);
+    // return r;
+  }
 
   private getPrivateKey(passwd: string): HDKey {
     let k: HDKey;
