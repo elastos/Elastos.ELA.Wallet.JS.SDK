@@ -23,25 +23,19 @@
 import { BigNumber, ethers } from "ethers";
 import { MasterWallet } from "./MasterWallet";
 import { CoinInfo } from "../walletcore/CoinInfo";
-import { Log } from "../common/Log";
 import {
   IEthSidechainSubWallet,
-  EthereumAmountUnit,
-  EthereumAmountType
+  EthereumAmountUnit
 } from "./IEthSidechainSubWallet";
 import { SubWallet } from "./SubWallet";
 import { uint64_t, json, uint32_t, JSONArray } from "../types";
 import { ErrorChecker, Error } from "../common/ErrorChecker";
-import { DeterministicKey } from "../walletcore/deterministickey";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { ChainConfig } from "../Config";
 import { Account } from "../account/Account";
-import {
-  EthereumNetwork,
-  EthereumNetworks,
-  EthereumNetworkRecord
-} from "./EthereumNetwork";
+import { EthereumNetworks, EthereumNetworkRecord } from "./EthereumNetwork";
 import { EthereumWallet } from "./EthereumWallet";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 namespace EthereumAmount {
   export enum Unit {
@@ -283,18 +277,17 @@ export class EthSidechainSubWallet
       Error.Code.InvalidArgument,
       "Invalid address"
     );
-
-    // Key k = GetPrivateKey(passwd);
-    // std::string sig = k.SignDER(uint256(digest)).getHex();
-
-    // return sig;
+    const k = this.getPrivateKey(passwd);
+    const sig = EcdsaSigner.sign(k.getPrivateKeyBytes(), Buffer.from(digest));
+    return sig.toString();
   }
 
   verifyDigest(pubkey: string, digest: string, signature: string): boolean {
-    // Key k(CTBitcoin, pubkey);
-    // bool r = k.VerifyDER(uint256(digest), signature);
-    // ArgInfo("r => {}", r);
-    // return r;
+    return EcdsaSigner.verify(
+      pubkey,
+      Buffer.from(signature),
+      Buffer.from(digest)
+    );
   }
 
   private getPrivateKey(passwd: string): HDKey {
