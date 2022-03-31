@@ -50,7 +50,8 @@ export class EthSidechainSubWallet
     info: CoinInfo,
     config: ChainConfig,
     parent: MasterWallet,
-    netType: string
+    netType: string,
+    jsonRPC: string
   ) {
     super(info, config, parent);
     let account: Account = this._parent.getAccount();
@@ -80,7 +81,10 @@ export class EthSidechainSubWallet
 
     this._wallet = new EthereumWallet(net, pubkey);
     this._wallet.setDefaultGasPrice(BigNumber.from("5000000000"));
-    this._provider = ethers.getDefaultProvider(net.chainId);
+
+    // Must create a provider otherwise we cann't use the 'populateTransaction' api of ethers.js
+    // The RPC of ETHSidechain testnet: https://api-testnet.trinity-tech.io/esc
+    this._provider = new ethers.providers.JsonRpcProvider(jsonRPC);
   }
 
   destroy() {}
@@ -95,6 +99,17 @@ export class EthSidechainSubWallet
 
     const rawtx = ethers.utils.serializeTransaction(unsignedTx);
     return rawtx;
+  }
+
+  private getUnit(etherUnit: EthereumAmountUnit) {
+    switch (etherUnit) {
+      case EthereumAmountUnit.ETHER_GWEI:
+        return "gwei";
+      case EthereumAmountUnit.ETHER_ETHER:
+        return "ether";
+      default:
+        return "wei";
+    }
   }
 
   async createTransfer(
@@ -117,23 +132,25 @@ export class EthSidechainSubWallet
       );
     }
 
-    let amtUnit: EthereumAmountUnit = amountUnit;
-    let gasUnit: EthereumAmountUnit = gasPriceUnit;
+    let amtUnit: string = this.getUnit(amountUnit);
+    let gasUnit: string = this.getUnit(gasPriceUnit);
     let j: json;
 
     let transaction = {
       to: targetAddress,
-      value: ethers.utils.parseEther(amount),
+      value: ethers.utils.parseUnits(amount, amtUnit),
       gasLimit,
-      gasPrice: ethers.utils.parseUnits(gasPrice, "gwei"),
+      gasPrice: ethers.utils.parseUnits(gasPrice, gasUnit),
       nonce: nonce.toNumber(),
       type: 1 // pre-eip-1559 transaction
     };
     const rawtx = await this.getRawTx(transaction);
 
     j["TxUnsigned"] = rawtx;
-    // j["Fee"] = tx->getFee(amtUnit);
-    // j["Unit"] = tx->getDefaultUnit();
+    const gasAmount = BigNumber.from(gasLimit).mul(gasPrice).toString();
+    // The Fee unit is wei
+    j["Fee"] = ethers.utils.parseUnits(gasAmount, gasUnit).toString();
+    j["Unit"] = amountUnit;
 
     return j;
   }
@@ -159,18 +176,15 @@ export class EthSidechainSubWallet
       );
     }
 
-    let unit: EthereumAmountUnit = amountUnit;
-    let gasUnit: EthereumAmountUnit = gasPriceUnit;
+    let unit: string = this.getUnit(amountUnit);
+    let gasUnit: string = this.getUnit(gasPriceUnit);
     let j: json;
-    // EthereumTransferPtr tx = _client->_ewm->getWallet()->createTransferGeneric(targetAddress,amount,unit,gasPrice,gasUnit,gasLimit,data,nonce);
-
-    // std::string rawtx = tx->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_UNSIGNED);
 
     let transaction = {
       to: targetAddress,
-      value: ethers.utils.parseEther(amount),
+      value: ethers.utils.parseUnits(amount, unit),
       gasLimit,
-      gasPrice: ethers.utils.parseUnits("5", "gwei"),
+      gasPrice: ethers.utils.parseUnits(gasPrice, gasUnit),
       nonce: nonce.toNumber(),
       type: 1, // pre-eip-1559 transaction
       data
@@ -178,9 +192,10 @@ export class EthSidechainSubWallet
     const rawtx = await this.getRawTx(transaction);
 
     j["TxUnsigned"] = rawtx;
-    // j["Fee"] = tx->getFee(unit);
-    // j["Unit"] = tx->getDefaultUnit();
-
+    const gasAmount = BigNumber.from(gasLimit).mul(gasPrice).toString();
+    // the Fee unit is wei
+    j["Fee"] = ethers.utils.parseUnits(gasAmount, gasUnit).toString();
+    j["Unit"] = amountUnit;
     return j;
   }
 
@@ -227,44 +242,46 @@ export class EthSidechainSubWallet
     return j;
   }
 
-  signTransaction(tx: json, passwd: string): json {
-    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-    // ArgInfo("tx: {}", tx.dump());
-    // ArgInfo("passwd: *");
-    /*
-			let rlptx: string;
-			EthereumTransferPtr transfer;
-      let amountUnit: EthereumAmount.Unit;
+  async signTransaction(tx: json, passwd: string) {
+    let rlptx: string;
+    let amountUnit: EthereumAmountUnit;
+    let transaction: UnsignedTransaction;
+    try {
+      rlptx = tx["TxUnsigned"] as string;
+      amountUnit = tx["Unit"] as EthereumAmountUnit;
 
-			try {
-				rlptx = tx["TxUnsigned"] as string;
-        amountUnit = EthereumAmount::Unit(tx["Unit"].get<int>());
+      // get the unsigned transaction
+      transaction = ethers.utils.parseTransaction(rlptx);
+      console.log("unsigned transaction", transaction);
 
-        BREthereumTransaction transaction = transactionRlpHexDecode (_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_UNSIGNED, rlptx.c_str());
-        BREthereumTransfer brtransfer = transferCreateWithTransactionOriginating (
-          transaction,
-          (_client->_ewm->getWallet()->walletHoldsEther()
-            ? TRANSFER_BASIS_TRANSACTION
-            : TRANSFER_BASIS_LOG)
-        );
-        transfer = EthereumTransferPtr(new EthereumTransfer(_client->_ewm.get(), brtransfer, amountUnit));
-			} catch (const std::exception &e) {
-				ErrorChecker::ThrowParamException(Error::InvalidArgument, "get 'ID' of json failed");
-			}
+      // TODO
+      // BREthereumTransfer brtransfer = transferCreateWithTransactionOriginating (
+      //   transaction,
+      //   (_client->_ewm->getWallet()->walletHoldsEther()
+      //     ? TRANSFER_BASIS_TRANSACTION
+      //     : TRANSFER_BASIS_LOG)
+      // );
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "get 'ID' of json failed"
+      );
+    }
 
-      BRKey prvkey = GetBRPrivateKey(passwd);
-			_client->_ewm->getWallet()->signWithPrivateKey(transfer, prvkey);
+    const key: HDKey = this.getPrivateKey(passwd);
+    // use private key to create a wallet
+    let privateKey = key.getPrivateKeyBytes().toString();
+    const wallet = new ethers.Wallet(privateKey);
 
-      std::string rawtx = transfer->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_SIGNED);
-			nlohmann::json j;
-			j["Hash"] = transfer->getOriginationTransactionHash();
-			j["Fee"] = transfer->getFee(amountUnit);
-			j["Unit"] = amountUnit;
-      j["TxSigned"] = rawtx;
+    const rawtx = await wallet.signTransaction(transaction);
 
-			ArgInfo("r => {}", j.dump());
-			return j;
-    */
+    let j: json;
+    // TODO
+    // j["Hash"] = transfer->getOriginationTransactionHash();
+    // j["Fee"] = transfer->getFee(amountUnit);
+    j["Unit"] = amountUnit;
+    j["TxSigned"] = rawtx;
+    return j;
   }
 
   signDigest(address: string, digest: string, passwd: string): string {
