@@ -36,23 +36,15 @@ import { Account } from "../account/Account";
 import { EthereumNetworks, EthereumNetworkRecord } from "./EthereumNetwork";
 import { EthereumWallet } from "./EthereumWallet";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
-
-namespace EthereumAmount {
-  export enum Unit {
-    // TOKEN_DECIMAL = 0,
-    // TOKEN_INTEGER = 1,
-
-    ETHER_WEI = 0,
-    ETHER_GWEI = 3,
-    ETHER_ETHER = 6
-  }
-}
+import { Provider } from "@ethersproject/abstract-provider";
+import { UnsignedTransaction } from "@ethersproject/transactions";
 
 export class EthSidechainSubWallet
   extends SubWallet
   implements IEthSidechainSubWallet
 {
   private _wallet: EthereumWallet;
+  private _provider: Provider;
 
   constructor(
     info: CoinInfo,
@@ -60,7 +52,7 @@ export class EthSidechainSubWallet
     parent: MasterWallet,
     netType: string
   ) {
-    super();
+    super(info, config, parent);
     let account: Account = this._parent.getAccount();
     let pubkey = account.getETHSCPubKey();
     if (pubkey.length === 0) {
@@ -86,17 +78,26 @@ export class EthSidechainSubWallet
       "network config not found"
     );
 
-    // EthereumNetworkPtr network(new EthereumNetwork(net));
-    // this._client = new EthereumClient(network, parent->GetDataPath(), pubkey);
-    // this._client->_ewm->getWallet()->setDefaultGasPrice(5000000000);
-
     this._wallet = new EthereumWallet(net, pubkey);
     this._wallet.setDefaultGasPrice(BigNumber.from("5000000000"));
+    this._provider = ethers.getDefaultProvider(net.chainId);
   }
 
   destroy() {}
 
-  createTransfer(
+  private async getRawTx(transaction) {
+    const wallet = ethers.Wallet.createRandom();
+    const signer = wallet.connect(this._provider);
+
+    const unsignedTx = (await signer.populateTransaction(
+      transaction
+    )) as UnsignedTransaction;
+
+    const rawtx = ethers.utils.serializeTransaction(unsignedTx);
+    return rawtx;
+  }
+
+  async createTransfer(
     targetAddress: string,
     amount: string,
     amountUnit: EthereumAmountUnit,
@@ -104,13 +105,7 @@ export class EthSidechainSubWallet
     gasPriceUnit: EthereumAmountUnit,
     gasLimit: string,
     nonce: uint64_t
-  ) {
-    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-    // ArgInfo("target: {}", targetAddress);
-    // ArgInfo("amount: {}", amount);
-    // ArgInfo("amountUnit: {}", amountUnit);
-    // ArgInfo("nonce: {}", nonce);
-
+  ): Promise<json> {
     if (
       amountUnit != EthereumAmountUnit.ETHER_WEI &&
       amountUnit != EthereumAmountUnit.ETHER_GWEI &&
@@ -126,21 +121,24 @@ export class EthSidechainSubWallet
     let gasUnit: EthereumAmountUnit = gasPriceUnit;
     let j: json;
 
-    // EthereumTransferPtr tx = _client->_ewm->getWallet()->createTransfer(targetAddress, amount, amtUnit, gasPrice, gasUnit, gasLimit, nonce);
+    let transaction = {
+      to: targetAddress,
+      value: ethers.utils.parseEther(amount),
+      gasLimit,
+      gasPrice: ethers.utils.parseUnits(gasPrice, "gwei"),
+      nonce: nonce.toNumber(),
+      type: 1 // pre-eip-1559 transaction
+    };
+    const rawtx = await this.getRawTx(transaction);
 
-    // let rawtx: string = tx->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_UNSIGNED);
-
-    // j["TxUnsigned"] = rawtx;
+    j["TxUnsigned"] = rawtx;
     // j["Fee"] = tx->getFee(amtUnit);
     // j["Unit"] = tx->getDefaultUnit();
 
-    // ArgInfo("r => {}", j.dump());
-
-    // return j;
-    return {};
+    return j;
   }
 
-  createTransferGeneric(
+  async createTransferGeneric(
     targetAddress: string,
     amount: string,
     amountUnit: EthereumAmountUnit,
@@ -149,17 +147,7 @@ export class EthSidechainSubWallet
     gasLimit: string,
     data: string,
     nonce: uint64_t
-  ): json {
-    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-    // ArgInfo("target: {}", targetAddress);
-    // ArgInfo("amount: {}", amount);
-    // ArgInfo("amountUnit: {}", amountUnit);
-    // ArgInfo("gasPrice: {}", gasPrice);
-    // ArgInfo("gasPriceUnit: {}", gasPriceUnit);
-    // ArgInfo("gasLimit: {}", gasLimit);
-    // ArgInfo("data: {}", data);
-    // ArgInfo("nonce: {}", nonce);
-
+  ): Promise<json> {
     if (
       amountUnit != EthereumAmountUnit.ETHER_WEI &&
       amountUnit != EthereumAmountUnit.ETHER_GWEI &&
@@ -178,11 +166,20 @@ export class EthSidechainSubWallet
 
     // std::string rawtx = tx->RlpEncode(_client->_ewm->getNetwork()->getRaw(), RLP_TYPE_TRANSACTION_UNSIGNED);
 
-    // j["TxUnsigned"] = rawtx;
+    let transaction = {
+      to: targetAddress,
+      value: ethers.utils.parseEther(amount),
+      gasLimit,
+      gasPrice: ethers.utils.parseUnits("5", "gwei"),
+      nonce: nonce.toNumber(),
+      type: 1, // pre-eip-1559 transaction
+      data
+    };
+    const rawtx = await this.getRawTx(transaction);
+
+    j["TxUnsigned"] = rawtx;
     // j["Fee"] = tx->getFee(unit);
     // j["Unit"] = tx->getDefaultUnit();
-
-    // ArgInfo("r => {}", j.dump());
 
     return j;
   }

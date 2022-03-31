@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { info } from "console";
 import { warnLog } from "../common/Log";
 import { ChainConfig } from "../config";
 import { json, JSONValue, uint32_t } from "../types";
@@ -35,14 +36,15 @@ export abstract class SubWallet {
   protected _info: CoinInfo;
   protected _config: ChainConfig;
 
+  constructor(info: CoinInfo, config: ChainConfig, parent: MasterWallet) {
+    this._parent = parent;
+    this._info = info;
+    this._config = config;
+  }
+
   /* #define WarnLog() SPVLOG_WARN("SubWallet::{} should not be here", GetFunName())
 
-	SubWallet::SubWallet(const CoinInfoPtr &info,
-							const ChainConfigPtr &config,
-							MasterWallet *parent) :
-		_parent(parent),
-		_info(info),
-		_config(config) {}
+
 
 	SubWallet::~SubWallet() {}
 

@@ -53,7 +53,7 @@ export interface IEthSidechainSubWallet extends ISubWallet {
     gasPriceUnit: EthereumAmountUnit,
     gasLimit: string,
     nonce: uint64_t
-  ): json;
+  ): Promise<json>;
 
   /**
    *
@@ -81,7 +81,7 @@ export interface IEthSidechainSubWallet extends ISubWallet {
     gasLimit: string,
     data: string,
     nonce: uint64_t
-  ): json;
+  ): Promise<json>;
 
   exportPrivateKey(payPassword: string): string;
 }

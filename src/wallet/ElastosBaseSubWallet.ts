@@ -67,7 +67,7 @@ export class ElastosBaseSubWallet
     parent: MasterWallet,
     netType: string
   ) {
-    super();
+    super(info, config, parent);
 
     ErrorChecker.checkParam(
       !this._parent.getAccount().masterPubKeyHDPMString(),

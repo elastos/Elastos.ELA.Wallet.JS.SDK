@@ -51,4 +51,8 @@ export class EthereumWallet {
   getChainID(): string {
     return this._network.name.split("-")[0];
   }
+
+  getNetwork(): EthereumNetworkRecord {
+    return this._network;
+  }
 }
