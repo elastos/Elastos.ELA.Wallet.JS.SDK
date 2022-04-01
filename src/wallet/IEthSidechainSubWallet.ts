@@ -34,7 +34,7 @@ export enum EthereumAmountUnit {
   ETHER_ETHER = 6
 }
 
-export interface IEthSidechainSubWallet extends ISubWallet {
+export interface IEthSidechainSubWallet {
   /**
    *
    * @param targetAddress

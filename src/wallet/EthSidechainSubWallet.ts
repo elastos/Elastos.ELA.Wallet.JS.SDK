@@ -28,14 +28,13 @@ import {
   EthereumAmountUnit
 } from "./IEthSidechainSubWallet";
 import { SubWallet } from "./SubWallet";
-import { uint64_t, json, uint32_t, JSONArray } from "../types";
+import { uint64_t, json, uint32_t, JSONArray, JSONObject } from "../types";
 import { ErrorChecker, Error } from "../common/ErrorChecker";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { ChainConfig } from "../Config";
 import { Account } from "../account/Account";
 import { EthereumNetworks, EthereumNetworkRecord } from "./EthereumNetwork";
 import { EthereumWallet } from "./EthereumWallet";
-import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import { Provider } from "@ethersproject/abstract-provider";
 import { UnsignedTransaction } from "@ethersproject/transactions";
 import { Secp256 } from "../walletcore/secp256";
@@ -196,7 +195,7 @@ export class EthSidechainSubWallet
     const gasAmount = BigNumber.from(gasLimit).mul(gasPrice).toString();
     // the Fee unit is wei
     j["Fee"] = ethers.utils.parseUnits(gasAmount, gasUnit).toString();
-    j["Unit"] = amountUnit;
+    j["Unit"] = EthereumAmountUnit.ETHER_WEI;
     return j;
   }
 
@@ -254,14 +253,6 @@ export class EthSidechainSubWallet
       // get the unsigned transaction
       transaction = ethers.utils.parseTransaction(rlptx);
       console.log("unsigned transaction", transaction);
-
-      // TODO
-      // BREthereumTransfer brtransfer = transferCreateWithTransactionOriginating (
-      //   transaction,
-      //   (_client->_ewm->getWallet()->walletHoldsEther()
-      //     ? TRANSFER_BASIS_TRANSACTION
-      //     : TRANSFER_BASIS_LOG)
-      // );
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.InvalidArgument,
@@ -273,13 +264,16 @@ export class EthSidechainSubWallet
     // use private key to create a wallet
     let privateKey = key.getPrivateKeyBytes().toString();
     const wallet = new ethers.Wallet(privateKey);
-
     const rawtx = await wallet.signTransaction(transaction);
 
     let j: json;
-    // TODO
-    // j["Hash"] = transfer->getOriginationTransactionHash();
-    // j["Fee"] = transfer->getFee(amountUnit);
+    j["Hash"] = rlptx;
+    const gasAmount = BigNumber.from(transaction.gasLimit)
+      .mul(transaction.gasPrice)
+      .toString();
+    j["Fee"] = ethers.utils
+      .parseUnits(gasAmount, this.getUnit(amountUnit))
+      .toString();
     j["Unit"] = amountUnit;
     j["TxSigned"] = rawtx;
     return j;

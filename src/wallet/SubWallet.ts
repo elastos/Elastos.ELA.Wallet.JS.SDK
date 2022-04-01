@@ -145,10 +145,12 @@ export abstract class SubWallet {
    * @param passwd use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
    * @return If success return the content of transaction in json format.
    */
-  public signTransaction(tx: json, passwd: string): json {
-    warnLog();
-    return {};
-  }
+  // public signTransaction(tx: json, passwd: string): json {
+  //   warnLog();
+  //   return {};
+  // }
+
+  abstract signTransaction(tx: json, passwd: string): Promise<json>;
 
   /**
    * Sign message with private key of did.
