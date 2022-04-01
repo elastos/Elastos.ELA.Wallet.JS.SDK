@@ -38,6 +38,7 @@ import { EthereumWallet } from "./EthereumWallet";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import { Provider } from "@ethersproject/abstract-provider";
 import { UnsignedTransaction } from "@ethersproject/transactions";
+import { Secp256 } from "../walletcore/secp256";
 
 export class EthSidechainSubWallet
   extends SubWallet
@@ -291,16 +292,19 @@ export class EthSidechainSubWallet
       Error.Code.InvalidArgument,
       "Invalid address"
     );
+
     const k = this.getPrivateKey(passwd);
-    const sig = EcdsaSigner.sign(k.getPrivateKeyBytes(), Buffer.from(digest));
-    return sig.toString();
+    const curve = new Secp256(Secp256.CURVE_K1);
+    const sig = curve.sign(Buffer.from(digest), k.getPrivateKeyBytes());
+    return sig.signature.toString("hex");
   }
 
   verifyDigest(pubkey: string, digest: string, signature: string): boolean {
-    return EcdsaSigner.verify(
-      pubkey,
+    const curve = new Secp256(Secp256.CURVE_K1);
+    return curve.verify(
+      Buffer.from(digest),
       Buffer.from(signature),
-      Buffer.from(digest)
+      Buffer.from(pubkey)
     );
   }
 
@@ -311,7 +315,7 @@ export class EthSidechainSubWallet
       seed = this._parent.getAccount().getSeed(passwd);
       let masterKey: HDKey = HDKey.fromMasterSeed(
         seed,
-        KeySpec.Bitcoin
+        KeySpec.Ethereum
       ).deriveWithPath("44'/60'/0'/0/0");
       k = masterKey;
     } else {
@@ -323,7 +327,7 @@ export class EthSidechainSubWallet
         Error.Code.Sign,
         "private key not found"
       );
-      k = HDKey.deserialize(ethprvkey, KeySpec.Bitcoin);
+      k = HDKey.deserialize(ethprvkey, KeySpec.Ethereum);
     }
     return k;
   }
