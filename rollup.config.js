@@ -89,25 +89,25 @@ const nodePlugins = [
             '/node_modules/rollup-plugin-node-polyfills/**/*.js',
             '/node_modules/rollup-plugin-polyfill-node/**/*.js',
         ],
-         values: {
-             // Replace readable-stream with stream (polyfilled) because it uses dynamic requires and this doesn't work well at runtime
-             // even if trying to add "readable-stream" to "dynamicRequireTargets" in commonJs().
-             // https://github.com/rollup/rollup/issues/1507#issuecomment-340550539
-             'require(\'readable-stream\')': 'require(\'stream\')',
-             'require("readable-stream")': 'require("stream")',
-             'require(\'readable-stream/writable\')': 'require(\'stream\').Writable',
-             'require("readable-stream/writable")': 'require("stream").Writable',
-             'require(\'readable-stream/readable\')': 'require(\'stream\').Readable',
-             'require("readable-stream/readable")': 'require("stream").Readable',
-             'LegacyTransportStream = require(\'./legacy\')': 'LegacyTransportStream = null',
-             'LegacyTransportStream = require(\'winston-transport/legacy\')': 'LegacyTransportStream = null'
-         }
+        values: {
+            // Replace readable-stream with stream (polyfilled) because it uses dynamic requires and this doesn't work well at runtime
+            // even if trying to add "readable-stream" to "dynamicRequireTargets" in commonJs().
+            // https://github.com/rollup/rollup/issues/1507#issuecomment-340550539
+            'require(\'readable-stream\')': 'require(\'stream\')',
+            'require("readable-stream")': 'require("stream")',
+            'require(\'readable-stream/writable\')': 'require(\'stream\').Writable',
+            'require("readable-stream/writable")': 'require("stream").Writable',
+            'require(\'readable-stream/readable\')': 'require(\'stream\').Readable',
+            'require("readable-stream/readable")': 'require("stream").Readable',
+            'LegacyTransportStream = require(\'./legacy\')': 'LegacyTransportStream = null',
+            'LegacyTransportStream = require(\'winston-transport/legacy\')': 'LegacyTransportStream = null'
+        }
     }),
-    commonjs({}),
     typescript({
-        include: ["index.ts", "src/walletcore/*.ts", "src/**/*.ts"],
+        //include: ["index.ts", "src/walletcore/*.ts", "src/**/*.ts"],
         exclude: "*.browser.ts"
     }),
+    commonjs({}),
     size()
 ];
 
@@ -306,5 +306,5 @@ export default command => {
         ]
     };
 
-    return [commonJSBuild, esmBuild /*, browserBuilds */];
+    return [commonJSBuild/*, esmBuild , browserBuilds */];
 };

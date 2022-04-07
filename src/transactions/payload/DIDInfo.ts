@@ -3,9 +3,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 import { ByteStream } from "../../common/bytestream";
-import { uint8_t, size_t, json, bytes_t, JSONArray } from "../../types";
+import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
-import { ErrorChecker, Error } from "../../common/ErrorChecker";
+import { bytes_t, json, JSONArray, size_t, uint8_t } from "../../types";
 import { Base58 } from "../../walletcore/base58";
 import { BASE64 } from "../../walletcore/base64";
 import { DeterministicKey } from "../../walletcore/deterministickey";
@@ -194,24 +194,24 @@ export class DIDPubKeyInfo {
     }
   }
   /*
-		toOrderedJson(JsonGenerator *generator) const {
-			JsonGenerator_WriteStartObject(generator);
+    toOrderedJson(JsonGenerator *generator) const {
+      JsonGenerator_WriteStartObject(generator);
 
-			JsonGenerator_WriteFieldName(generator, "id");
-			JsonGenerator_WriteString(generator, _id.c_str());
+      JsonGenerator_WriteFieldName(generator, "id");
+      JsonGenerator_WriteString(generator, _id.c_str());
 
-			JsonGenerator_WriteFieldName(generator, "type");
-			JsonGenerator_WriteString(generator, _type.c_str());
+      JsonGenerator_WriteFieldName(generator, "type");
+      JsonGenerator_WriteString(generator, _type.c_str());
 
-			JsonGenerator_WriteFieldName(generator, "controller");
-			JsonGenerator_WriteString(generator, _controller.c_str());
+      JsonGenerator_WriteFieldName(generator, "controller");
+      JsonGenerator_WriteString(generator, _controller.c_str());
 
-			JsonGenerator_WriteFieldName(generator, "publicKeyBase58");
-			JsonGenerator_WriteString(generator, _publicKeyBase58.c_str());
+      JsonGenerator_WriteFieldName(generator, "publicKeyBase58");
+      JsonGenerator_WriteString(generator, _publicKeyBase58.c_str());
 
-			JsonGenerator_WriteEndObject(generator);
-		}
-		*/
+      JsonGenerator_WriteEndObject(generator);
+    }
+    */
 
   toJson(version: uint8_t): json {
     let j: json = {};
@@ -299,48 +299,48 @@ export class CredentialSubject {
   }
 
   /*
-		void CredentialSubject::ToOrderedJson(JsonGenerator *generator) const {
-			JsonGenerator_WriteStartObject(generator);
+    void CredentialSubject::ToOrderedJson(JsonGenerator *generator) const {
+      JsonGenerator_WriteStartObject(generator);
 
-			JsonGenerator_WriteStringField(generator, "id", _id.c_str());
+      JsonGenerator_WriteStringField(generator, "id", _id.c_str());
 
-			std::map<std::string, nlohmann::json> propertiesMap = _properties;
-			for (auto & m : propertiesMap) {
-				JsonGenerator_WriteFieldName(generator, m.first.c_str());
-				Properties2OrderedJson(generator, m.second);
-			}
+      std::map<std::string, nlohmann::json> propertiesMap = _properties;
+      for (auto & m : propertiesMap) {
+        JsonGenerator_WriteFieldName(generator, m.first.c_str());
+        Properties2OrderedJson(generator, m.second);
+      }
 
-			JsonGenerator_WriteEndObject(generator);
-		}
+      JsonGenerator_WriteEndObject(generator);
+    }
 
-		void CredentialSubject::Properties2OrderedJson(JsonGenerator *generator, const nlohmann::json &properties) const {
-			if (properties.is_array()) {
-				JsonGenerator_WriteStartArray(generator);
-				for (auto & p : properties)
-					Properties2OrderedJson(generator, p);
-				JsonGenerator_WriteEndArray(generator);
-			} else if (properties.is_object()) {
-				std::map<std::string, nlohmann::json> propertiesMap = properties;
-				JsonGenerator_WriteStartObject(generator);
-				for (auto & m : propertiesMap) {
-					JsonGenerator_WriteFieldName(generator, m.first.c_str());
-					Properties2OrderedJson(generator, m.second);
-				}
-				JsonGenerator_WriteEndObject(generator);
-			} else if (properties.is_string()) {
-				JsonGenerator_WriteString(generator, properties.get<std::string>().c_str());
-			} else if (properties.is_boolean()) {
-				JsonGenerator_WriteBoolean(generator, properties.get<bool>());
-			} else if (properties.is_number_float()) {
-				JsonGenerator_WriteDouble(generator, properties.get<double>());
-			} else if (properties.is_number()) {
-				JsonGenerator_WriteNumber(generator, properties.get<int>());
-			} else if (properties.is_null()) {
-				JsonGenerator_WriteString(generator, NULL);
-			} else {
-				ErrorChecker::ThrowParamException(Error::InvalidArgument, "unsupport other josn value type: " + properties.dump());
-			}
-		}
+    void CredentialSubject::Properties2OrderedJson(JsonGenerator *generator, const nlohmann::json &properties) const {
+      if (properties.is_array()) {
+        JsonGenerator_WriteStartArray(generator);
+        for (auto & p : properties)
+          Properties2OrderedJson(generator, p);
+        JsonGenerator_WriteEndArray(generator);
+      } else if (properties.is_object()) {
+        std::map<std::string, nlohmann::json> propertiesMap = properties;
+        JsonGenerator_WriteStartObject(generator);
+        for (auto & m : propertiesMap) {
+          JsonGenerator_WriteFieldName(generator, m.first.c_str());
+          Properties2OrderedJson(generator, m.second);
+        }
+        JsonGenerator_WriteEndObject(generator);
+      } else if (properties.is_string()) {
+        JsonGenerator_WriteString(generator, properties.get<std::string>().c_str());
+      } else if (properties.is_boolean()) {
+        JsonGenerator_WriteBoolean(generator, properties.get<bool>());
+      } else if (properties.is_number_float()) {
+        JsonGenerator_WriteDouble(generator, properties.get<double>());
+      } else if (properties.is_number()) {
+        JsonGenerator_WriteNumber(generator, properties.get<int>());
+      } else if (properties.is_null()) {
+        JsonGenerator_WriteString(generator, NULL);
+      } else {
+        ErrorChecker::ThrowParamException(Error::InvalidArgument, "unsupport other josn value type: " + properties.dump());
+      }
+    }
 */
   toJson(version: uint8_t): json {
     let j = this._properties;
@@ -404,15 +404,15 @@ export class ServiceEndpoint {
     }
   }
   /*
-		void ServiceEndpoint::ToOrderedJson(JsonGenerator *generator) const {
-			JsonGenerator_WriteStartObject(generator);
+    void ServiceEndpoint::ToOrderedJson(JsonGenerator *generator) const {
+      JsonGenerator_WriteStartObject(generator);
 
-			JsonGenerator_WriteStringField(generator, "id", _id.c_str());
-			JsonGenerator_WriteStringField(generator, "type", _type.c_str());
-			JsonGenerator_WriteStringField(generator, "serviceEndpoint", _serviceEndpoint.c_str());
+      JsonGenerator_WriteStringField(generator, "id", _id.c_str());
+      JsonGenerator_WriteStringField(generator, "type", _type.c_str());
+      JsonGenerator_WriteStringField(generator, "serviceEndpoint", _serviceEndpoint.c_str());
 
-			JsonGenerator_WriteEndObject(generator);
-		}
+      JsonGenerator_WriteEndObject(generator);
+    }
 */
   toJson(version: uint8_t): json {
     let j: json;
@@ -506,45 +506,45 @@ export class VerifiableCredential {
   }
 
   /*
-		void VerifiableCredential::ToOrderedJson(JsonGenerator *generator) const {
-			JsonGenerator_WriteStartObject(generator);
+    void VerifiableCredential::ToOrderedJson(JsonGenerator *generator) const {
+      JsonGenerator_WriteStartObject(generator);
 
-			JsonGenerator_WriteFieldName(generator, "id");
-			JsonGenerator_WriteString(generator, _id.c_str());
+      JsonGenerator_WriteFieldName(generator, "id");
+      JsonGenerator_WriteString(generator, _id.c_str());
 
-			JsonGenerator_WriteFieldName(generator, "type");
-			JsonGenerator_WriteStartArray(generator);
+      JsonGenerator_WriteFieldName(generator, "type");
+      JsonGenerator_WriteStartArray(generator);
 
-			std::map<std::string, std::string> sortedTypes;
-			for (const std::string &type : _types) {
-				sortedTypes[type] = "";
-			}
-			for (std::map<std::string, std::string>::iterator it = sortedTypes.begin(); it != sortedTypes.end(); ++it) {
-				JsonGenerator_WriteString(generator, (*it).first.c_str());
-			}
+      std::map<std::string, std::string> sortedTypes;
+      for (const std::string &type : _types) {
+        sortedTypes[type] = "";
+      }
+      for (std::map<std::string, std::string>::iterator it = sortedTypes.begin(); it != sortedTypes.end(); ++it) {
+        JsonGenerator_WriteString(generator, (*it).first.c_str());
+      }
 
-			JsonGenerator_WriteEndArray(generator);
+      JsonGenerator_WriteEndArray(generator);
 
-			JsonGenerator_WriteFieldName(generator, "issuer");
-			JsonGenerator_WriteString(generator, _issuer.c_str());
+      JsonGenerator_WriteFieldName(generator, "issuer");
+      JsonGenerator_WriteString(generator, _issuer.c_str());
 
-			JsonGenerator_WriteFieldName(generator, "issuanceDate");
-			JsonGenerator_WriteString(generator, _issuanceDate.c_str());
+      JsonGenerator_WriteFieldName(generator, "issuanceDate");
+      JsonGenerator_WriteString(generator, _issuanceDate.c_str());
 
-			if (!_expirationDate.empty()) {
-				JsonGenerator_WriteFieldName(generator, "expirationDate");
-				JsonGenerator_WriteString(generator, _expirationDate.c_str());
-			}
+      if (!_expirationDate.empty()) {
+        JsonGenerator_WriteFieldName(generator, "expirationDate");
+        JsonGenerator_WriteString(generator, _expirationDate.c_str());
+      }
 
-			JsonGenerator_WriteFieldName(generator, "credentialSubject");
-			_credentialSubject.ToOrderedJson(generator);
+      JsonGenerator_WriteFieldName(generator, "credentialSubject");
+      _credentialSubject.ToOrderedJson(generator);
 
-			JsonGenerator_WriteFieldName(generator, "proof");
-			_proof.ToOrderJson(generator);
+      JsonGenerator_WriteFieldName(generator, "proof");
+      _proof.ToOrderJson(generator);
 
-			JsonGenerator_WriteEndObject(generator);
-		}
-		*/
+      JsonGenerator_WriteEndObject(generator);
+    }
+    */
 
   toJson(version: uint8_t): json {
     let j: json;
@@ -846,131 +846,131 @@ export class DIDPayloadInfo {
   }
 
   /*
-		std::string DIDPayloadInfo::ToOrderedJson() const {
-			JsonGenerator generator, *pGenerator;
-			pGenerator = JsonGenerator_Initialize(&generator);
-			JsonGenerator_WriteStartObject(pGenerator);
+    std::string DIDPayloadInfo::ToOrderedJson() const {
+      JsonGenerator generator, *pGenerator;
+      pGenerator = JsonGenerator_Initialize(&generator);
+      JsonGenerator_WriteStartObject(pGenerator);
 
-			JsonGenerator_WriteFieldName(pGenerator, "id");
-			JsonGenerator_WriteString(pGenerator, _id.c_str());
+      JsonGenerator_WriteFieldName(pGenerator, "id");
+      JsonGenerator_WriteString(pGenerator, _id.c_str());
 
-			JsonGenerator_WriteFieldName(pGenerator, "publicKey");
-			JsonGenerator_WriteStartArray(pGenerator);
-			for (DIDPubKeyInfoArray::const_iterator it = _publickey.cbegin(); it != _publickey.cend(); ++it)
-				(*it).ToOrderedJson(pGenerator);
-			JsonGenerator_WriteEndArray(pGenerator);
+      JsonGenerator_WriteFieldName(pGenerator, "publicKey");
+      JsonGenerator_WriteStartArray(pGenerator);
+      for (DIDPubKeyInfoArray::const_iterator it = _publickey.cbegin(); it != _publickey.cend(); ++it)
+        (*it).ToOrderedJson(pGenerator);
+      JsonGenerator_WriteEndArray(pGenerator);
 
-			JsonGenerator_WriteFieldName(pGenerator, "authentication");
-			JsonGenerator_WriteStartArray(pGenerator);
-			for (DIDPubKeyInfoArray::const_iterator it = _authentication.cbegin(); it != _authentication.cend(); ++it)
-				JsonGenerator_WriteString(pGenerator, (*it).ID().c_str());
-			JsonGenerator_WriteEndArray(pGenerator);
+      JsonGenerator_WriteFieldName(pGenerator, "authentication");
+      JsonGenerator_WriteStartArray(pGenerator);
+      for (DIDPubKeyInfoArray::const_iterator it = _authentication.cbegin(); it != _authentication.cend(); ++it)
+        JsonGenerator_WriteString(pGenerator, (*it).ID().c_str());
+      JsonGenerator_WriteEndArray(pGenerator);
 
-			if (_authorization.size()) {
-				JsonGenerator_WriteFieldName(pGenerator, "authorization");
-				JsonGenerator_WriteStartArray(pGenerator);
-				for (DIDPubKeyInfoArray::const_iterator it = _authorization.cbegin(); it != _authorization.cend(); ++it)
-					JsonGenerator_WriteString(pGenerator, (*it).ID().c_str());
-				JsonGenerator_WriteEndArray(pGenerator);
-			}
+      if (_authorization.size()) {
+        JsonGenerator_WriteFieldName(pGenerator, "authorization");
+        JsonGenerator_WriteStartArray(pGenerator);
+        for (DIDPubKeyInfoArray::const_iterator it = _authorization.cbegin(); it != _authorization.cend(); ++it)
+          JsonGenerator_WriteString(pGenerator, (*it).ID().c_str());
+        JsonGenerator_WriteEndArray(pGenerator);
+      }
 
-			if (_verifiableCredential.size()) {
-				JsonGenerator_WriteFieldName(pGenerator, "verifiableCredential");
-				JsonGenerator_WriteStartArray(pGenerator);
-				for (VerifiableCredentialArray::const_iterator it = _verifiableCredential.cbegin();
-				     it != _verifiableCredential.cend(); ++it) {
-					(*it).ToOrderedJson(pGenerator);
-				}
-				JsonGenerator_WriteEndArray(pGenerator);
-			}
+      if (_verifiableCredential.size()) {
+        JsonGenerator_WriteFieldName(pGenerator, "verifiableCredential");
+        JsonGenerator_WriteStartArray(pGenerator);
+        for (VerifiableCredentialArray::const_iterator it = _verifiableCredential.cbegin();
+             it != _verifiableCredential.cend(); ++it) {
+          (*it).ToOrderedJson(pGenerator);
+        }
+        JsonGenerator_WriteEndArray(pGenerator);
+      }
 
-			if (_services.size()) {
-				JsonGenerator_WriteFieldName(pGenerator, "service");
-				JsonGenerator_WriteStartArray(pGenerator);
-				for (ServiceEndpoints::const_iterator it = _services.cbegin(); it != _services.cend(); ++it)
-					(*it).ToOrderedJson(pGenerator);
-				JsonGenerator_WriteEndArray(pGenerator);
-			}
+      if (_services.size()) {
+        JsonGenerator_WriteFieldName(pGenerator, "service");
+        JsonGenerator_WriteStartArray(pGenerator);
+        for (ServiceEndpoints::const_iterator it = _services.cbegin(); it != _services.cend(); ++it)
+          (*it).ToOrderedJson(pGenerator);
+        JsonGenerator_WriteEndArray(pGenerator);
+      }
 
-			if (_expires.size()){
-				JsonGenerator_WriteStringField(pGenerator, "expires", _expires.c_str());
-			}
+      if (_expires.size()){
+        JsonGenerator_WriteStringField(pGenerator, "expires", _expires.c_str());
+      }
 
-			JsonGenerator_WriteEndObject(pGenerator);
+      JsonGenerator_WriteEndObject(pGenerator);
 
-			const char *pjson = JsonGenerator_Finish(pGenerator);
-			std::string json = pjson;
-			free((void *)pjson);
-			return json;
-		}
+      const char *pjson = JsonGenerator_Finish(pGenerator);
+      std::string json = pjson;
+      free((void *)pjson);
+      return json;
+    }
 
-		void DIDPayloadInfo::FromJson(const nlohmann::json &j, uint8_t version) {
-		    if (j.contains("controller")) {
+    void DIDPayloadInfo::FromJson(const nlohmann::json &j, uint8_t version) {
+        if (j.contains("controller")) {
                 if (j.is_array()) {
                     _controller = j["controller"].get<std::vector<std::string>>();
                 } else {
                     _controller.push_back(j["controller"].get<std::string>());
                 }
-		    } else {
+        } else {
                 _id = j["id"].get<std::string>();
-		    }
+        }
 
 #if 0
-			nlohmann::json jPubKey = j["publicKey"];
-			for (nlohmann::json::iterator it = jPubKey.begin(); it != jPubKey.end(); ++it) {
-				DIDPubKeyInfo pubKeyInfo;
-				pubKeyInfo.FromJson(*it, version);
-				pubKeyInfo.AutoFill(_id);
-				_publickey.push_back(pubKeyInfo);
-			}
+      nlohmann::json jPubKey = j["publicKey"];
+      for (nlohmann::json::iterator it = jPubKey.begin(); it != jPubKey.end(); ++it) {
+        DIDPubKeyInfo pubKeyInfo;
+        pubKeyInfo.FromJson(*it, version);
+        pubKeyInfo.AutoFill(_id);
+        _publickey.push_back(pubKeyInfo);
+      }
 
-			if (j.find("authentication") != j.end()) {
-				nlohmann::json jAuthentication = j["authentication"];
-				for (nlohmann::json::iterator it = jAuthentication.begin(); it != jAuthentication.end(); ++it) {
-					DIDPubKeyInfo pubKeyInfo;
-					pubKeyInfo.FromJson(*it, version);
-					pubKeyInfo.AutoFill(_id);
-					_authentication.push_back(pubKeyInfo);
-				}
-			}
+      if (j.find("authentication") != j.end()) {
+        nlohmann::json jAuthentication = j["authentication"];
+        for (nlohmann::json::iterator it = jAuthentication.begin(); it != jAuthentication.end(); ++it) {
+          DIDPubKeyInfo pubKeyInfo;
+          pubKeyInfo.FromJson(*it, version);
+          pubKeyInfo.AutoFill(_id);
+          _authentication.push_back(pubKeyInfo);
+        }
+      }
 
-			if (j.find("authorization") != j.end()) {
-				nlohmann::json jAuthorization = j["authorization"];
-				for (nlohmann::json::iterator it = jAuthorization.begin(); it != jAuthorization.end(); ++it) {
-					DIDPubKeyInfo pubKeyInfo;
-					pubKeyInfo.FromJson(*it, version);
-					pubKeyInfo.AutoFill(_id);
-					_authorization.push_back(pubKeyInfo);
-				}
-			}
+      if (j.find("authorization") != j.end()) {
+        nlohmann::json jAuthorization = j["authorization"];
+        for (nlohmann::json::iterator it = jAuthorization.begin(); it != jAuthorization.end(); ++it) {
+          DIDPubKeyInfo pubKeyInfo;
+          pubKeyInfo.FromJson(*it, version);
+          pubKeyInfo.AutoFill(_id);
+          _authorization.push_back(pubKeyInfo);
+        }
+      }
 
-			_expires = j["expires"].get<std::string>();
+      _expires = j["expires"].get<std::string>();
 
-			if (j.find("verifiableCredential") != j.end()) {
-				nlohmann::json jVerifiableCredential = j["verifiableCredential"];
-				for (nlohmann::json::iterator it = jVerifiableCredential.begin(); it != jVerifiableCredential.end(); ++it) {
-					VerifiableCredential verifiableCredential;
-					verifiableCredential.FromJson(*it, version);
-					verifiableCredential.AutoFill(_id);
-					_verifiableCredential.push_back(verifiableCredential);
-				}
-			}
+      if (j.find("verifiableCredential") != j.end()) {
+        nlohmann::json jVerifiableCredential = j["verifiableCredential"];
+        for (nlohmann::json::iterator it = jVerifiableCredential.begin(); it != jVerifiableCredential.end(); ++it) {
+          VerifiableCredential verifiableCredential;
+          verifiableCredential.FromJson(*it, version);
+          verifiableCredential.AutoFill(_id);
+          _verifiableCredential.push_back(verifiableCredential);
+        }
+      }
 
-			if (j.find("service") != j.end()) {
-				nlohmann::json jservices = j["service"];
-				for (nlohmann::json::iterator it = jservices.begin(); it != jservices.end(); ++it) {
-					ServiceEndpoint serviceEndpoint;
-					serviceEndpoint.FromJson(*it, version);
-					serviceEndpoint.AutoFill(_id);
-					_services.push_back(serviceEndpoint);
-				}
-			}
+      if (j.find("service") != j.end()) {
+        nlohmann::json jservices = j["service"];
+        for (nlohmann::json::iterator it = jservices.begin(); it != jservices.end(); ++it) {
+          ServiceEndpoint serviceEndpoint;
+          serviceEndpoint.FromJson(*it, version);
+          serviceEndpoint.AutoFill(_id);
+          _services.push_back(serviceEndpoint);
+        }
+      }
 
-			if (j.find("proof") != j.end()) {
-				_proof.FromJson(j["proof"], version);
-			}
+      if (j.find("proof") != j.end()) {
+        _proof.FromJson(j["proof"], version);
+      }
 #endif
-		}*/
+    }*/
 }
 
 export class DIDProofInfo {
@@ -1057,18 +1057,18 @@ export class DIDProofInfo {
   }
 
   /*
-		toOrderJson(JsonGenerator *generator) const {
-			JsonGenerator_WriteStartObject(generator);
+    toOrderJson(JsonGenerator *generator) const {
+      JsonGenerator_WriteStartObject(generator);
 
-			JsonGenerator_WriteStringField(generator, "type", _type.c_str());
+      JsonGenerator_WriteStringField(generator, "type", _type.c_str());
 
-			JsonGenerator_WriteStringField(generator, "verificationMethod", _verificationMethod.c_str());
+      JsonGenerator_WriteStringField(generator, "verificationMethod", _verificationMethod.c_str());
 
-			JsonGenerator_WriteStringField(generator, "signature", _signature.c_str());
+      JsonGenerator_WriteStringField(generator, "signature", _signature.c_str());
 
-			JsonGenerator_WriteEndObject(generator);
-		}
-		*/
+      JsonGenerator_WriteEndObject(generator);
+    }
+    */
 
   equals(info: DIDProofInfo): boolean {
     return (
@@ -1121,8 +1121,8 @@ export class DIDInfo {
   setDIDPlayloadInfo(didPayloadInfo: DIDPayloadInfo) {
     this._payloadInfo = didPayloadInfo;
     // TODO
-    let str: string = this._payloadInfo.toJson(0);
-    this._payload = BASE64.encode(str);
+    //let str: string = this._payloadInfo.toJson(0);
+    //this._payload = BASE64.encode(str);
   }
 
   didPayload(): DIDPayloadInfo {
@@ -1190,87 +1190,87 @@ export class DIDInfo {
   }
 
   /*
-		void DIDInfo::FromJson(const nlohmann::json &j, uint8_t version) {
-			_header.FromJson(j["header"], version);
-			_payload = j["payload"].get<std::string>();
-			_proof.FromJson(j["proof"], version);
+    void DIDInfo::FromJson(const nlohmann::json &j, uint8_t version) {
+      _header.FromJson(j["header"], version);
+      _payload = j["payload"].get<std::string>();
+      _proof.FromJson(j["proof"], version);
 
-			bytes_t bytes = Base64::DecodeURL(_payload);
-			std::string payloadString((char *) bytes.data(), bytes.size());
-			SPVLOG_DEBUG("did doc: {}", payloadString);
-			_payloadInfo.FromJson(nlohmann::json::parse(payloadString), version);
-		}
+      bytes_t bytes = Base64::DecodeURL(_payload);
+      std::string payloadString((char *) bytes.data(), bytes.size());
+      SPVLOG_DEBUG("did doc: {}", payloadString);
+      _payloadInfo.FromJson(nlohmann::json::parse(payloadString), version);
+    }
 
-		bool DIDInfo::IsValid(uint8_t version) const {
-			bool verifiedSign = false;
+    bool DIDInfo::IsValid(uint8_t version) const {
+      bool verifiedSign = false;
 
-			if (_proof.Type() != DID_DEFAULT_TYPE) {
-				Log::error("unsupport did type {}", _proof.Type());
-				return false;
-			}
+      if (_proof.Type() != DID_DEFAULT_TYPE) {
+        Log::error("unsupport did type {}", _proof.Type());
+        return false;
+      }
 #if 1
-			return true;
+      return true;
 #else
-			std::string proofID = _proof.VerificationMethod();
-			if (proofID.empty()) {
-				Log::error("VerificationMethod of proof is empty");
-				return false;
-			}
+      std::string proofID = _proof.VerificationMethod();
+      if (proofID.empty()) {
+        Log::error("VerificationMethod of proof is empty");
+        return false;
+      }
 
-			if (!_payloadInfo.IsValid()) {
-				Log::error("did document verify signature fail");
-				return false;
-			}
+      if (!_payloadInfo.IsValid()) {
+        Log::error("did document verify signature fail");
+        return false;
+      }
 
-			if (proofID[0] == '#')
-				proofID = _payloadInfo.ID() + proofID;
+      if (proofID[0] == '#')
+        proofID = _payloadInfo.ID() + proofID;
 
-			std::string sourceData = "";
-			if (_header.Operation() == UPDATE_DID) {
-				sourceData = _header.Specification() + _header.Operation() + _header.PreviousTxid() + _payload;
-			} else {
-				sourceData = _header.Specification() + _header.Operation() + _payload;
-			}
+      std::string sourceData = "";
+      if (_header.Operation() == UPDATE_DID) {
+        sourceData = _header.Specification() + _header.Operation() + _header.PreviousTxid() + _payload;
+      } else {
+        sourceData = _header.Specification() + _header.Operation() + _payload;
+      }
 
-			const DIDPubKeyInfoArray &pubkeyInfoArray = _payloadInfo.PublicKeyInfo();
-			for (DIDPubKeyInfoArray::const_iterator it = pubkeyInfoArray.cbegin(); it != pubkeyInfoArray.cend(); ++it) {
-				std::string pubkeyID = (*it).ID();
-				if (pubkeyID[0] == '#')
-					pubkeyID = _payloadInfo.ID() + pubkeyID;
+      const DIDPubKeyInfoArray &pubkeyInfoArray = _payloadInfo.PublicKeyInfo();
+      for (DIDPubKeyInfoArray::const_iterator it = pubkeyInfoArray.cbegin(); it != pubkeyInfoArray.cend(); ++it) {
+        std::string pubkeyID = (*it).ID();
+        if (pubkeyID[0] == '#')
+          pubkeyID = _payloadInfo.ID() + pubkeyID;
 
-				if (proofID == pubkeyID) {
-					bytes_t signature = Base64::DecodeURL(_proof.Signature());
-					bytes_t pubkey = Base58::Decode((*it).PublicKeyBase58());
-					Key key;
-					key.SetPubKey(pubkey);
+        if (proofID == pubkeyID) {
+          bytes_t signature = Base64::DecodeURL(_proof.Signature());
+          bytes_t pubkey = Base58::Decode((*it).PublicKeyBase58());
+          Key key;
+          key.SetPubKey(pubkey);
 
-					if (key.Verify(sourceData, signature)) {
-						verifiedSign = true;
-					}
+          if (key.Verify(sourceData, signature)) {
+            verifiedSign = true;
+          }
 
-					break;
-				}
-			}
+          break;
+        }
+      }
 
-			if (!verifiedSign) {
-				Log::error("did payload verify signature fail");
-			}
+      if (!verifiedSign) {
+        Log::error("did payload verify signature fail");
+      }
 
-			return verifiedSign;
+      return verifiedSign;
 #endif
-		}
+    }
 
-		IPayload &DIDInfo::operator=(const IPayload &payload) {
-			try {
-				const DIDInfo &didInfo = dynamic_cast<const DIDInfo &>(payload);
-				operator=(didInfo);
-			} catch (const std::bad_cast &e) {
-				Log::error("payload is not instance of CRInfo");
-			}
+    IPayload &DIDInfo::operator=(const IPayload &payload) {
+      try {
+        const DIDInfo &didInfo = dynamic_cast<const DIDInfo &>(payload);
+        operator=(didInfo);
+      } catch (const std::bad_cast &e) {
+        Log::error("payload is not instance of CRInfo");
+      }
 
-			return *this;
-		}
-		*/
+      return *this;
+    }
+    */
 
   copyFromDIDInfo(payload: DIDInfo): DIDInfo {
     this._header = payload._header;

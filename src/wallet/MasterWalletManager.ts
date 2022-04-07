@@ -29,15 +29,13 @@ import {
   CONFIG_PRVNET,
   CONFIG_REGTEST,
   CONFIG_TESTNET
-} from "../Config";
+} from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
-import { json, JSONArray, JSONObject, time_t, uint32_t } from "../types";
-import { HDKey } from "../walletcore/hdkey";
-import { DeterministicKey } from "../walletcore/deterministickey";
-import { MasterWallet } from "./MasterWallet";
+import { json, JSONObject, time_t, uint32_t } from "../types";
+import { Base58Check } from "../walletcore/base58";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
-import { Base58Check } from "../walletcore/base58";
+import { MasterWallet } from "./MasterWallet";
 
 const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
 const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
@@ -96,24 +94,24 @@ export class MasterWalletManager {
         ExtKeyVersionMap["bip32"]["mainnet"]["prv"],
         ExtKeyVersionMap["bip32"]["mainnet"]["pub"]
       );
-			*/
+      */
     } else {
       /* TODO
       HDKeychain.setVersions(
         ExtKeyVersionMap["bip32"]["testnet"]["prv"],
         ExtKeyVersionMap["bip32"]["testnet"]["pub"]
       );
-			*/
+      */
       /* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
-			this._dataPath = this._dataPath + "/" + this._config.getNetType();
-			if (!boost:: filesystem:: exists(_dataPath))
-				boost:: filesystem:: create_directory(_dataPath); */
+      this._dataPath = this._dataPath + "/" + this._config.getNetType();
+      if (!boost:: filesystem:: exists(_dataPath))
+        boost:: filesystem:: create_directory(_dataPath); */
     }
 
     this.loadMasterWalletID(storage);
   }
 
-  destory() {}
+  destory() { }
 
   protected loadMasterWalletID(storage: WalletStorage) {
     const masterWalletIDs = storage.masterWalletIDs;
@@ -644,11 +642,11 @@ export class MasterWalletManager {
   }
 
   /*
-		std::string MasterWalletManager::GetVersion() const {
-			ArgInfo("{}", GetFunName());
-			ArgInfo("r => {}", SPVSDK_VERSION_MESSAGE);
-			return SPVSDK_VERSION_MESSAGE;
-		}
+    std::string MasterWalletManager::GetVersion() const {
+      ArgInfo("{}", GetFunName());
+      ArgInfo("r => {}", SPVSDK_VERSION_MESSAGE);
+      return SPVSDK_VERSION_MESSAGE;
+    }
 */
 
   flushData() {
