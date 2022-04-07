@@ -52,3 +52,4 @@ generated/
 *stats.html
 #test-report.html
 elastosfoundation-wallet-js-sdk-1.0.0.tgz
+test.sh

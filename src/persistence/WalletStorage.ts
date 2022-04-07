@@ -6,7 +6,6 @@ import { json } from "../types";
 export interface WalletStorage {
   // The unique identification of a wallet
   currentMasterWalletID: string | null;
-  masterWalletIDs: string[] | null;
   /**
    * Loads a saved store and returns it as json.
    */
@@ -15,4 +14,6 @@ export interface WalletStorage {
    * Saves the given local store JSON representation to persistent storage.
    */
   saveStore(j: json): void;
+
+  getMasterWalletIDs(): string[];
 }

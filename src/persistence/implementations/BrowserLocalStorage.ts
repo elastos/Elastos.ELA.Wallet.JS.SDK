@@ -3,7 +3,7 @@ import { WalletStorage } from "../WalletStorage";
 
 export class BrowserLocalStorage implements WalletStorage {
   currentMasterWalletID: string;
-  masterWalletIDs: string[];
+  static masterWalletIDs: string[] = [];
 
   constructor(id: string) {
     this.currentMasterWalletID = id;
@@ -22,6 +22,10 @@ export class BrowserLocalStorage implements WalletStorage {
   saveStore(j: JSONObject) {
     // use local storage to save wallet info and setup masterWalletID
     localStorage.setItem(this.currentMasterWalletID, JSON.stringify(j));
-    this.masterWalletIDs.push(this.currentMasterWalletID);
+    BrowserLocalStorage.masterWalletIDs.push(this.currentMasterWalletID);
+  }
+
+  getMasterWalletIDs(): string[] {
+    return BrowserLocalStorage.masterWalletIDs;
   }
 }

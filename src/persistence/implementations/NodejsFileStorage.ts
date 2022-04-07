@@ -3,7 +3,6 @@ import { WalletStorage } from "../WalletStorage";
 
 export class NodejsFileStorage implements WalletStorage {
   currentMasterWalletID: string;
-  masterWalletIDs: string[];
 
   public loadStore(): json {
     /* TODO fs::path filepath = _path;
@@ -37,5 +36,9 @@ export class NodejsFileStorage implements WalletStorage {
       o << j;
       o.flush();
     } */
+  }
+
+  getMasterWalletIDs(): string[] {
+    return;
   }
 }

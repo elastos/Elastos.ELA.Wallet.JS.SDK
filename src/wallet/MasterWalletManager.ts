@@ -111,10 +111,10 @@ export class MasterWalletManager {
     this.loadMasterWalletID(storage);
   }
 
-  destory() { }
+  destory() {}
 
   protected loadMasterWalletID(storage: WalletStorage) {
-    const masterWalletIDs = storage.masterWalletIDs;
+    const masterWalletIDs = storage.getMasterWalletIDs();
     for (let i = 0; i < masterWalletIDs.length; i++) {
       let masterWalletID = masterWalletIDs[i];
       this._masterWalletMap.set(masterWalletID, null);

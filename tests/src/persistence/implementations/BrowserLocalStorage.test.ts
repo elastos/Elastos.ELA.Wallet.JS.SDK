@@ -1,5 +1,5 @@
 import "jest-localstorage-mock";
-// import {} from "@elastosfoundation/wallet-js-sdk";
+import { BrowserLocalStorage } from "@elastosfoundation/wallet-js-sdk";
 
 const setItem = localStorage.setItem as jest.MockedFunction<
   typeof localStorage.setItem
@@ -8,19 +8,34 @@ const setItem = localStorage.setItem as jest.MockedFunction<
 beforeEach(() => {
   // to fully reset the state between tests, clear the storage
   localStorage.clear();
-
   // optionally reset individual mocks instead:
-  setItem.mockClear();
-  setItem("foo", "bar");
+  // setItem.mockClear();
 });
 
-test("should save to localStorage", () => {
-  const KEY = "foo";
-  const VALUE = "bar";
+describe("HDKey Tests", () => {
+  test("should save to localStorage", () => {
+    const key = "master-wallet-id-0";
+    const value = { key };
+    const browserStorage = new BrowserLocalStorage(key);
+    browserStorage.saveStore(value);
+    expect(setItem).toHaveBeenLastCalledWith(key, JSON.stringify(value));
+    expect(Object.keys(localStorage.__STORE__).length).toBe(1);
+  });
 
-  // const browserStorage = new BrowserLocalStorage();
+  test("load localStorage", () => {
+    const key = "master-wallet-id-1";
+    const value = { key };
+    const browserStorage = new BrowserLocalStorage(key);
+    browserStorage.saveStore(value);
+    expect(localStorage.__STORE__[key]).toBe(JSON.stringify(value));
+  });
 
-  expect(setItem).toHaveBeenLastCalledWith(KEY, VALUE);
-  expect(localStorage.__STORE__[KEY]).toBe(VALUE);
-  expect(Object.keys(localStorage.__STORE__).length).toBe(1);
+  test("get master wallet IDs", () => {
+    const key = "master-wallet-id-2";
+    const browserStorage = new BrowserLocalStorage(key);
+    const ids = browserStorage.getMasterWalletIDs();
+    expect(ids.length).toBe(2);
+    expect(ids[0]).toBe("master-wallet-id-0");
+    expect(ids[1]).toBe("master-wallet-id-1");
+  });
 });
