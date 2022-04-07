@@ -1,21 +1,21 @@
-import type { InitialOptionsTsJest } from 'ts-jest/dist/types'
-import { defaults as tsjPreset } from 'ts-jest/presets'
+import type { InitialOptionsTsJest } from "ts-jest/dist/types";
+import { defaults as tsjPreset } from "ts-jest/presets";
 import { writeFileSync, existsSync, mkdirSync } from "fs";
 
 // Empty browser data stub for nodejs tests.
-if (!existsSync("./generated"))
-    mkdirSync("./generated");
+if (!existsSync("./generated")) mkdirSync("./generated");
 writeFileSync("./generated/browserdata.json", "{}");
 
 const config: InitialOptionsTsJest = {
   rootDir: "./src",
   transform: {
-    ...tsjPreset.transform,
+    ...tsjPreset.transform
   },
   reporters: [
     "default",
     [
-      "jest-html-reporter", {
+      "jest-html-reporter",
+      {
         pageTitle: "DID JS SDK NodeJS test report",
         includeFailureMsg: true,
         includeSuiteFailure: true
@@ -26,9 +26,11 @@ const config: InitialOptionsTsJest = {
   testRunner: "jest-circus/runner",
   globals: {
     "ts-jest": {
-      "tsconfig": "./tsconfig.json"
+      tsconfig: "./tsconfig.json"
     }
   },
-  testTimeout: 6000000
-}
-export default config
+  testTimeout: 6000000,
+  resetMocks: false,
+  setupFiles: ["jest-localstorage-mock"]
+};
+export default config;

@@ -150,7 +150,7 @@ export abstract class SubWallet {
   //   return {};
   // }
 
-  abstract signTransaction(tx: json, passwd: string): Promise<json>;
+  abstract signTransaction(tx: json, passwd: string): any;
 
   /**
    * Sign message with private key of did.

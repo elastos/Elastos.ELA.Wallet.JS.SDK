@@ -215,7 +215,7 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  public signTransaction(tx: json, payPassword: string): json {
+  signTransaction(tx: json, payPassword: string): json {
     /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */

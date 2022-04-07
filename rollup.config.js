@@ -105,7 +105,7 @@ const nodePlugins = [
     }),
     commonjs({}),
     typescript({
-        include: ["index.ts", "src/walletcore/*.ts"],
+        include: ["index.ts", "src/walletcore/*.ts", "src/**/*.ts"],
         exclude: "*.browser.ts"
     }),
     size()

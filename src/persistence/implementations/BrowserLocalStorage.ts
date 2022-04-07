@@ -10,9 +10,7 @@ export class BrowserLocalStorage implements WalletStorage {
   }
 
   loadStore(id?: string): json {
-    const data = window.localStorage.getItem(
-      id ? id : this.currentMasterWalletID
-    );
+    const data = localStorage.getItem(id ? id : this.currentMasterWalletID);
     if (!data) return {};
     try {
       return JSON.parse(data);
@@ -23,7 +21,7 @@ export class BrowserLocalStorage implements WalletStorage {
 
   saveStore(j: JSONObject) {
     // use local storage to save wallet info and setup masterWalletID
-    window.localStorage.setItem(this.currentMasterWalletID, JSON.stringify(j));
+    localStorage.setItem(this.currentMasterWalletID, JSON.stringify(j));
     this.masterWalletIDs.push(this.currentMasterWalletID);
   }
 }
