@@ -92,7 +92,7 @@ export class Config {
         let chainID: string = key;
 
         let chainConfig = new ChainConfig();
-        if (chainID.indexOf("ETH") !== 0) {
+        if (chainID.indexOf("ETH") !== -1) {
           let chainConfigJson: json = j[key] as json;
           chainConfig.setName(chainID + "-" + this._netType);
 

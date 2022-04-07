@@ -88,26 +88,6 @@ export class MasterWalletManager {
     }
 
     this._config = Config.newFromParams(netType, config);
-    if (this._config.getNetType() == CONFIG_MAINNET) {
-      /* TODO
-      HDKeychain.setVersions(
-        ExtKeyVersionMap["bip32"]["mainnet"]["prv"],
-        ExtKeyVersionMap["bip32"]["mainnet"]["pub"]
-      );
-      */
-    } else {
-      /* TODO
-      HDKeychain.setVersions(
-        ExtKeyVersionMap["bip32"]["testnet"]["prv"],
-        ExtKeyVersionMap["bip32"]["testnet"]["pub"]
-      );
-      */
-      /* TODO- DONT DEPEND ON PATHS, USE WALLETSTORAGE METHODS ONLY
-      this._dataPath = this._dataPath + "/" + this._config.getNetType();
-      if (!boost:: filesystem:: exists(_dataPath))
-        boost:: filesystem:: create_directory(_dataPath); */
-    }
-
     this.loadMasterWalletID(storage);
   }
 

@@ -22,32 +22,40 @@
 
 import { Mnemonic } from "@elastosfoundation/wallet-js-sdk";
 
-describe('Mnemonic Tests', () => {
-    test('Test builtin wordlist', () => {
-        let languages = [
-            Mnemonic.DEFAULT,
-            Mnemonic.CHINESE_SIMPLIFIED,
-            Mnemonic.ENGLISH,
-            Mnemonic.FRENCH,
-        ];
+describe("Mnemonic Tests", () => {
+  test("Test builtin wordlist", () => {
+    let languages = [
+      Mnemonic.DEFAULT,
+      Mnemonic.CHINESE_SIMPLIFIED,
+      Mnemonic.ENGLISH,
+      Mnemonic.FRENCH
+    ];
 
-        languages.forEach(lang => {
-            let mc = Mnemonic.getInstance(lang);
-            let mnemonic = mc.generate();
+    languages.forEach((lang) => {
+      let mc = Mnemonic.getInstance(lang);
+      let mnemonic = mc.generate();
 
-            expect(mc.isValid(mnemonic)).toBeTruthy();
-            expect(Mnemonic.checkIsValid(mnemonic)).toBeTruthy();
+      expect(mc.isValid(mnemonic)).toBeTruthy();
+      expect(Mnemonic.checkIsValid(mnemonic)).toBeTruthy();
 
-            expect(mc.isValid(mnemonic + "z")).toBeFalsy();
-            expect(Mnemonic.checkIsValid(mnemonic + "z")).toBeFalsy();
-        });
+      expect(mc.isValid(mnemonic + "z")).toBeFalsy();
+      expect(Mnemonic.checkIsValid(mnemonic + "z")).toBeFalsy();
     });
+  });
 
-    test('Test french mnemonic', () => {
-        let mnemonic = "remarque séduire massif boire horde céleste exact dribbler pulpe prouesse vagabond opale";
-        let mc = Mnemonic.getInstance(Mnemonic.FRENCH);
+  test("Test french mnemonic", () => {
+    let mnemonic = `remarque séduire massif boire horde céleste exact dribbler pulpe prouesse vagabond opale`;
+    let mc = Mnemonic.getInstance(Mnemonic.FRENCH);
 
-        expect(mc.isValid(mnemonic)).toBeTruthy();
-        expect(Mnemonic.checkIsValid(mnemonic)).toBeTruthy();
-    });
-})
+    expect(mc.isValid(mnemonic)).toBeTruthy();
+    expect(Mnemonic.checkIsValid(mnemonic)).toBeTruthy();
+  });
+
+  test("Test English mnemonic", () => {
+    let mnemonic = `student borrow old later combine acoustic donkey media ensure symbol science salad`;
+    let mc = Mnemonic.getInstance(Mnemonic.ENGLISH);
+
+    expect(mc.isValid(mnemonic)).toBeTruthy();
+    expect(Mnemonic.checkIsValid(mnemonic)).toBeTruthy();
+  });
+});
