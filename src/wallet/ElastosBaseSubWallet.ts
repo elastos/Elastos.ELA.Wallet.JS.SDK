@@ -377,8 +377,8 @@ export class ElastosBaseSubWallet
   }
 
   protected UTXOFromJson(utxo: UTXOSet, j: JSONArray): boolean {
-    for (let utxoJson of j) {
-      utxoJson = utxoJson as json;
+    for (let item of j) {
+      let utxoJson = item as json;
       if (
         !("TxHash" in utxoJson) ||
         !("Index" in utxoJson) ||

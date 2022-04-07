@@ -1,20 +1,17 @@
 module.exports = {
   root: true,
-  parser: '@typescript-eslint/parser',
+  parser: "@typescript-eslint/parser",
   parserOptions: {
     project: "./tsconfig.json"
   },
-  plugins: [
-    '@typescript-eslint',
-    'import'
-  ],
+  plugins: ["@typescript-eslint", "import"],
   extends: [
-    'eslint:recommended',
-    'plugin:node/recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript'
+    "eslint:recommended",
+    "plugin:node/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript"
   ],
   rules: {
     // Generic JS
@@ -40,6 +37,9 @@ module.exports = {
     "no-promise-executor-return": "error",
     "no-non-null-assertion": "off",
     "import/no-duplicates": "off",
+    "prefer-object-spread": 0, // until node 8 is required
+    "prefer-rest-params": 0, // until node 6 is required
+    "prefer-spread": 0, // until node 6 is required
 
     // Node
     "node/no-unsupported-features/es-syntax": "off",
