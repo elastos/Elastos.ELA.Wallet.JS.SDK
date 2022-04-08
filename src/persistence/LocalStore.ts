@@ -50,7 +50,7 @@ export class LocalStore {
   // for btc
   private _xPubKeyBitcoin: string;
 
-  private _subWalletsInfoList: CoinInfo[];
+  private _subWalletsInfoList: CoinInfo[] = [];
   //private _path: string; // rootPath + masterWalletID
   private _walletStorage: WalletStorage;
 

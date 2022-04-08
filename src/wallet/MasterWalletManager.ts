@@ -176,11 +176,10 @@ export class MasterWalletManager {
       this._storage
     );
 
-    // this.checkRedundant(masterWallet);
-    this._masterWalletMap[masterWalletID] = masterWallet;
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create master wallet done");
-
     return masterWallet;
   }
 

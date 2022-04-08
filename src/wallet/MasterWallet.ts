@@ -47,7 +47,7 @@ type WalletMap = {
 };
 
 export class MasterWallet {
-  protected _createdWallets: WalletMap;
+  protected _createdWallets: WalletMap = {};
   protected _account: Account;
   protected _id: string;
   protected _config: Config;
@@ -292,7 +292,7 @@ export class MasterWallet {
       "Chain ID should less than 128"
     );
 
-    if (this._createdWallets[chainID]) {
+    if (this._createdWallets && this._createdWallets[chainID]) {
       const subWallet = this._createdWallets[chainID];
       // ArgInfo("r => already created");
       return subWallet;

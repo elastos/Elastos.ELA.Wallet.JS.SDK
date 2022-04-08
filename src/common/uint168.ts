@@ -9,7 +9,9 @@ export class uint168 {
 
   public static newFrom21BytesBuffer(payload: Buffer): uint168 {
     if (payload.length != 21)
-      throw new Error(`uint168: Invalid payload size ${payload.length}. 21 expected`);
+      throw new Error(
+        `uint168: Invalid payload size ${payload.length}. 21 expected`
+      );
 
     let int = new uint168();
     int.buffer = Buffer.alloc(21);
@@ -24,7 +26,7 @@ export class uint168 {
    */
   public static newFromPrefixAndHash(prefix: Prefix, hash: Buffer): uint168 {
     let int = new uint168();
-
+    int.buffer = Buffer.alloc(1 + hash.length);
     int.buffer[0] = prefix;
     hash.copy(int.buffer, 1);
 
