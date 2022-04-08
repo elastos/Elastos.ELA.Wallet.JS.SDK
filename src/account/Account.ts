@@ -418,13 +418,28 @@ export class Account {
     payPasswd: string,
     singleAddress: boolean
   ) {
+    console.log("mnemonic...", mnemonic);
+    console.log("passphrase...", passphrase);
+
     let account = new Account();
 
     const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
-    const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
+    console.log("newFromMnemonicAndPassphrase seed...", seed);
 
-    const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
-    const ethkey: HDKey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
+    const rootkey: HDKey = HDKey.fromMnemonic(
+      mnemonic,
+      passphrase,
+      KeySpec.Elastos
+    );
+    console.log("newFromMnemonicAndPassphrase rootkey...", rootkey);
+
+    const stdrootkey: HDKey = HDKey.fromMnemonic(
+      mnemonic,
+      passphrase,
+      KeySpec.Bitcoin
+    );
+
+    const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
 
     const encryptedSeed: string = AESEncrypt(seed, payPasswd);
 
@@ -435,10 +450,12 @@ export class Account {
 
     const ethscPubKey: string = ethkey.getPublicKeyBytes().toString("hex");
 
+    /*
     const ripplePubKey: string = stdrootkey
-      .deriveWithPath("44'/144'/0'/0/0")
+      .deriveWithPath("m/44'/144'/0'/0/0")
       .getPublicKeyBytes()
       .toString("hex");
+    */
 
     const encryptedMnemonic: string = AESEncrypt(
       Buffer.from(mnemonic),
@@ -449,19 +466,20 @@ export class Account {
       payPasswd
     );
 
-    const xpubBitcoin: string = Base58Check.encode(
-      stdrootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
-    );
+    const xpubBitcoin: string = stdrootkey
+      .deriveWithPath("m/44'/0'/0'")
+      .serializePublicKeyBase58();
 
-    const xPubKey: string = Base58Check.encode(
-      rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
-    );
+    const xPubKey: string = rootkey
+      .deriveWithPath("m/44'/0'/0'")
+      .serializePublicKeyBase58();
+    console.log("newFromMnemonicAndPassphrase xPubKey...", xPubKey);
 
-    const xpubHDPM: string = Base58Check.encode(
-      rootkey.deriveWithPath("45'").getPublicKeyBytes()
-    );
+    const xpubHDPM: string = rootkey
+      .deriveWithPath("m/45'")
+      .serializePublicKeyBase58();
 
-    const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
+    const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
 
     const encryptedRequestPrvKey: string = AESEncrypt(
       requestKey.getPrivateKeyBytes(),
@@ -471,12 +489,12 @@ export class Account {
     const requestPubKey: string = requestKey
       .getPublicKeyBytes()
       .toString("hex");
+
     const ownerPubKey: string = rootkey
-      .deriveWithPath("44'/0'/1'/0/0")
+      .deriveWithPath("m/44'/0'/1'/0/0")
       .getPublicKeyBytes()
       .toString("hex");
 
-    // TODO: path should be replaced with a WalletStorage object
     account._localstore = new LocalStore(storage);
     account._localstore.setDerivationStrategy("BIP44");
     account._localstore.setM(1);
@@ -496,7 +514,7 @@ export class Account {
     account._localstore.setOwnerPubKey(ownerPubKey);
     account._localstore.setSeed(encryptedSeed);
     account._localstore.setETHSCPrimaryPubKey(ethscPubKey);
-    // TODO this._localstore.setxPubKeyBitcoin(xpubBitcoin);
+    account._localstore.setxPubKeyBitcoin(xpubBitcoin);
     account._localstore.setSinglePrivateKey(encryptedethPrvKey);
     // TODO this._localstore.setRipplePrimaryPubKey(ripplePubKey);
 

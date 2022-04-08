@@ -62,7 +62,10 @@ export class LocalStore {
     j["xPubKeyHDPM"] = this._xPubKeyHDPM;
     j["requestPrivKey"] = this._requestPrivKey;
     j["requestPubKey"] = this._requestPubKey;
-    j["publicKeyRing"] = this._publicKeyRing.map((pkr) => pkr.toJson());
+    j["publicKeyRing"] =
+      this._publicKeyRing.length > 0
+        ? this._publicKeyRing.map((pkr) => pkr.toJson())
+        : null;
     j["m"] = this._m;
     j["n"] = this._n;
     j["mnemonicHasPassphrase"] = this._mnemonicHasPassphrase;
@@ -73,7 +76,10 @@ export class LocalStore {
     j["ownerPubKey"] = this._ownerPubKey;
     j["singleAddress"] = this._singleAddress;
     j["readonly"] = this._readonly;
-    j["coinInfo"] = this._subWalletsInfoList.map((c) => c.toJson());
+    j["coinInfo"] =
+      this._subWalletsInfoList && this._subWalletsInfoList.length > 0
+        ? this._subWalletsInfoList.map((c) => c.toJson())
+        : null;
     j["seed"] = this._seed;
     j["ethscPrimaryPubKey"] = this._ethscPrimaryPubKey;
     // TODO j["ripplePrimaryPubKey"] = this._ripplePrimaryPubKey;
@@ -149,11 +155,11 @@ export class LocalStore {
 			} */
 
       // support btc
-      /* TODO if ("xPubKeyBitcoin" in j) {
-				this._xPubKeyBitcoin = j["xPubKeyBitcoin"].get < std:: string > ();
-			} else {
-				this._xPubKeyBitcoin.clear();
-			} */
+      if ("xPubKeyBitcoin" in j) {
+        this._xPubKeyBitcoin = j["xPubKeyBitcoin"] as string;
+      } else {
+        this._xPubKeyBitcoin = null;
+      }
 
       this._subWalletsInfoList = (j["coinInfo"] as JSONArray).map((j) =>
         new CoinInfo().fromJson(j as json)
@@ -491,8 +497,8 @@ export class LocalStore {
 		this._ripplePrimaryPubKey = pubkey;
 	}
 
-			public const std:: string & LocalStore:: GetRipplePrimaryPubKey() const {
-			return _ripplePrimaryPubKey;
-				}
-			}  */
+  public const std:: string & LocalStore:: GetRipplePrimaryPubKey() const {
+  return _ripplePrimaryPubKey;
+    }
+  }  */
 }

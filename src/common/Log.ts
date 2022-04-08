@@ -1,4 +1,3 @@
-
 export const SPV_LOG_NAME = "spvsdk";
 export const SPV_DEFAULT_LOG = SPV_LOG_NAME;
 export const SPV_FILE_NAME = "spvsdk.log";
@@ -24,7 +23,7 @@ export const SPV_FILE_NAME = "spvsdk.log";
  * could be improved later for better log support (files, filters...)
  */
 export class Log {
-    /* static   registerMultiLogger(const std::string &path = ".") {
+  /* static   registerMultiLogger(const std::string &path = ".") {
         if (spdlog::get(SPV_DEFAULT_LOG) != nullptr)
             return ;
 
@@ -56,27 +55,27 @@ export class Log {
         spdlog::get(SPV_DEFAULT_LOG)->flush_on(spdlog::level::debug);
     } */
 
-    public static setLevel() {
-        // TODO
-    }
+  public static setLevel() {
+    // TODO
+  }
 
-    public static log(...args: any) {
-        console.log.apply(console, ...args);
-    }
+  public static log(...args: any) {
+    console.log.apply(console, [...args]);
+  }
 
-    public static warn(...args: any) {
-        console.warn.apply(console, ...args);
-    }
+  public static warn(...args: any) {
+    console.warn.apply(console, [...args]);
+  }
 
-    public static error(...args: any) {
-        console.error.apply(console, ...args);
-    }
+  public static error(...args: any) {
+    console.error.apply(console, [...args]);
+  }
 
-    public static info(...args: any) {
-        console.log.apply(console, ...args);
-    }
+  public static info(...args: any) {
+    console.log.apply(console, [...args]);
+  }
 
-    /*  template<typename Arg1, typename... Args>
+  /*  template<typename Arg1, typename... Args>
      static inline void critical(const std::string &fmt, const Arg1 &arg1, const Args &... args) {
          spdlog::get(SPV_DEFAULT_LOG)->critical(fmt.c_str(), arg1, args...);
      }
@@ -91,20 +90,19 @@ export class Log {
          spdlog::get(SPV_DEFAULT_LOG)->debug(msg);
      }
 
-             static inline void setLevel(spdlog::level::level_enum level) {
-                 spdlog::get(SPV_DEFAULT_LOG)->set_level(level);
-             }
+    static inline void setLevel(spdlog::level::level_enum level) {
+        spdlog::get(SPV_DEFAULT_LOG)->set_level(level);
+    }
 
-             static inline void setPattern(const std::string &fmt) {
-                 spdlog::get(SPV_DEFAULT_LOG)->set_pattern(fmt);
-             }
+    static inline void setPattern(const std::string &fmt) {
+        spdlog::get(SPV_DEFAULT_LOG)->set_pattern(fmt);
+    }
 
-             static inline void flush() {
-                 spdlog::get(SPV_DEFAULT_LOG)->flush();
-             } */
-
+    static inline void flush() {
+        spdlog::get(SPV_DEFAULT_LOG)->flush();
+    } */
 }
 
 export const warnLog = () => {
-    console.warn("Warning! Unexpected code is been executed!");
-}
+  console.warn("Warning! Unexpected code is been executed!");
+};

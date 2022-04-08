@@ -356,7 +356,7 @@ export class MasterWallet {
     const keys = Object.keys(configs);
     for (let i = 0; i < keys.length; i++) {
       const value = configs[keys[i]];
-      if (value.name().length !== 0) {
+      if (value.name() && value.name().length !== 0) {
         EthereumNetworks.insertEthereumNetwork(
           value.name(),
           value.chainID(),

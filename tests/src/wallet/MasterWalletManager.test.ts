@@ -53,8 +53,8 @@ describe("MasterWalletManager Tests", () => {
     );
     expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
 
-    const mnemonic = `student borrow old later combine acoustic donkey media ensure symbol science salad`;
-    const passphrase = "11111111";
+    const mnemonic = `cloth always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
     const passwd = "11111111";
     const singleAddress = true;
     const masterWallet = masterWalletManager.createMasterWallet(
@@ -65,6 +65,8 @@ describe("MasterWalletManager Tests", () => {
       singleAddress
     );
     expect(masterWallet).toBeInstanceOf(MasterWallet);
+    const localStore = browserStorage.loadStore(masterWalletID);
+    console.log("localStore...", localStore);
   });
 
   test("get master wallet IDs", () => {});
