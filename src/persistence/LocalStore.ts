@@ -16,7 +16,7 @@ export class LocalStore {
   private _requestPrivKey: string;
   private _mnemonic: string;
   // only old version keystore and localstore of spvsdk contain this. will remove later
-  //			std::string _passphrase __attribute__((deprecated));
+  // std::string _passphrase __attribute__((deprecated));
   private _passphrase: string;
   private _singlePrivateKey: string;
   private _seed: string;
@@ -45,7 +45,7 @@ export class LocalStore {
   private _ethscPrimaryPubKey: string;
 
   // for ripple
-  //private _ripplePrimaryPubKey: string;
+  private _ripplePrimaryPubKey: string;
 
   // for btc
   private _xPubKeyBitcoin: string;
@@ -72,7 +72,7 @@ export class LocalStore {
     j["derivationStrategy"] = this._derivationStrategy;
     j["account"] = this._account;
     j["mnemonic"] = this._mnemonic;
-    j["passphrase"] = this._passphrase;
+    j["passphrase"] = this._mnemonicHasPassphrase ? this._passphrase : "";
     j["ownerPubKey"] = this._ownerPubKey;
     j["singleAddress"] = this._singleAddress;
     j["readonly"] = this._readonly;
@@ -82,8 +82,8 @@ export class LocalStore {
         : null;
     j["seed"] = this._seed;
     j["ethscPrimaryPubKey"] = this._ethscPrimaryPubKey;
-    // TODO j["ripplePrimaryPubKey"] = this._ripplePrimaryPubKey;
-    // TODO j["xPubKeyBitcoin"] = this._xPubKeyBitcoin;
+    j["ripplePrimaryPubKey"] = this._ripplePrimaryPubKey;
+    j["xPubKeyBitcoin"] = this._xPubKeyBitcoin;
     j["SinglePrivateKey"] = this._singlePrivateKey;
 
     return j;
@@ -148,11 +148,11 @@ export class LocalStore {
         this._ethscPrimaryPubKey = null;
       }
 
-      /* TODO if ("ripplePrimaryPubKey" in j) {
-				this._ripplePrimaryPubKey = j["ripplePrimaryPubKey"].get < std:: string > ();
-			} else {
-				this._ripplePrimaryPubKey.clear();
-			} */
+      if ("ripplePrimaryPubKey" in j) {
+        this._ripplePrimaryPubKey = j["ripplePrimaryPubKey"] as string;
+      } else {
+        this._ripplePrimaryPubKey = null;
+      }
 
       // support btc
       if ("xPubKeyBitcoin" in j) {
@@ -493,12 +493,11 @@ export class LocalStore {
     return this._singlePrivateKey;
   }
 
-  /*public setRipplePrimaryPubKey(pubkey: string) {
-		this._ripplePrimaryPubKey = pubkey;
-	}
+  public setRipplePrimaryPubKey(pubkey: string) {
+    this._ripplePrimaryPubKey = pubkey;
+  }
 
-  public const std:: string & LocalStore:: GetRipplePrimaryPubKey() const {
-  return _ripplePrimaryPubKey;
-    }
-  }  */
+  public getRipplePrimaryPubKey(): string {
+    return this._ripplePrimaryPubKey;
+  }
 }
