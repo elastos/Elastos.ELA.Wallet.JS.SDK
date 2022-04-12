@@ -60,8 +60,8 @@ export class Wallet extends Lockable {
     changeBack2FirstInput?: boolean
   ): Transaction {
     let memoFixed: string;
-    let totalOutputAmount: BigNumber;
-    let totalInputAmount: BigNumber;
+    let totalOutputAmount: BigNumber = new BigNumber(0);
+    let totalInputAmount: BigNumber = new BigNumber(0);
 
     let tx = Transaction.newFromParams(type, payload);
     if (memo) {
@@ -76,17 +76,18 @@ export class Wallet extends Lockable {
       )
     );
 
-    for (let o of outputs)
+    for (let o of outputs) {
       totalOutputAmount = totalOutputAmount.plus(o.amount());
+    }
 
     if (outputs) tx.setOutputs(outputs);
 
     //await this.GetLock().runExclusive(() => {
     // TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
     for (let u of utxo) {
-      let code: bytes_t;
-      tx.addInput(TransactionInput.newFromParams(u.Hash(), u.Index()));
-      if (!this._subAccount.getCode(u.GetAddress(), code)) {
+      tx.addInput(TransactionInput.newFromParams(u.hash(), u.index()));
+      let code = this._subAccount.getCode(u.getAddress());
+      if (code === null) {
         //GetLock().unlock();
         ErrorChecker.throwParamException(
           Error.Code.Address,
@@ -95,7 +96,7 @@ export class Wallet extends Lockable {
       }
       tx.addUniqueProgram(Program.newFromParams(code, Buffer.alloc(0)));
 
-      totalInputAmount = totalInputAmount.plus(u.GetAmount());
+      totalInputAmount = totalInputAmount.plus(u.getAmount());
     }
     //});
 
@@ -111,7 +112,7 @@ export class Wallet extends Lockable {
         .minus(fee);
       let changeAddress: Address;
       if (changeBack2FirstInput) {
-        changeAddress = utxo[0].GetAddress();
+        changeAddress = utxo[0].getAddress();
       } else {
         let addresses: AddressArray = this._subAccount.getAddresses(
           0,

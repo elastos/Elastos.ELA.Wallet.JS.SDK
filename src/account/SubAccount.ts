@@ -409,57 +409,50 @@ export class SubAccount {
     // 44'/coinIndex'/account'/change/index
     const privateKey = this._parent
       .rootKey(payPasswd)
-      .deriveWithPath("44'/0'/1'/0/0")
+      .deriveWithPath("m/44'/0'/1'/0/0")
       .getPrivateKeyBase58();
     return DeterministicKey.fromExtendedKey(privateKey);
   }
 
   deriveDIDKey(payPasswd: string): HDKey {
-    return this._parent.rootKey(payPasswd).deriveWithPath("44'/0'/0'/0/0");
+    return this._parent.rootKey(payPasswd).deriveWithPath("m/44'/0'/0'/0/0");
   }
 
-  getCode(addr: Address, code: bytes_t): boolean {
+  getCode(addr: Address): Buffer | null {
     let index: uint32_t;
-    let pubKey: bytes_t;
-
+    let code: bytes_t;
     if (this.isProducerDepositAddress(addr)) {
       // "44'/0'/1'/0/0";
-      code = this._depositAddress.redeemScript();
-      return true;
+      return (code = this._depositAddress.redeemScript());
     }
 
     if (this.isOwnerAddress(addr)) {
       // "44'/0'/1'/0/0";
-      code = this._ownerAddress.redeemScript();
-      return true;
+      return (code = this._ownerAddress.redeemScript());
     }
 
     if (this.isCRDepositAddress(addr)) {
       // "44'/0'/0'/0/0";
-      code = this._crDepositAddress.redeemScript();
-      return true;
+      return (code = this._crDepositAddress.redeemScript());
     }
 
     for (let chainAddr of Object.values(this._chainAddressCached)) {
       for (index = chainAddr.length; index > 0; index--) {
         if (chainAddr[index - 1] == addr) {
-          code = chainAddr[index - 1].RedeemScript();
-          return true;
+          return (code = chainAddr[index - 1].RedeemScript());
         }
 
         if (this._parent.getSignType() != AccountSignType.MultiSign) {
           let cid = Address.newFromAddress(chainAddr[index - 1]);
           cid.changePrefix(Prefix.PrefixIDChain);
           if (addr == cid) {
-            code = cid.redeemScript();
-            return true;
+            return (code = cid.redeemScript());
           }
 
           let did = Address.newFromAddress(cid);
           did.convertToDID();
           if (addr == did) {
-            code = did.redeemScript();
-            return true;
+            return (code = did.redeemScript());
           }
         }
       }
@@ -467,7 +460,7 @@ export class SubAccount {
 
     Log.error("Can't find code and path for address:", addr.string());
 
-    return false;
+    return null;
   }
 
   public parent(): Account {

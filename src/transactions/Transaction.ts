@@ -89,9 +89,9 @@ export class Transaction {
   protected _payloadVersion: uint8_t;
   protected _fee: uint64_t;
   protected _payload: Payload;
-  protected _outputs: TransactionOutput[];
-  protected _inputs: TransactionInput[];
-  protected _attributes: Attribute[];
+  protected _outputs: TransactionOutput[] = [];
+  protected _inputs: TransactionInput[] = [];
+  protected _attributes: Attribute[] = [];
   protected _programs: Program[];
 
   /* Transaction::Transaction() :

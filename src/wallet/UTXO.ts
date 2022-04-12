@@ -12,85 +12,92 @@ export type UTXOArray = UTXO[];
 const TX_UNCONFIRMED = INT32_MAX;
 
 export class UTXO {
-	protected _address: Address;
-	protected _amount: BigNumber;
-	protected _hash: uint256;
-	protected _n: uint16_t = 0;
+  protected _address: Address;
+  protected _amount: BigNumber;
+  protected _hash: uint256;
+  protected _n: uint16_t = 0;
 
-	public static newFromUTXO(u: UTXO): UTXO {
-		let utxo = new UTXO();
-		utxo._address = u._address;
-		utxo._amount = u._amount;
-		utxo._hash = u._hash;
-		utxo._n = u._n;
-		return utxo;
-	}
+  public static newFromUTXO(u: UTXO): UTXO {
+    let utxo = new UTXO();
+    utxo._address = u._address;
+    utxo._amount = u._amount;
+    utxo._hash = u._hash;
+    utxo._n = u._n;
+    return utxo;
+  }
 
-	public static newFromParams(hash: uint256, n: uint16_t, address: Address, amount: BigNumber): UTXO {
-		let utxo = new UTXO();
-		utxo._hash = hash;
-		utxo._n = n;
-		utxo._address = address;
-		utxo._amount = amount;
-		return utxo;
-	}
+  public static newFromParams(
+    hash: uint256,
+    n: uint16_t,
+    address: Address,
+    amount: BigNumber
+  ): UTXO {
+    let utxo = new UTXO();
+    utxo._hash = hash;
+    utxo._n = n;
+    utxo._address = address;
+    utxo._amount = amount;
+    return utxo;
+  }
 
-	public Hash(): uint256 {
-		return this._hash;
-	}
+  public hash(): uint256 {
+    return this._hash;
+  }
 
-	public SetHash(hash: uint256) {
-		this._hash = hash;
-	}
+  public setHash(hash: uint256) {
+    this._hash = hash;
+  }
 
-	public Index(): uint16_t {
-		return this._n;
-	}
+  public index(): uint16_t {
+    return this._n;
+  }
 
-	public SetIndex(index: uint16_t) {
-		this._n = index;
-	}
+  public setIndex(index: uint16_t) {
+    this._n = index;
+  }
 
-	public GetAddress(): Address {
-		return this._address;
-	}
+  public getAddress(): Address {
+    return this._address;
+  }
 
-	public SetAddress(address: Address) {
-		this._address = address;
-	}
+  public setAddress(address: Address) {
+    this._address = address;
+  }
 
-	public GetAmount(): BigNumber {
-		return this._amount;
-	}
+  public getAmount(): BigNumber {
+    return this._amount;
+  }
 
-	public SetAmount(amount: BigNumber) {
-		this._amount = amount;
-	}
+  public setAmount(amount: BigNumber) {
+    this._amount = amount;
+  }
 
-	public EqualsInput(input: TransactionInput): boolean { // WAS Equal(InputPtr)
-		return this._hash == input.txHash() && this._n == input.index();
-	}
+  public equalsInput(input: TransactionInput): boolean {
+    // WAS Equal(InputPtr)
+    return this._hash == input.txHash() && this._n == input.index();
+  }
 
-	public Equals(hash: uint256, index: uint16_t): boolean { // WAS Equals
-		return this._hash == hash && index == this._n;
-	}
+  public equals(hash: uint256, index: uint16_t): boolean {
+    // WAS Equals
+    return this._hash == hash && index == this._n;
+  }
 
-	public equalsUTXO(utxo: UTXO): boolean {
-		return this.Equals(utxo.Hash(), utxo.Index());
-	}
+  public equalsUTXO(utxo: UTXO): boolean {
+    return this.equals(utxo.hash(), utxo.index());
+  }
 }
 
 /**
  * Array of UTXO, always sorted
  */
 export class UTXOSet extends Array<UTXO> {
-	public sortUTXOs() {
-		this.sort((x, y) => {
-			if (x.Hash() === y.Hash()) {
-				return x.Index() - y.Index();
-			} else {
-				return x.Hash().minus(y.Hash()).toNumber();
-			}
-		})
-	}
+  public sortUTXOs() {
+    this.sort((x, y) => {
+      if (x.hash() === y.hash()) {
+        return x.index() - y.index();
+      } else {
+        return x.hash().minus(y.hash()).toNumber();
+      }
+    });
+  }
 }

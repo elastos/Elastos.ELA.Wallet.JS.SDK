@@ -310,7 +310,7 @@ export class EthSidechainSubWallet
       let masterKey: HDKey = HDKey.fromMasterSeed(
         seed,
         KeySpec.Ethereum
-      ).deriveWithPath("44'/60'/0'/0/0");
+      ).deriveWithPath("m/44'/60'/0'/0/0");
       k = masterKey;
     } else {
       let ethprvkey: Buffer = this._parent

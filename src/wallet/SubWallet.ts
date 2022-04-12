@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-import { info } from "console";
 import { warnLog } from "../common/Log";
 import { ChainConfig } from "../config";
 import { json, JSONValue, uint32_t } from "../types";

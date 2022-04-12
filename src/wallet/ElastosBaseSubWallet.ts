@@ -188,15 +188,14 @@ export class ElastosBaseSubWallet
     //ArgInfo("fee: {}", fee);
     //ArgInfo("memo: {}", memo);
 
-    let wallet = this.getWallet();
-
+    const wallet = this.getWallet();
     let utxos = new UTXOSet();
     this.UTXOFromJson(utxos, inputsJson);
 
     let outputs: TransactionOutput[] = [];
     this.outputsFromJson(outputs, outputsJson);
 
-    let feeAmount = new BigNumber(fee);
+    const feeAmount = new BigNumber(fee);
 
     let payload = new TransferAsset();
     let tx = wallet.createTransaction(
@@ -207,10 +206,8 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-
     let result: json = {};
     this.encodeTx(result, tx);
-
     //ArgInfo("r => {}", result.dump());
     return result;
   }
@@ -411,7 +408,6 @@ export class ElastosBaseSubWallet
       utxo.push(UTXO.newFromParams(hash, n, address, amount));
     }
     utxo.sortUTXOs();
-
     return true;
   }
 

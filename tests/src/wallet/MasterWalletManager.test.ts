@@ -66,7 +66,7 @@ describe("MasterWalletManager Tests", () => {
     );
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
-    const subWallet = masterWallet.createSubWallet("ELA");
+    const subWallet: any = masterWallet.createSubWallet("ELA");
     console.log("subWallet....", subWallet);
 
     const localStore = browserStorage.loadStore(masterWalletID);
@@ -75,6 +75,29 @@ describe("MasterWalletManager Tests", () => {
     const addresses = subWallet.getAddresses(0, 1, false);
     // the value of addresses is ['EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz']
     console.log("addressed...", addresses);
+
+    const inputsJson = [
+      {
+        Index: 1,
+        Sequence: 0,
+        ContainDetail: false,
+        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
+        Amount: "0",
+        TxHash:
+          "a693bd76ef3aa8c2001ae11cf7b26c3fa8a2a35385cb160e739ffb1edebe263b"
+      }
+    ];
+
+    const outputsJson = [
+      {
+        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
+        Amount: "2687533220000"
+      }
+    ];
+
+    const fee = "20000";
+    const memo = "test creating a transaction";
+    subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
   });
 
   test("get master wallet IDs", () => {
