@@ -42,7 +42,7 @@ export type OutputArray = OutputPtr[];
 
 export class TransactionOutput implements JsonSerializer {
   private _amount: BigNumber = new BigNumber(0); // to support token chain
-  private _assetID: uint256;
+  private _assetID: uint256 = new BigNumber(0);
   private _outputLock: uint32_t = 0;
   private _address: Address;
 
@@ -132,8 +132,7 @@ export class TransactionOutput implements JsonSerializer {
 
   public serialize(ostream: ByteStream, txVersion: uint8_t) {
     ostream.writeBytes(getBNBytes(this._assetID));
-
-    if (this._assetID == Asset.getELAAssetID()) {
+    if (Asset.getELAAssetID().eq(this._assetID)) {
       //let bytes: bytes_t = getBNHexBytes(this._amount); // WAS this._amount.getHexBytes(true);
       //let amount: uint64_t = Buffer.alloc(sizeof_uint64_t());
       //memcpy(& amount, & bytes[0], Math.min(bytes.length, sizeof_uint64_t()));

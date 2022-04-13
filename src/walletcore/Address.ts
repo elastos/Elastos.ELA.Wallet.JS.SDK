@@ -211,7 +211,8 @@ export class Address {
     else
       return (
         this._isValid == address._isValid &&
-        this._programHash == address._programHash
+        this._programHash.bytes().toString() ==
+          address._programHash.bytes().toString()
       );
   }
 

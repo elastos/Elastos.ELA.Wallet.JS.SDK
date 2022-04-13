@@ -92,7 +92,7 @@ export class Transaction {
   protected _outputs: TransactionOutput[] = [];
   protected _inputs: TransactionInput[] = [];
   protected _attributes: Attribute[] = [];
-  protected _programs: Program[];
+  protected _programs: Program[] = [];
 
   /* Transaction::Transaction() :
 			_version(TxVersion::Default),
@@ -228,7 +228,7 @@ export class Transaction {
 
   public getHash(): uint256 {
     if (this._txHash.eq(0)) {
-      let stream: ByteStream;
+      let stream: ByteStream = new ByteStream();
       this.serializeUnsigned(stream);
       this._txHash = new BigNumber(
         SHA256.hashTwice(stream.getBytes()).toString()
@@ -520,9 +520,7 @@ export class Transaction {
       ostream.writeByte(this._version);
     }
     ostream.writeByte(this._type);
-
     ostream.writeByte(this._payloadVersion);
-
     ErrorChecker.checkCondition(
       this._payload == null,
       Error.Code.Transaction,

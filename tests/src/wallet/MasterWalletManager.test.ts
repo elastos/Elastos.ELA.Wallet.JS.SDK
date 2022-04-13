@@ -81,8 +81,8 @@ describe("MasterWalletManager Tests", () => {
         Index: 1,
         Sequence: 0,
         ContainDetail: false,
-        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
-        Amount: "0",
+        Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ",
+        Amount: "6300000000",
         TxHash:
           "a693bd76ef3aa8c2001ae11cf7b26c3fa8a2a35385cb160e739ffb1edebe263b"
       }
@@ -90,8 +90,8 @@ describe("MasterWalletManager Tests", () => {
 
     const outputsJson = [
       {
-        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
-        Amount: "2687533220000"
+        Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ",
+        Amount: "2300000000"
       }
     ];
 

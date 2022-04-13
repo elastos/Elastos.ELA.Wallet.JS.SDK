@@ -91,15 +91,17 @@ export class SubAccount {
   }
 
   isProducerDepositAddress(address: Address): boolean {
-    return this._depositAddress.valid() && this._depositAddress == address;
+    return this._depositAddress.valid() && this._depositAddress.equals(address);
   }
 
   isOwnerAddress(address: Address): boolean {
-    return this._ownerAddress.valid() && this._ownerAddress == address;
+    return this._ownerAddress.valid() && this._ownerAddress.equals(address);
   }
 
   isCRDepositAddress(address: Address): boolean {
-    return this._crDepositAddress.valid() && this._crDepositAddress == address;
+    return (
+      this._crDepositAddress.valid() && this._crDepositAddress.equals(address)
+    );
   }
 
   getCID(cids: Address[], index: uint32_t, count: size_t, internal: boolean) {
@@ -274,16 +276,16 @@ export class SubAccount {
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let pubkey of pubkeys) {
         if (pubkey.equals(this._parent.ownerPubKey())) {
-          key = root.deriveWithPath("44'/0'/1'/0/0");
+          key = root.deriveWithPath("m/44'/0'/1'/0/0");
           return { found: true, key };
         }
       }
     }
 
     let bipkeys: HDKey[] = [];
-    bipkeys.push(root.deriveWithPath("44'/0'/0'"));
+    bipkeys.push(root.deriveWithPath("m/44'/0'/0'"));
     if (type == SignType.SignTypeMultiSign) {
-      let bip45: HDKey = root.deriveWithPath("45'");
+      let bip45: HDKey = root.deriveWithPath("m/45'");
       if (this._parent.getSignType() == AccountSignType.MultiSign) {
         bipkeys.push(bip45.deriveWithIndex(this._parent.cosignerIndex()));
       } else {
@@ -388,7 +390,7 @@ export class SubAccount {
           if (addr == address || addr == cid || addr == did) {
             const privateKey = this._parent
               .rootKey(payPasswd)
-              .deriveWithPath("44'/0'/0'")
+              .deriveWithPath("m/44'/0'/0'")
               .deriveWithIndex(chain)
               .deriveWithIndex(i)
               .getPrivateKeyBase58();
@@ -427,6 +429,7 @@ export class SubAccount {
     }
 
     if (this.isOwnerAddress(addr)) {
+      console.log("addr...", addr);
       // "44'/0'/1'/0/0";
       return (code = this._ownerAddress.redeemScript());
     }

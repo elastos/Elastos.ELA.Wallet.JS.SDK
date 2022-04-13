@@ -206,6 +206,7 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
+    console.log("tx.....", tx);
     let result: json = {};
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
