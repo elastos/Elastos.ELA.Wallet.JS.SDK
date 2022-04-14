@@ -206,10 +206,11 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-    console.log("tx.....", tx);
+    console.log("createTransaction tx...", tx);
     let result: json = {};
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
+    console.log("createTransaction result....", result);
     return result;
   }
 
@@ -300,7 +301,7 @@ export class ElastosBaseSubWallet
     const hex = stream.getBytes();
 
     result["Algorithm"] = "base64";
-    result["ID"] = tx.getHash().toString(16).substr(0, 8);
+    result["ID"] = tx.getHash().toString(16).slice(0, 8);
     result["Data"] = hex.toString("base64");
     result["ChainID"] = this.getChainID();
     result["Fee"] = tx.getFee().toNumber();

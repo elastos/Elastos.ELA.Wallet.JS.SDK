@@ -333,11 +333,12 @@ export class SubAccount {
     );
 
     let md: uint256 = tx.getShaData();
-
+    console.log("md.....", md);
     let programs = tx.getPrograms();
     for (let i = 0; i < programs.length; ++i) {
       let publicKeys: bytes_t[] = [];
       let type: SignType = programs[i].decodePublicKey(publicKeys);
+      console.log("type.....", type);
       ErrorChecker.checkLogic(
         type != SignType.SignTypeMultiSign && type != SignType.SignTypeStandard,
         Error.Code.InvalidArgument,
@@ -349,6 +350,7 @@ export class SubAccount {
         publicKeys,
         payPasswd
       );
+      console.log("private key rs......", rs);
       ErrorChecker.checkLogic(
         !rs.found,
         Error.Code.PrivateKeyNotFound,
@@ -356,8 +358,10 @@ export class SubAccount {
       );
 
       let privateKey: string = rs.key.getPrivateKeyBase58();
+      console.log("privateKey...", privateKey);
       const key = DeterministicKey.fromExtendedKey(privateKey);
       stream.reset();
+      console.log("key....", key);
       if (programs[i].getParameter().length > 0) {
         let verifyStream = new ByteStream(programs[i].getParameter());
         while (verifyStream.readVarBytes(signature)) {

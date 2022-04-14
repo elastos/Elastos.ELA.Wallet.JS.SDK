@@ -185,6 +185,7 @@ export class TransactionOutput implements JsonSerializer {
       Log.error("deserialize output program hash error");
       return false;
     }
+    this._address = new Address();
     this._address.setProgramHash(uint168.newFrom21BytesBuffer(programHash));
 
     if (txVersion >= TxVersion.V09) {
@@ -193,10 +194,10 @@ export class TransactionOutput implements JsonSerializer {
         Log.error("tx output deserialize output type error");
         return false;
       }
-
+      console.log("this._outputType...", this._outputType);
       this._payload = this.generatePayload(this._outputType);
 
-      if (!this._payload.deserialize(istream)) {
+      if (this._payload !== null && !this._payload.deserialize(istream)) {
         Log.error("tx output deserialize payload error");
         return false;
       }

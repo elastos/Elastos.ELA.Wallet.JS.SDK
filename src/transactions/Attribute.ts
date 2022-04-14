@@ -9,35 +9,36 @@ import { ELAMessage } from "../ELAMessage";
 import { bytes_t, json, size_t } from "../types";
 
 export enum Usage {
-	Nonce = 0x00,
-	Script = 0x20,
-	DescriptionUrl = 0x91,
-	Description = 0x90,
-	Memo = 0x81,
-	Confirmations = 0x92
+  Nonce = 0x00,
+  Script = 0x20,
+  DescriptionUrl = 0x91,
+  Description = 0x90,
+  Memo = 0x81,
+  Confirmations = 0x92
 }
 
 export class Attribute extends ELAMessage implements JsonSerializer {
-	private _usage: Usage = Usage.Nonce;
-	private _data: bytes_t;
+  private _usage: Usage = Usage.Nonce;
+  private _data: bytes_t;
 
-	public constructor(usage = Usage.Nonce, data: bytes_t = null) {
-		super();
-		this._usage = usage;
-		this._data = data;
-	}
+  public constructor(usage = Usage.Nonce, data: bytes_t = null) {
+    super();
+    this._usage = usage;
+    this._data = data;
+  }
 
-	public static newFromAttribute(attr: Attribute) {
-		return new Attribute().copyAttribute(attr);
-	}
+  public static newFromAttribute(attr: Attribute) {
+    return new Attribute().copyAttribute(attr);
+  }
 
-	public copyAttribute(attr: Attribute): Attribute {
-		this._usage = attr._usage;
-		this._data = attr._data;
-		return this;
-	}
+  public copyAttribute(attr: Attribute): Attribute {
+    this._usage = attr._usage;
+    this._data = attr._data;
 
-	/*Attribute::Usage Attribute::GetUsage() const {
+    return this;
+  }
+
+  /*Attribute::Usage Attribute::GetUsage() const {
 		return _usage;
 	}
 
@@ -45,69 +46,77 @@ export class Attribute extends ELAMessage implements JsonSerializer {
 		return _data;
 	}*/
 
-	isValid(): boolean {
-		return (this._usage == Usage.Description ||
-			this._usage == Usage.DescriptionUrl ||
-			this._usage == Usage.Memo ||
-			this._usage == Usage.Script ||
-			this._usage == Usage.Nonce ||
-			this._usage == Usage.Confirmations);
-	}
+  isValid(): boolean {
+    return (
+      this._usage == Usage.Description ||
+      this._usage == Usage.DescriptionUrl ||
+      this._usage == Usage.Memo ||
+      this._usage == Usage.Script ||
+      this._usage == Usage.Nonce ||
+      this._usage == Usage.Confirmations
+    );
+  }
 
-	estimateSize(): size_t {
-		let size: size_t = 0;
-		let stream = new ByteStream();
+  estimateSize(): size_t {
+    let size: size_t = 0;
+    let stream = new ByteStream();
 
-		size += 1;
-		size += stream.writeVarUInt(this._data.length);
-		size += this._data.length;
+    size += 1;
+    size += stream.writeVarUInt(this._data.length);
+    size += this._data.length;
 
-		return size;
-	}
+    return size;
+  }
 
-	public serialize(stream: ByteStream) {
-		stream.writeUInt8(this._usage);
-		stream.writeVarBytes(this._data);
-	}
+  public serialize(stream: ByteStream) {
+    stream.writeUInt8(this._usage);
+    stream.writeVarBytes(this._data);
+  }
 
-	public deserialize(stream: ByteStream): boolean {
-		this._usage = stream.readUInt8();
-		if (this._usage === null) {
-			Log.error("Attribute deserialize usage fail");
-			return false;
-		}
+  public deserialize(stream: ByteStream): boolean {
+    this._usage = stream.readUInt8();
+    console.log("Attribute deserialize usage....", this._usage);
+    if (this._usage === null) {
+      Log.error("Attribute deserialize usage fail");
+      return false;
+    }
 
-		if (!this.isValid()) {
-			Log.error("invalid attribute usage: ", this._usage);
-			return false;
-		}
+    if (!this.isValid()) {
+      Log.error("invalid attribute usage: ", this._usage);
+      return false;
+    }
+    const length = stream.readUInt8();
+    console.log("Attribute deserialize data length.....", length);
+    const bytes = Buffer.alloc(length);
+    if (!stream.readBytes(bytes, length)) {
+      Log.error("Attribute deserialize data fail");
+      return false;
+    }
 
-		if (!stream.readVarBytes(this._data)) {
-			Log.error("Attribute deserialize data fail");
-			return false;
-		}
+    this._data = bytes;
+    console.log("this._data.toString()", this._data.toString());
 
-		return true;
-	}
+    return true;
+  }
 
-	public toJson(): json {
-		return {
-			Usage: this._usage,
-			Data: this._data.toString("hex")
-		}
-	}
+  public toJson(): json {
+    return {
+      Usage: this._usage,
+      Data: this._data.toString("hex")
+    };
+  }
 
-	public fromJson(j: json): Attribute {
-		this._usage = j["Usage"] as Usage;
-		this._data = Buffer.from(j["Data"] as string, "hex");
-		return this;
-	}
+  public fromJson(j: json): Attribute {
+    this._usage = j["Usage"] as Usage;
+    this._data = Buffer.from(j["Data"] as string, "hex");
+    return this;
+  }
 
-	public equals(a: Attribute): boolean {
-		return this._usage == a._usage && this._data == a._data;
-	}
+  public equals(a: Attribute): boolean {
+    return this._usage == a._usage && this._data == a._data;
+  }
 
-	/*bool Attribute::operator!=(const Attribute &a) const {
+  /*bool Attribute::operator!=(const Attribute &a) const {
 		return !operator==(a);
 	} */
 }

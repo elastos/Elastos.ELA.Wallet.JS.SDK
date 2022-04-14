@@ -21,6 +21,8 @@ import {
 import { SHA256 } from "../walletcore/sha256";
 import { Attribute } from "./Attribute";
 import { CoinBase } from "./payload/CoinBase";
+import { TransferAsset } from "./payload/TransferAsset";
+import { RegisterAsset } from "./payload/RegisterAsset";
 import { Payload } from "./payload/Payload";
 import { Program } from "./Program";
 import { TransactionInput } from "./TransactionInput";
@@ -231,7 +233,8 @@ export class Transaction {
       let stream: ByteStream = new ByteStream();
       this.serializeUnsigned(stream);
       this._txHash = new BigNumber(
-        SHA256.hashTwice(stream.getBytes()).toString()
+        SHA256.hashTwice(stream.getBytes()).toString("hex"),
+        16
       ); // WAS this._txHash = sha256_2(stream.getBytes());
     }
     return this._txHash;
@@ -547,7 +550,6 @@ export class Transaction {
       Log.error("deserialize flag byte error");
       return false;
     }
-
     if (flagByte >= TxVersion.V09) {
       this._version = flagByte;
       this._type = istream.readByte();
@@ -594,6 +596,7 @@ export class Transaction {
     }
 
     let inCount = istream.readVarUInt();
+    console.log("deserialize tx inCount...", inCount);
     if (inCount === null) {
       Log.error("deserialize tx inCount error");
       return false;
@@ -611,7 +614,7 @@ export class Transaction {
 
     let outputLength = istream.readVarUInt();
     if (outputLength === null) {
-      Log.error("deserialize tx output len error");
+      Log.error("deserialize tx output length error");
       return false;
     }
 
@@ -619,6 +622,7 @@ export class Transaction {
       Log.error("deserialize tx: too much outputs: {}", outputLength);
       return false;
     }
+    console.log("outputLength...", outputLength);
 
     this._outputs = [];
     for (let i = 0; i < outputLength.toNumber(); i++) {
@@ -741,11 +745,11 @@ export class Transaction {
 
     if (type == TransactionType.coinBase) {
       payload = new CoinBase();
-    } /* TODO else if (type == registerAsset) {
-			payload = PayloadPtr(new RegisterAsset());
-		} else if (type == transferAsset) {
-			payload = PayloadPtr(new TransferAsset());
-		} else if (type == record) {
+    } else if (type == TransactionType.registerAsset) {
+      payload = new RegisterAsset();
+    } else if (type == TransactionType.transferAsset) {
+      payload = new TransferAsset();
+    } /*else if (type == record) {
 			payload = PayloadPtr(new Record());
 		} else if (type == deploy) {
 			//todo add deploy _payload

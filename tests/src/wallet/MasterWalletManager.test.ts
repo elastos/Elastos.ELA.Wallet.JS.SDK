@@ -98,6 +98,15 @@ describe("MasterWalletManager Tests", () => {
     const fee = "20000";
     const memo = "test creating a transaction";
     subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
+
+    const tx = {
+      Algorithm: "base64",
+      ID: "bb489859",
+      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACTg1NTk3ODY5OAE7Jr7eHvufcw4Wy4VTo6KoP2yy9xzhGgDCqDrvdr2TpgEAAAAAAAKwN9uWSiMUWNLW/9XqGJRMT5DmPVR8XTuYdN9mpOrQowA3F4kAAAAAAAAAACEY0ICS9w+a/Q5lCfA8F2NKxqKGbQCwN9uWSiMUWNLW/9XqGJRMT5DmPVR8XTuYdN9mpOrQo+DZau4AAAAAAAAAACF6lGDY2L7kPZNg3VtSAjJkHJin7QAAAAAAAQAjIQIMPSi7Luc2U0hyLGhrS2ChDdygMsRE4xcAIs01uweROKw=",
+      ChainID: "ELA",
+      Fee: 20000
+    };
+    subWallet.signTransaction(tx, passwd);
   });
 
   test("get master wallet IDs", () => {

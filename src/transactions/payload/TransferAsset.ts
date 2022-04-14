@@ -34,7 +34,6 @@ export class TransferAsset extends Payload {
     } catch (e) {
       Log.error("payload is not instance of TransferAsset");
     }
-
     return this;
   }
 

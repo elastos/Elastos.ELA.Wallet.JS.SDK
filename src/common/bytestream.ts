@@ -19,7 +19,7 @@ export class ByteStream {
       this.reset();
     } else {
       this.buffer = Buffer.concat([buffer]);
-      this.position = buffer.length;
+      this.position = 0;
     }
   }
 
@@ -210,6 +210,12 @@ export class ByteStream {
       // Write bytes one by one - 32 bytes for a uint256
       this.writeUInt8(bn.mod(n256).toNumber());
       bn = bn.dividedBy(n256);
+      const digitsBeforeDot = bn.sd(true) - bn.dp();
+      if (digitsBeforeDot !== 0) {
+        bn = new BigNumber(bn.toPrecision(digitsBeforeDot, 1));
+      } else {
+        bn = new BigNumber(0);
+      }
       i += 1;
     }
   }
@@ -223,7 +229,7 @@ export class ByteStream {
       if (digitsBeforeDot !== 0) {
         bn = new BigNumber(bn.toPrecision(digitsBeforeDot, 1));
       } else {
-        break;
+        bn = new BigNumber(0);
       }
     }
   }
