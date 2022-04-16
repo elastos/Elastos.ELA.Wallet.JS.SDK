@@ -206,7 +206,7 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-    console.log("createTransaction tx...", tx);
+    // console.log("createTransaction tx...", tx);
     let result: json = {};
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
@@ -220,7 +220,7 @@ export class ElastosBaseSubWallet
         ArgInfo("passwd: *"); */
 
     let txn = this.decodeTx(tx);
-
+    // console.log("signTransaction txn", tx);
     this.getWallet().signTransaction(txn, payPassword);
 
     let result: json;
@@ -294,12 +294,11 @@ export class ElastosBaseSubWallet
     return rawtx;
   }
 
-  // TODO: result as return value
   protected encodeTx(result: json, tx: Transaction) {
     let stream = new ByteStream();
     tx.serialize(stream);
     const hex = stream.getBytes();
-
+    // console.log("encodeTx hex...", hex.toString("hex"));
     result["Algorithm"] = "base64";
     result["ID"] = tx.getHash().toString(16).slice(0, 8);
     result["Data"] = hex.toString("base64");

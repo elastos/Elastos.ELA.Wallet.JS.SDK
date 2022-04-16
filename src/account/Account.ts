@@ -93,16 +93,16 @@ export class Account {
       Log.warn("xpub is empty");
     }
 
-    if (!this._localstore.getxPubKeyBitcoin()) {
+    if (this._localstore.getxPubKeyBitcoin()) {
       ErrorChecker.checkParam(
         !Base58Check.decode(this._localstore.getxPubKeyBitcoin()),
         Error.Code.PubKeyFormat,
         "xpubkeyBitcoin decode error"
       );
-      const deterministicKey = new DeterministicKey(
-        DeterministicKey.BITCOIN_VERSIONS
+      this._btcMasterPubKey = HDKey.deserializeBase58(
+        this._localstore.getxPubKeyBitcoin(),
+        KeySpec.Bitcoin
       );
-      this._btcMasterPubKey = HDKey.fromKey(deterministicKey, KeySpec.Bitcoin);
     } else {
       this._btcMasterPubKey = null;
       Log.warn("btcMasterPubKey is empty");
@@ -452,8 +452,6 @@ export class Account {
     const ethscPubKey: string = secp256
       .publicKeyConvert(ethkey.getPublicKeyBytes(), false)
       .toString("hex");
-
-    console.log("ethscPubKey...", ethscPubKey);
 
     const ripplePubKey: string = stdrootkey
       .deriveWithPath("m/44'/144'/0'/0/0")

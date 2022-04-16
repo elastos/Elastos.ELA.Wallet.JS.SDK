@@ -75,7 +75,6 @@ export class Attribute extends ELAMessage implements JsonSerializer {
 
   public deserialize(stream: ByteStream): boolean {
     this._usage = stream.readUInt8();
-    console.log("Attribute deserialize usage....", this._usage);
     if (this._usage === null) {
       Log.error("Attribute deserialize usage fail");
       return false;
@@ -86,7 +85,6 @@ export class Attribute extends ELAMessage implements JsonSerializer {
       return false;
     }
     const length = stream.readUInt8();
-    console.log("Attribute deserialize data length.....", length);
     const bytes = Buffer.alloc(length);
     if (!stream.readBytes(bytes, length)) {
       Log.error("Attribute deserialize data fail");
@@ -94,7 +92,6 @@ export class Attribute extends ELAMessage implements JsonSerializer {
     }
 
     this._data = bytes;
-    console.log("this._data.toString()", this._data.toString());
 
     return true;
   }

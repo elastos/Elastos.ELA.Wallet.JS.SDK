@@ -241,9 +241,8 @@ export class ByteStream {
     let result = zero;
     let base = one;
 
-    let index = this.position;
     for (let i = 0; i < bytes; i++) {
-      let byte = this.buffer[index];
+      let byte = this.readUInt8();
       result = result.plus(base.multipliedBy(byte));
       base = base.multipliedBy(n256);
     }

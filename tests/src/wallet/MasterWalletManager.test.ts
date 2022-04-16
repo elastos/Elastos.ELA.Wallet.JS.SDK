@@ -32,7 +32,7 @@ describe("MasterWalletManager Tests", () => {
   test("instantiating with constructor should throw error", () => {
     const netType = "mainnet";
     const browserStorage = new BrowserLocalStorage("master-wallet-id-3");
-    const netConfig = { NetType: "MainNet", ELA: {} };
+    const netConfig = { NetType: netType, ELA: {} };
     const t = () => {
       new MasterWalletManager(browserStorage, netType, netConfig);
     };
@@ -44,7 +44,7 @@ describe("MasterWalletManager Tests", () => {
     const netType = "MainNet";
     const masterWalletID = "master-wallet-id-3";
     const browserStorage = new BrowserLocalStorage(masterWalletID);
-    const netConfig = { NetType: "MainNet", ELA: {} };
+    const netConfig = { NetType: netType, ELA: {} };
 
     masterWalletManager = new MasterWalletManager(
       browserStorage,
@@ -79,9 +79,8 @@ describe("MasterWalletManager Tests", () => {
     const inputsJson = [
       {
         Index: 1,
-        Sequence: 0,
-        ContainDetail: false,
-        Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ",
+        Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
+        // Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ", // owner address
         Amount: "6300000000",
         TxHash:
           "a693bd76ef3aa8c2001ae11cf7b26c3fa8a2a35385cb160e739ffb1edebe263b"
@@ -90,7 +89,7 @@ describe("MasterWalletManager Tests", () => {
 
     const outputsJson = [
       {
-        Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ",
+        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
         Amount: "2300000000"
       }
     ];
@@ -101,11 +100,12 @@ describe("MasterWalletManager Tests", () => {
 
     const tx = {
       Algorithm: "base64",
-      ID: "bb489859",
-      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACTg1NTk3ODY5OAE7Jr7eHvufcw4Wy4VTo6KoP2yy9xzhGgDCqDrvdr2TpgEAAAAAAAKwN9uWSiMUWNLW/9XqGJRMT5DmPVR8XTuYdN9mpOrQowA3F4kAAAAAAAAAACEY0ICS9w+a/Q5lCfA8F2NKxqKGbQCwN9uWSiMUWNLW/9XqGJRMT5DmPVR8XTuYdN9mpOrQo+DZau4AAAAAAAAAACF6lGDY2L7kPZNg3VtSAjJkHJin7QAAAAAAAQAjIQIMPSi7Luc2U0hyLGhrS2ChDdygMsRE4xcAIs01uweROKw=",
+      ID: "158968d0",
+      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACjIzOTMwODQ0NTkBOya+3h77n3MOFsuFU6OiqD9ssvcc4RoAwqg673a9k6YBAAAAAAACsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KMANxeJAAAAAAAAAAAhWvTw9R/58BGx4hcDoi3txx+rPI0AsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KPg2WruAAAAAAAAAAAhepRg2Ni+5D2TYN1bUgIyZByYp+0AAAAAAAEAIyEDH1aVXMAFEi8RzsUmTqWWgkCpDwFDT7Cht0Kb5LkVfUas",
       ChainID: "ELA",
       Fee: 20000
     };
+    // can't get the code data when sign a tx
     subWallet.signTransaction(tx, passwd);
   });
 

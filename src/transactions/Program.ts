@@ -139,9 +139,11 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   decodePublicKey(pubkeys: bytes_t[]): SignType {
+    console.log("decodePublicKey this._code.length...", this._code.length);
     if (this._code.length < 33 + 2) return SignType.SignTypeInvalid;
 
     let signType = this._code[this._code.length - 1];
+    console.log("signType...", signType);
     let pubKey: bytes_t = Buffer.alloc(0);
 
     let stream = new ByteStream(this._code);
@@ -216,11 +218,13 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public deserialize(stream: ByteStream): boolean {
+    const len = stream.readVarUInt().toNumber();
+    this._parameter = Buffer.alloc(len);
     if (!stream.readVarBytes(this._parameter)) {
       Log.error("Program deserialize parameter fail");
       return false;
     }
-
+    this._code = Buffer.alloc(len);
     if (!stream.readVarBytes(this._code)) {
       Log.error("Program deserialize code fail");
       return false;

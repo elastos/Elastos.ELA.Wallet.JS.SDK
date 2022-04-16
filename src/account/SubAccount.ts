@@ -230,6 +230,7 @@ export class SubAccount {
           break;
         }
         addrChain.push(addr);
+        this._chainAddressCached.set(chain, addrChain);
       }
     } else {
       let keychain = this._parent.masterPubKey().deriveWithIndex(chain);
@@ -244,12 +245,15 @@ export class SubAccount {
           break;
         }
         addrChain.push(addr);
+        this._chainAddressCached.set(chain, addrChain);
       }
     }
 
     let addresses: Address[] = [];
-    for (let i = index; i < index + count; i++) addresses.push(addrChain[i]);
-    // WAS addresses.assign(addrChain.begin() + index, addrChain.begin() + index + count);
+    for (let i = index; i < index + count; i++) {
+      addresses.push(addrChain[i]);
+    }
+
     return addresses;
   }
 
@@ -333,24 +337,20 @@ export class SubAccount {
     );
 
     let md: uint256 = tx.getShaData();
-    console.log("md.....", md);
     let programs = tx.getPrograms();
     for (let i = 0; i < programs.length; ++i) {
       let publicKeys: bytes_t[] = [];
       let type: SignType = programs[i].decodePublicKey(publicKeys);
-      console.log("type.....", type);
       ErrorChecker.checkLogic(
         type != SignType.SignTypeMultiSign && type != SignType.SignTypeStandard,
         Error.Code.InvalidArgument,
         "Invalid redeem script"
       );
-
       let rs: { found: boolean; key?: HDKey } = this.findPrivateKey(
         type,
         publicKeys,
         payPasswd
       );
-      console.log("private key rs......", rs);
       ErrorChecker.checkLogic(
         !rs.found,
         Error.Code.PrivateKeyNotFound,
@@ -358,10 +358,8 @@ export class SubAccount {
       );
 
       let privateKey: string = rs.key.getPrivateKeyBase58();
-      console.log("privateKey...", privateKey);
       const key = DeterministicKey.fromExtendedKey(privateKey);
       stream.reset();
-      console.log("key....", key);
       if (programs[i].getParameter().length > 0) {
         let verifyStream = new ByteStream(programs[i].getParameter());
         while (verifyStream.readVarBytes(signature)) {
@@ -425,7 +423,6 @@ export class SubAccount {
   }
 
   getCode(addr: Address): Buffer | null {
-    let index: uint32_t;
     let code: bytes_t;
     if (this.isProducerDepositAddress(addr)) {
       // "44'/0'/1'/0/0";
@@ -433,7 +430,6 @@ export class SubAccount {
     }
 
     if (this.isOwnerAddress(addr)) {
-      console.log("addr...", addr);
       // "44'/0'/1'/0/0";
       return (code = this._ownerAddress.redeemScript());
     }
@@ -443,12 +439,11 @@ export class SubAccount {
       return (code = this._crDepositAddress.redeemScript());
     }
 
-    for (let chainAddr of Object.values(this._chainAddressCached)) {
-      for (index = chainAddr.length; index > 0; index--) {
-        if (chainAddr[index - 1] == addr) {
-          return (code = chainAddr[index - 1].RedeemScript());
+    for (let chainAddr of this._chainAddressCached.values()) {
+      for (let index = chainAddr.length; index > 0; index--) {
+        if (chainAddr[index - 1].equals(addr)) {
+          return (code = chainAddr[index - 1].redeemScript());
         }
-
         if (this._parent.getSignType() != AccountSignType.MultiSign) {
           let cid = Address.newFromAddress(chainAddr[index - 1]);
           cid.changePrefix(Prefix.PrefixIDChain);

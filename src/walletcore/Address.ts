@@ -232,8 +232,11 @@ export class Address {
     if (m == 1 && pubkeys.length == 1) {
       bytes.writeUInt8(pubkeys[0].length);
       bytes.writeBytes(pubkeys[0]);
-      if (did) bytes.writeUInt8(SignType.SignTypeDID);
-      else bytes.writeUInt8(this.prefixToSignType(prefix));
+      if (did) {
+        bytes.writeUInt8(SignType.SignTypeDID);
+      } else {
+        bytes.writeUInt8(this.prefixToSignType(prefix));
+      }
     } else {
       ErrorChecker.checkCondition(
         pubkeys.length >= UINT8_MAX - OP_1,
@@ -244,7 +247,6 @@ export class Address {
       let sortedSigners: bytes_t[] = Array.from(pubkeys);
       sortedSigners.sort((a, b) => {
         return a.toString("hex").localeCompare(b.toString("hex"));
-        // WAS return a.getHex() < b.getHex();
       });
 
       bytes.writeUInt8(OP_1 + m - 1);
@@ -255,7 +257,6 @@ export class Address {
       bytes.writeUInt8(OP_1 + sortedSigners.length - 1);
       bytes.writeUInt8(this.prefixToSignType(prefix));
     }
-
     this._code = bytes.getBytes();
   }
 

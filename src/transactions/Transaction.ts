@@ -737,7 +737,9 @@ export class Transaction {
   getShaData(): uint256 {
     let stream = new ByteStream();
     this.serializeUnsigned(stream);
-    return new BigNumber(SHA256.encodeToString(stream.getBytes())); // WAS uint256(sha256(stream.GetBytes()));
+    const str = SHA256.encodeToString(stream.getBytes());
+    const hexStr = Buffer.from(str).toString("hex");
+    return new BigNumber(hexStr, 16); // WAS uint256(sha256(stream.GetBytes()));
   }
 
   initPayload(type: uint8_t): Payload {
