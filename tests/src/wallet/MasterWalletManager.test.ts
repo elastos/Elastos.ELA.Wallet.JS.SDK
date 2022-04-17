@@ -74,13 +74,14 @@ describe("MasterWalletManager Tests", () => {
 
     const addresses = subWallet.getAddresses(0, 1, false);
     // the value of addresses is ['EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz']
-    console.log("addressed...", addresses);
+    console.log("addresses...", addresses);
 
     const inputsJson = [
       {
         Index: 1,
-        Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
+        // Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
         // Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ", // owner address
+        Address: addresses[0],
         Amount: "6300000000",
         TxHash:
           "a693bd76ef3aa8c2001ae11cf7b26c3fa8a2a35385cb160e739ffb1edebe263b"

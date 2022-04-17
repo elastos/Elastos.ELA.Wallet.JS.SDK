@@ -194,7 +194,6 @@ export class TransactionOutput implements JsonSerializer {
         Log.error("tx output deserialize output type error");
         return false;
       }
-      console.log("this._outputType...", this._outputType);
       this._payload = this.generatePayload(this._outputType);
 
       if (this._payload !== null && !this._payload.deserialize(istream)) {

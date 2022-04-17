@@ -260,8 +260,12 @@ export class ByteStream {
   // TODO: C++ version can read bytes or various uint sizes. Let's try to focus bytes for bytes and
   // use other methods for uints
   public readVarBytes(bytes: bytes_t): boolean {
-    let length = this.readVarUInt().toNumber(); // length is never a large number
-    return this.readBytes(bytes, length);
+    if (!this.readVarUInt().isNaN()) {
+      let length = this.readVarUInt().toNumber(); // length is never a large number
+      bytes = Buffer.alloc(length);
+      return this.readBytes(bytes, length);
+    }
+    return false;
   }
 
   /**

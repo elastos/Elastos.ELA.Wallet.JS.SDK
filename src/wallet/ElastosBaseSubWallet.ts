@@ -206,11 +206,9 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-    // console.log("createTransaction tx...", tx);
     let result: json = {};
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
-    console.log("createTransaction result....", result);
     return result;
   }
 
@@ -220,10 +218,9 @@ export class ElastosBaseSubWallet
         ArgInfo("passwd: *"); */
 
     let txn = this.decodeTx(tx);
-    // console.log("signTransaction txn", tx);
     this.getWallet().signTransaction(txn, payPassword);
 
-    let result: json;
+    let result: json = {};
     this.encodeTx(result, txn);
 
     //ArgInfo("r => {}", result.dump());

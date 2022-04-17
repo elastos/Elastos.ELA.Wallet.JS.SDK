@@ -66,13 +66,10 @@ export class Wallet extends Lockable {
     let tx = Transaction.newFromParams(type, payload);
     if (memo) {
       memoFixed = "type:text,msg:" + memo;
-      console.log("memoFixed...", memoFixed);
-      console.log("memoFixed.length...", memoFixed.length);
       tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(memoFixed)));
     }
 
     const noneData = Buffer.from(randomInteger(0xffffffff).toString(10));
-    console.log("noneData...", noneData);
     tx.addAttribute(new Attribute(Usage.Nonce, noneData));
 
     for (let o of outputs) {

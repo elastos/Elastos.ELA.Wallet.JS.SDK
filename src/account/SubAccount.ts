@@ -304,7 +304,7 @@ export class SubAccount {
         for (let index = addresses.length; index > 0; index--) {
           let bipkeyIndex: HDKey = bipkeyChain.deriveWithIndex(index - 1);
           for (let p of pubkeys) {
-            if (bipkeyIndex.getPublicKeyBytes() == p) {
+            if (bipkeyIndex.getPublicKeyBytes().toString() == p.toString()) {
               key = bipkeyIndex;
               return { found: true, key };
             }
@@ -346,6 +346,7 @@ export class SubAccount {
         Error.Code.InvalidArgument,
         "Invalid redeem script"
       );
+
       let rs: { found: boolean; key?: HDKey } = this.findPrivateKey(
         type,
         publicKeys,
@@ -357,7 +358,7 @@ export class SubAccount {
         "Private key not found"
       );
 
-      let privateKey: string = rs.key.getPrivateKeyBase58();
+      let privateKey: string = rs.key.serializeBase58();
       const key = DeterministicKey.fromExtendedKey(privateKey);
       stream.reset();
       if (programs[i].getParameter().length > 0) {

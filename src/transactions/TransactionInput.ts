@@ -97,7 +97,6 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 
   public serialize(stream: ByteStream) {
     // WAS stream.WriteBytes(this._txHash);
-    console.log("serialize this._txHash", this._txHash.toString(16));
     stream.writeBNAsUIntOfSize(this._txHash, 32);
     stream.writeUInt16(this._index); // WAS stream.WriteUint16(this._index);
     stream.writeUInt32(this._sequence); // WAS stream.WriteUint32(this._sequence);
@@ -105,7 +104,6 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 
   public deserialize(stream: ByteStream): boolean {
     this._txHash = stream.readUIntOfBytesAsBN(32);
-    console.log("deserialize this._txHash", this._txHash.toString(16));
     if (this._txHash === null) {
       Log.error("deser input txHash");
       return false;

@@ -229,7 +229,8 @@ export class Transaction {
   }
 
   public getHash(): uint256 {
-    if (this._txHash.eq(0)) {
+    // this._txHash is undefined when sign a tx
+    if (!this._txHash || this._txHash.eq(0)) {
       let stream: ByteStream = new ByteStream();
       this.serializeUnsigned(stream);
       this._txHash = new BigNumber(
@@ -596,7 +597,6 @@ export class Transaction {
     }
 
     let inCount = istream.readVarUInt();
-    console.log("deserialize tx inCount...", inCount);
     if (inCount === null) {
       Log.error("deserialize tx inCount error");
       return false;
@@ -622,7 +622,6 @@ export class Transaction {
       Log.error("deserialize tx: too much outputs: {}", outputLength);
       return false;
     }
-    console.log("outputLength...", outputLength);
 
     this._outputs = [];
     for (let i = 0; i < outputLength.toNumber(); i++) {

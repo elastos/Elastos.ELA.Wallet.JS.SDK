@@ -444,7 +444,7 @@ export class Account {
     const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
 
     const encryptedethPrvKey: string = AESEncrypt(
-      ethkey.getPrivateKeyBytes(),
+      ethkey.serializeBase58(),
       payPasswd
     );
 
@@ -463,7 +463,7 @@ export class Account {
       payPasswd
     );
     const encryptedxPrvKey: string = AESEncrypt(
-      rootkey.getPrivateKeyBytes(),
+      rootkey.serializeBase58(),
       payPasswd
     );
 
@@ -482,7 +482,7 @@ export class Account {
     const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
 
     const encryptedRequestPrvKey: string = AESEncrypt(
-      requestKey.getPrivateKeyBytes(),
+      requestKey.serializeBase58(),
       payPasswd
     );
 
