@@ -373,7 +373,7 @@ export class SubAccount {
         stream.writeBytes(programs[i].getParameter());
       }
 
-      signature = key.sign(Buffer.from(md.toString()));
+      signature = key.sign(Buffer.from(md.toString(16), "hex"));
       stream.writeVarBytes(signature);
       programs[i].setParameter(stream.getBytes());
     }

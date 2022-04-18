@@ -40,8 +40,8 @@ describe("MasterWalletManager Tests", () => {
     expect(t).toThrow(JSON.stringify(error));
   });
 
-  test("create a master wallet on mainnet", () => {
-    const netType = "MainNet";
+  test("create and sign a tx", () => {
+    const netType = "TestNet";
     const masterWalletID = "master-wallet-id-3";
     const browserStorage = new BrowserLocalStorage(masterWalletID);
     const netConfig = { NetType: netType, ELA: {} };
@@ -78,35 +78,32 @@ describe("MasterWalletManager Tests", () => {
 
     const inputsJson = [
       {
-        Index: 1,
-        // Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
-        // Address: "EKR7VBGm5YLkGFFxtLs6sdpTz45SfEVhWZ", // owner address
         Address: addresses[0],
-        Amount: "6300000000",
+        Amount: "1000000000",
         TxHash:
-          "a693bd76ef3aa8c2001ae11cf7b26c3fa8a2a35385cb160e739ffb1edebe263b"
+          "c0c11e651a006086d3c42331d03d05fe8af8603a61fa249e30ec5b95dd20f078",
+        Index: 0
       }
     ];
 
     const outputsJson = [
       {
-        Address: "ERSqjfWDwTYw7iLrCZYLHKzSzEYzF4QZUz",
-        Amount: "2300000000"
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "500000000"
       }
     ];
 
-    const fee = "20000";
+    const fee = "10000";
     const memo = "test creating a transaction";
     subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
 
     const tx = {
       Algorithm: "base64",
-      ID: "158968d0",
-      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACjIzOTMwODQ0NTkBOya+3h77n3MOFsuFU6OiqD9ssvcc4RoAwqg673a9k6YBAAAAAAACsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KMANxeJAAAAAAAAAAAhWvTw9R/58BGx4hcDoi3txx+rPI0AsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KPg2WruAAAAAAAAAAAhepRg2Ni+5D2TYN1bUgIyZByYp+0AAAAAAAEAIyEDH1aVXMAFEi8RzsUmTqWWgkCpDwFDT7Cht0Kb5LkVfUas",
+      ID: "f04d800e",
+      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACjMxOTM4NTgwOTEBePAg3ZVb7DCeJPphOmD4iv4FPdAxI8TThmAAGmUewcAAAAAAAAACsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KMAZc0dAAAAAAAAAAAh8y27oh50hsZqJkHYbYuYPX7YxiUAsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KPwPc0dAAAAAAAAAAAhepRg2Ni+5D2TYN1bUgIyZByYp+0AAAAAAAEAIyEDH1aVXMAFEi8RzsUmTqWWgkCpDwFDT7Cht0Kb5LkVfUas",
       ChainID: "ELA",
-      Fee: 20000
+      Fee: 10000
     };
-    // can't get the code data when sign a tx
     subWallet.signTransaction(tx, passwd);
   });
 
