@@ -365,7 +365,7 @@ export class SubAccount {
         let verifyStream = new ByteStream(programs[i].getParameter());
         while (verifyStream.readVarBytes(signature)) {
           ErrorChecker.checkLogic(
-            key.verify(Buffer.from(md.toString()), signature),
+            key.verify(Buffer.from(md.toString(16), "hex"), signature),
             Error.Code.AlreadySigned,
             "Already signed"
           );
