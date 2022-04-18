@@ -211,7 +211,7 @@ export class ByteStream {
       this.writeUInt8(bn.mod(n256).toNumber());
       bn = bn.dividedBy(n256);
       const digitsBeforeDot = bn.sd(true) - bn.dp();
-      if (digitsBeforeDot !== 0) {
+      if (digitsBeforeDot > 0) {
         bn = new BigNumber(bn.toPrecision(digitsBeforeDot, 1));
       } else {
         bn = new BigNumber(0);
@@ -226,7 +226,7 @@ export class ByteStream {
       this.writeUInt8(bn.mod(n256).toNumber());
       bn = bn.dividedBy(n256);
       const digitsBeforeDot = bn.sd(true) - bn.dp();
-      if (digitsBeforeDot !== 0) {
+      if (digitsBeforeDot > 0) {
         bn = new BigNumber(bn.toPrecision(digitsBeforeDot, 1));
       } else {
         bn = new BigNumber(0);

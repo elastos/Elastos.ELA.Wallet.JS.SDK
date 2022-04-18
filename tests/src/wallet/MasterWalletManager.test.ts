@@ -79,37 +79,30 @@ describe("MasterWalletManager Tests", () => {
     const inputsJson = [
       {
         Address: addresses[0],
-        Amount: "1000000000",
+        Amount: "499990000",
         TxHash:
-          "c0c11e651a006086d3c42331d03d05fe8af8603a61fa249e30ec5b95dd20f078",
-        Index: 0
+          "e10e3ab2bd5f4fb5d6cade98bb2c4f4f56d64bac50e7e8d8a9d37feb0e804df0",
+        Index: 1
       }
     ];
-
     const outputsJson = [
       {
         Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
-        Amount: "500000000"
+        Amount: "200000000"
       }
     ];
-
     const fee = "10000";
     const memo = "test creating a transaction";
-    subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
 
-    const tx = {
-      Algorithm: "base64",
-      ID: "f04d800e",
-      Data: "CQIAAoEpdHlwZTp0ZXh0LG1zZzp0ZXN0IGNyZWF0aW5nIGEgdHJhbnNhY3Rpb24ACjMxOTM4NTgwOTEBePAg3ZVb7DCeJPphOmD4iv4FPdAxI8TThmAAGmUewcAAAAAAAAACsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KMAZc0dAAAAAAAAAAAh8y27oh50hsZqJkHYbYuYPX7YxiUAsDfblkojFFjS1v/V6hiUTE+Q5j1UfF07mHTfZqTq0KPwPc0dAAAAAAAAAAAhepRg2Ni+5D2TYN1bUgIyZByYp+0AAAAAAAEAIyEDH1aVXMAFEi8RzsUmTqWWgkCpDwFDT7Cht0Kb5LkVfUas",
-      ChainID: "ELA",
-      Fee: 10000
-    };
-    subWallet.signTransaction(tx, passwd);
+    const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
+    console.log("tx...", tx);
+
+    const signedTx = subWallet.signTransaction(tx, passwd);
+    console.log("signedTx...", signedTx);
   });
 
   test("get master wallet IDs", () => {
     const masterWallets = masterWalletManager.getAllMasterWallets();
-    console.log("masterWallets...", masterWallets);
     expect(masterWallets.length).toBe(1);
   });
 });
