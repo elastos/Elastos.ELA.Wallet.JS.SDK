@@ -40,7 +40,8 @@ export class CoinBase extends Payload {
   }
 
   public deserialize(istream: ByteStream, version: uint8_t): boolean {
-    return istream.readVarBytes(this._coinBaseData);
+    this._coinBaseData = istream.readVarBytes(this._coinBaseData);
+    return !!this._coinBaseData;
   }
 
   public toJson(version: uint8_t): json {

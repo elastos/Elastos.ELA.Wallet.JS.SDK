@@ -161,15 +161,11 @@ export class Program extends ELAMessage implements JsonSerializer {
       return SignType.SignTypeInvalid;
     }
 
-    // TODO
-    // let pubKey: bytes_t = Buffer.alloc(0);
-    // while (stream.readVarBytes(pubKey)) {
-    //   pubkeys.push(pubKey);
-    // }
-    const length = stream.readVarUInt().toNumber();
-    const pubKey = Buffer.alloc(length);
-    if (stream.readBytes(pubKey, length)) {
+    let pubKey: bytes_t;
+    pubKey = stream.readVarBytes(pubKey);
+    while (pubKey) {
       pubkeys.push(pubKey);
+      pubKey = stream.readVarBytes(pubKey);
     }
 
     return signType;
@@ -225,17 +221,17 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public deserialize(stream: ByteStream): boolean {
-    const len = stream.readUInt8();
-    const parameter = Buffer.alloc(len);
-    if (!stream.readBytes(parameter, len)) {
+    let parameter: bytes_t;
+    parameter = stream.readVarBytes(parameter);
+    if (!parameter) {
       Log.error("Program deserialize parameter fail");
       return false;
     }
     this._parameter = parameter;
 
-    const codeLen = stream.readUInt8();
-    const code = Buffer.alloc(codeLen);
-    if (!stream.readBytes(code, codeLen)) {
+    let code: bytes_t;
+    code = stream.readVarBytes(code);
+    if (!code) {
       Log.error("Program deserialize code fail");
       return false;
     }

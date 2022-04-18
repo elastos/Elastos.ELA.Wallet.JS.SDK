@@ -259,23 +259,24 @@ export class ByteStream {
 
   // TODO: C++ version can read bytes or various uint sizes. Let's try to focus bytes for bytes and
   // use other methods for uints
-  public readVarBytes(bytes: bytes_t): boolean {
-    if (!this.readVarUInt().isNaN()) {
-      let length = this.readVarUInt().toNumber(); // length is never a large number
-      bytes = Buffer.alloc(length);
+  public readVarBytes(bytes: bytes_t): bytes_t | null {
+    const bn = this.readVarUInt();
+    if (!bn.isNaN()) {
+      let length = bn.toNumber(); // length is never a large number
       return this.readBytes(bytes, length);
     }
-    return false;
+    return null;
   }
 
   /**
    * @param bytes Output buffer. If not enough space, more space will be allocated
    * @param length Number of bytes to read
    */
-  public readBytes(bytes: bytes_t, length: size_t): boolean {
-    // TODO: alloc buffer "bytes" ?
+  public readBytes(bytes: bytes_t, length: size_t): bytes_t {
+    // alloc buffer "bytes"? yes
+    bytes = Buffer.alloc(length);
     for (let i = 0; i < length; i++) bytes[i] = this.buffer[this.position++];
-    return true;
+    return bytes;
   }
 
   /**

@@ -180,8 +180,9 @@ export class TransactionOutput implements JsonSerializer {
       return false;
     }
 
-    let programHash = Buffer.alloc(sizeof_uint168_t());
-    if (!istream.readBytes(programHash, sizeof_uint168_t())) {
+    let programHash: bytes_t;
+    programHash = istream.readBytes(programHash, sizeof_uint168_t());
+    if (!programHash) {
       Log.error("deserialize output program hash error");
       return false;
     }

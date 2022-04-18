@@ -84,9 +84,10 @@ export class Attribute extends ELAMessage implements JsonSerializer {
       Log.error("invalid attribute usage: ", this._usage);
       return false;
     }
-    const length = stream.readUInt8();
-    const bytes = Buffer.alloc(length);
-    if (!stream.readBytes(bytes, length)) {
+
+    let bytes: bytes_t;
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
       Log.error("Attribute deserialize data fail");
       return false;
     }

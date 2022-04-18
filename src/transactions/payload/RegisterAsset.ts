@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { json, size_t, uint8_t, uint64_t } from "../../types";
+import { json, size_t, uint8_t, uint64_t, bytes_t } from "../../types";
 import { Payload } from "./Payload";
 import { Log } from "../../common/Log";
 import { Asset, MaxPrecision } from "../Asset";
@@ -61,8 +61,9 @@ export class RegisterAsset extends Payload {
       Log.error("Payload register asset deserialize amount fail");
       return false;
     }
-    const controller = Buffer.alloc(21);
-    if (!istream.readBytes(controller, 21)) {
+    let controller: bytes_t;
+    controller = istream.readBytes(controller, 21);
+    if (!controller) {
       Log.error("Payload register asset deserialize controller fail");
       return false;
     }
