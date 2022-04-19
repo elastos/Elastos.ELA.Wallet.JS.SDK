@@ -255,7 +255,7 @@ export class Wallet extends Lockable {
       addr,
       payPasswd
     );
-    return key.sign(Buffer.from(digest.toString())).toString("hex");
+    return key.sign(Buffer.from(digest.toString(16), "hex")).toString("hex");
   }
 
   signWithOwnerKey(msg: bytes_t, payPasswd: string) {

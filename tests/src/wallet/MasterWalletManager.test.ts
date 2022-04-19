@@ -76,6 +76,25 @@ describe("MasterWalletManager Tests", () => {
     // the value of addresses is ['EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz']
     console.log("addresses...", addresses);
 
+    const digest =
+      "1aa09cbe96ed691289d4b9cd5358b0d9a0e081a80fdbcaafb60f340602427723";
+
+    const sigHex =
+      "cebe56756058104d8a0f18f86e64e0bd940ab87c055fb1c5367d6c2cd9a8bb3e2593853de4948b6f9b16bb5c90d2534b0945cf6265d648ad3c6749eae8e4cc05";
+
+    const signature = subWallet.signDigest(addresses[0], digest, passwd);
+    expect(signature).toBe(sigHex);
+
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    console.log("pubKeys...", pubKeys);
+
+    // "020c3d28bb2ee7365348722c686b4b60a10ddca032c444e3170022cd35bb079138";
+    const pubKey =
+      "031f56955cc005122f11cec5264ea5968240a90f01434fb0a1b7429be4b9157d46";
+
+    const rs = subWallet.verifyDigest(pubKey, digest, signature);
+    expect(rs).toBe(true);
+
     const inputsJson = [
       {
         Address: addresses[0],
@@ -99,6 +118,12 @@ describe("MasterWalletManager Tests", () => {
 
     const signedTx = subWallet.signTransaction(tx, passwd);
     console.log("signedTx...", signedTx);
+
+    const signedInfo = subWallet.getTransactionSignedInfo(signedTx);
+    console.log("signedInfo...", signedInfo);
+
+    const rawTx = subWallet.convertToRawTransaction(signedTx);
+    console.log("rawTx...", rawTx);
   });
 
   test("get master wallet IDs", () => {

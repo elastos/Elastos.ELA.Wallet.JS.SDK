@@ -334,7 +334,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 				ArgInfo("r => {}", result.dump());
 				return result;
 			}
-	
+
 
   createUpdateProducerTransaction(
     inputsJson: json,
@@ -365,7 +365,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("r => {}", result.dump());
     // return result;
   }
-  
+
 			nlohmann::json MainchainSubWallet::CreateCancelProducerTransaction(
 				const nlohmann::json &inputsJson,
 				const nlohmann::json &payloadJson,
@@ -403,9 +403,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 			}
 
 					nlohmann::json MainchainSubWallet::CreateRetrieveDepositTransaction(const nlohmann::json &inputsJson,
-																																							const std::string &amount,
-																																							const std::string &fee,
-																																							const std::string &memo) const {
+					const std::string &amount,
+					const std::string &fee,
+					const std::string &memo) const {
 							WalletPtr wallet = _walletManager->GetWallet();
 				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 				ArgInfo("inputs: {}", inputsJson.dump());
@@ -554,9 +554,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 			}
 
 					nlohmann::json MainchainSubWallet::CreateVoteTransaction(const nlohmann::json &inputsJson,
-																																	 const nlohmann::json &voteContentsJson,
-																																	 const std::string &fee,
-																																	 const std::string &memo) const {
+					const nlohmann::json &voteContentsJson,
+					const std::string &fee,
+					const std::string &memo) const {
 							WalletPtr wallet = _walletManager->GetWallet();
 				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 				ArgInfo("inputs: {}", inputsJson.dump());
@@ -582,7 +582,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
 							PayloadPtr payload = PayloadPtr(new TransferAsset());
 							TransactionPtr tx = wallet->CreateTransaction(Transaction::transferAsset,
-																														payload, utxos, outputs, memo, feeAmount, true);
+							payload, utxos, outputs, memo, feeAmount, true);
 
 				nlohmann::json result;
 				EncodeTx(result, tx);
@@ -706,7 +706,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 					ErrorChecker::CheckParam(!payload->IsValid(payloadVersion), Error::InvalidArgument, "verify signature failed");
 				} catch (const nlohmann::detail::exception &e) {
 					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-																						"Payload format err: " + std::string(e.what()));
+										"Payload format err: " + std::string(e.what()));
 				}
 
 				bytes_t code = static_cast<CRInfo *>(payload.get())->GetCode();
@@ -747,7 +747,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 					payload->FromJson(payloadJSON, payloadVersion);
 				} catch (const nlohmann::detail::exception &e) {
 					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-																						"Payload format err: " + std::string(e.what()));
+					"Payload format err: " + std::string(e.what()));
 				}
 
 				BigInt feeAmount;
@@ -780,15 +780,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 				UTXOFromJson(utxo, inputsJson);
 
 				ErrorChecker::CheckParam(payloadJSON.find("Signature") == payloadJSON.end() ||
-																 payloadJSON["Signature"].get<std::string>() == "",
-																 Error::InvalidArgument, "invalied signature");
+				payloadJSON["Signature"].get<std::string>() == "",
+				Error::InvalidArgument, "invalied signature");
 
 				PayloadPtr payload = PayloadPtr(new UnregisterCR());
 				try {
 					payload->FromJson(payloadJSON, 0);
 				} catch (const nlohmann::detail::exception &e) {
 					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-																						"Payload format err: " + std::string(e.what()));
+							"Payload format err: " + std::string(e.what()));
 				}
 
 				BigInt feeAmount;
@@ -978,10 +978,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 				return hashString;
 			}
 
-					nlohmann::json MainchainSubWallet::CreateProposalTransaction(const nlohmann::json &inputsJson,
-																																			 const nlohmann::json &payload,
-																																			 const std::string &fee,
-																																			 const std::string &memo) const {
+			nlohmann::json MainchainSubWallet::CreateProposalTransaction(const nlohmann::json &inputsJson,
+			const nlohmann::json &payload,
+			const std::string &fee,
+			const std::string &memo) const {
 				WalletPtr wallet = _walletManager->GetWallet();
 				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 							ArgInfo("inputs: {}", inputsJson.dump());
@@ -1048,9 +1048,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 			}
 
 			nlohmann::json MainchainSubWallet::CreateProposalReviewTransaction(const nlohmann::json &inputsJson,
-																																						 const nlohmann::json &payload,
-																				 const std::string &fee,
-																				 const std::string &memo) const {
+			  const nlohmann::json &payload,
+				const std::string &fee,
+				const std::string &memo) const {
 				WalletPtr wallet = _walletManager->GetWallet();
 				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 				ArgInfo("inputs: {}", inputsJson.dump());
@@ -1167,10 +1167,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 			}
 
 			nlohmann::json
-					MainchainSubWallet::CreateProposalTrackingTransaction(const nlohmann::json &inputsJson,
-																																const nlohmann::json &payload,
-																																const std::string &fee,
-																																const std::string &memo) const {
+			MainchainSubWallet::CreateProposalTrackingTransaction(const nlohmann::json &inputsJson,
+				const nlohmann::json &payload,
+				const std::string &fee,
+				const std::string &memo) const {
 				WalletPtr wallet = _walletManager->GetWallet();
 				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 				ArgInfo("inputs: {}", inputsJson.dump());

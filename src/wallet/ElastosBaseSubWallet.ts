@@ -19,6 +19,7 @@ import {
 import { Address, AddressArray } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { DeterministicKey } from "../walletcore/deterministickey";
+import { HDKey } from "../walletcore/hdkey";
 import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
@@ -78,9 +79,9 @@ export class ElastosBaseSubWallet
     // TODO subWalletDBPath /= _info->GetChainID() + ".db";
 
     /* TODO - replace the spvservice
-         _walletManager = WalletManagerPtr(
-                 new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
-                                _config, netType)); */
+      _walletManager = WalletManagerPtr(
+      new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
+      _config, netType)); */
 
     let chainID = info.getChainID();
     if (
@@ -241,7 +242,7 @@ export class ElastosBaseSubWallet
     const didAddress: Address = Address.newFromAddressString(address);
     const signature: string = this._wallet.signDigestWithAddress(
       didAddress,
-      new BigNumber(digest),
+      new BigNumber(digest, 16),
       payPassword
     );
 
@@ -251,16 +252,13 @@ export class ElastosBaseSubWallet
   }
 
   verifyDigest(publicKey: string, digest: string, signature: string): boolean {
-    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-    // ArgInfo("publicKey: {}", publicKey);
-    // ArgInfo("digest: {}", digest);
-    // ArgInfo("signature: {}", signature);
-
     const k = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
-    k.publicKey = Buffer.from(publicKey);
-    const r: boolean = k.verify(Buffer.from(digest), Buffer.from(signature));
-
-    // ArgInfo("r => {}", r);
+    k.publicKey = Buffer.from(publicKey, "hex");
+    const r: boolean = k.verify(
+      Buffer.from(digest, "hex"),
+      Buffer.from(signature, "hex")
+    );
+    console.log("r....", r);
     return r;
   }
 
@@ -277,7 +275,7 @@ export class ElastosBaseSubWallet
     return info;
   }
 
-  convertToRawTransaction(tx) {
+  public convertToRawTransaction(tx) {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("tx: {}", tx.dump());
 

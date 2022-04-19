@@ -100,6 +100,7 @@ export class Program extends ELAMessage implements JsonSerializer {
   public getSignedInfo(md: uint256): json {
     let info = {};
     let publicKeys: bytes_t[] = [];
+
     let type: SignType = this.decodePublicKey(publicKeys);
     if (type == SignType.SignTypeInvalid) {
       Log.warn("Can not decode pubkey from program");
@@ -112,14 +113,16 @@ export class Program extends ELAMessage implements JsonSerializer {
     let stream = new ByteStream(this._parameter);
     let signature: bytes_t = Buffer.alloc(0);
     let signers: string[] = [];
-    while (stream.readVarBytes(signature)) {
+    signature = stream.readVarBytes(signature);
+    while (signature) {
       for (let i = 0; i < publicKeys.length; ++i) {
         key.publicKey = publicKeys[i];
-        if (key.verify(Buffer.from(md.toString()), signature)) {
+        if (key.verify(Buffer.from(md.toString(16), "hex"), signature)) {
           signers.push(publicKeys[i].toString("hex"));
           break;
         }
       }
+      signature = stream.readVarBytes(signature);
     }
 
     if (

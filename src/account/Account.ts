@@ -750,10 +750,10 @@ export class Account {
         passphrase,
         KeySpec.Bitcoin
       );
-      const ethkey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
+      const ethkey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
 
       const xPubKey: string = Base58Check.encode(
-        rootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+        rootkey.deriveWithPath("m/44'/0'/0'").getPublicKeyBytes()
       );
       if (xPubKey != this._localstore.getxPubKey()) {
         ErrorChecker.throwParamException(
@@ -775,7 +775,7 @@ export class Account {
         rootkey.getPrivateKeyBytes(),
         newPassword
       );
-      const requestKey = rootkey.deriveWithPath("1'/0");
+      const requestKey = rootkey.deriveWithPath("m/1'/0");
 
       const encryptedRequestPrvKey: string = AESEncrypt(
         requestKey.getPublicKeyBytes(),
@@ -1292,7 +1292,7 @@ export class Account {
     }
 
     if (!this._localstore.getRequestPrivKey() && haveRootkey) {
-      const requestKey: HDKey = rootkey.deriveWithPath("1'/0");
+      const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
       const bytes = requestKey.getPrivateKeyBytes();
       this._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
       this._localstore.setRequestPubKey(
@@ -1302,7 +1302,7 @@ export class Account {
 
     // master public key
     if (!this._localstore.getxPubKey() && haveRootkey) {
-      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      const xpub: HDKey = rootkey.deriveWithPath("m/44'/0'/0'");
       this._localstore.setxPubKey(Base58Check.encode(xpub.getPublicKeyBytes()));
     }
 
@@ -1314,7 +1314,7 @@ export class Account {
     // bitcoin master public key
     if (!this._localstore.getxPubKeyBitcoin() && havestdrootkey) {
       tmpstr = Base58Check.encode(
-        stdrootkey.deriveWithPath("44'/0'/0'").getPublicKeyBytes()
+        stdrootkey.deriveWithPath("m/44'/0'/0'").getPublicKeyBytes()
       );
       this._localstore.setxPubKeyBitcoin(tmpstr);
     }
@@ -1325,7 +1325,7 @@ export class Account {
         !this._localstore.getSinglePrivateKey()) &&
       havestdrootkey
     ) {
-      const ethkey: HDKey = stdrootkey.deriveWithPath("44'/60'/0'/0/0");
+      const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
       tmpstr = ethkey.getPublicKeyBytes().toString("hex");
       this._localstore.setETHSCPrimaryPubKey(tmpstr);
       this._localstore.setSinglePrivateKey(
@@ -1344,7 +1344,7 @@ export class Account {
     */
 
     if (!this._localstore.getxPubKeyHDPM() && haveRootkey) {
-      const xpubHDPM: HDKey = rootkey.deriveWithPath("45'");
+      const xpubHDPM: HDKey = rootkey.deriveWithPath("m/45'");
       this._localstore.setxPubKeyHDPM(
         Base58Check.encode(xpubHDPM.getPublicKeyBytes())
       );
@@ -1352,7 +1352,9 @@ export class Account {
 
     // 44'/coinIndex'/account'/change/index
     if (!this._localstore.getOwnerPubKey() && haveRootkey) {
-      const bytes = rootkey.deriveWithPath("44'/0'/1'/0/0").getPublicKeyBytes();
+      const bytes = rootkey
+        .deriveWithPath("m/44'/0'/1'/0/0")
+        .getPublicKeyBytes();
       this._localstore.setOwnerPubKey(bytes.toString("hex"));
     }
 
@@ -1418,7 +1420,7 @@ export class Account {
   verifyPrivateKey(mnemonic: string, passphrase: string): boolean {
     if (!this._localstore.readonly() && this._xpub != null) {
       const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
-      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      const xpub: HDKey = rootkey.deriveWithPath("m/44'/0'/0'");
       if (xpub.getPublicKeyBase58() == this._xpub.getPublicKeyBase58()) {
         return true;
       }
@@ -1435,7 +1437,7 @@ export class Account {
       }
       const mnemonic = this._localstore.getMnemonic();
       const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
-      const xpub: HDKey = rootkey.deriveWithPath("44'/0'/0'");
+      const xpub: HDKey = rootkey.deriveWithPath("m/44'/0'/0'");
       if (xpub.getPublicKeyBase58() != this._xpub.getPublicKeyBase58())
         return false;
 

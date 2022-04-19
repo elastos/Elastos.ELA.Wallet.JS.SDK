@@ -170,7 +170,7 @@ export class SubAccount {
       return jout;
     } else {
       let keychain: HDKey = this._parent.masterPubKey().deriveWithIndex(chain);
-      let jout: JSONArray;
+      let jout: JSONArray = [];
       while (count--) {
         jout.push(
           keychain
@@ -381,7 +381,7 @@ export class SubAccount {
 
   getKeyWithAddress(addr: Address, payPasswd: string): DeterministicKey {
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
-      this._chainAddressCached.forEach((value, key) => {
+      for (let [key, value] of this._chainAddressCached) {
         let chain: uint32_t = key;
         let chainAddr: Address[] = value;
         for (let i = 0; i < chainAddr.length; i++) {
@@ -390,17 +390,17 @@ export class SubAccount {
           cid.changePrefix(Prefix.PrefixIDChain);
           let did = Address.newFromAddress(cid);
           did.convertToDID();
-          if (addr == address || addr == cid || addr == did) {
+          if (addr.equals(address) || addr.equals(cid) || addr.equals(did)) {
             const privateKey = this._parent
               .rootKey(payPasswd)
               .deriveWithPath("m/44'/0'/0'")
               .deriveWithIndex(chain)
               .deriveWithIndex(i)
-              .getPrivateKeyBase58();
+              .serializeBase58();
             return DeterministicKey.fromExtendedKey(privateKey);
           }
         }
-      });
+      }
     }
 
     ErrorChecker.throwLogicException(
