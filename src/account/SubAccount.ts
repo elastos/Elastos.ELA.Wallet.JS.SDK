@@ -45,6 +45,7 @@ import {
   MAX_MULTISIGN_COSIGNERS,
   SignType as AccountSignType
 } from "./Account";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export class SubAccount {
   private _chainAddressCached: Map<uint32_t, Address[]> = new Map();
@@ -317,9 +318,6 @@ export class SubAccount {
   }
 
   public signTransaction(tx: Transaction, payPasswd: string) {
-    let signature: bytes_t;
-    let stream = new ByteStream();
-
     ErrorChecker.checkParam(
       this._parent.readonly(),
       Error.Code.Sign,
@@ -358,14 +356,20 @@ export class SubAccount {
         "Private key not found"
       );
 
-      let privateKey: string = rs.key.serializeBase58();
-      const key = DeterministicKey.fromExtendedKey(privateKey);
+      let signature: bytes_t;
+      let stream = new ByteStream();
       stream.reset();
+
       if (programs[i].getParameter().length > 0) {
         let verifyStream = new ByteStream(programs[i].getParameter());
+        let publicKey = rs.key.getPublicKeyBytes();
         while (verifyStream.readVarBytes(signature)) {
           ErrorChecker.checkLogic(
-            key.verify(Buffer.from(md.toString(16), "hex"), signature),
+            EcdsaSigner.verify(
+              publicKey,
+              signature,
+              Buffer.from(md.toString(16), "hex")
+            ),
             Error.Code.AlreadySigned,
             "Already signed"
           );
@@ -373,13 +377,17 @@ export class SubAccount {
         stream.writeBytes(programs[i].getParameter());
       }
 
-      signature = key.sign(Buffer.from(md.toString(16), "hex"));
+      let privateKey: bytes_t = rs.key.getPrivateKeyBytes();
+      signature = EcdsaSigner.sign(
+        privateKey,
+        Buffer.from(md.toString(16), "hex")
+      );
       stream.writeVarBytes(signature);
       programs[i].setParameter(stream.getBytes());
     }
   }
 
-  getKeyWithAddress(addr: Address, payPasswd: string): DeterministicKey {
+  getKeyWithAddress(addr: Address, payPasswd: string): bytes_t | null {
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let [key, value] of this._chainAddressCached) {
         let chain: uint32_t = key;
@@ -396,8 +404,8 @@ export class SubAccount {
               .deriveWithPath("m/44'/0'/0'")
               .deriveWithIndex(chain)
               .deriveWithIndex(i)
-              .serializeBase58();
-            return DeterministicKey.fromExtendedKey(privateKey);
+              .getPrivateKeyBytes();
+            return privateKey;
           }
         }
       }
@@ -407,7 +415,7 @@ export class SubAccount {
       Error.Code.PrivateKeyNotFound,
       "private key not found"
     );
-    return new DeterministicKey();
+    return null;
   }
 
   deriveOwnerKey(payPasswd: string): DeterministicKey {

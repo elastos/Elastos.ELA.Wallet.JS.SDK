@@ -284,6 +284,7 @@ export class Secp256 {
       k: noncefn,
       pers: data
     });
+
     return {
       signature: Buffer.concat([
         result.r.toArrayLike(Buffer, "be", 32),

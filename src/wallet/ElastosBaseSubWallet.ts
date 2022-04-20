@@ -1,36 +1,3 @@
-import BigNumber from "bignumber.js";
-import { SubAccount } from "../account/SubAccount";
-import { ByteStream } from "../common/bytestream";
-import { Error, ErrorChecker } from "../common/ErrorChecker";
-import { ChainConfig } from "../config";
-import { TransferAsset } from "../transactions/payload/TransferAsset";
-import { Transaction, TransactionType } from "../transactions/Transaction";
-import { TransactionOutput } from "../transactions/TransactionOutput";
-import {
-  bytes_t,
-  json,
-  JSONArray,
-  JSONValue,
-  uint16_t,
-  uint256,
-  uint32_t,
-  uint64_t
-} from "../types";
-import { Address, AddressArray } from "../walletcore/Address";
-import { CoinInfo } from "../walletcore/CoinInfo";
-import { DeterministicKey } from "../walletcore/deterministickey";
-import { HDKey } from "../walletcore/hdkey";
-import { IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
-import { MasterWallet } from "./MasterWallet";
-import { SubWallet } from "./SubWallet";
-import { UTXO, UTXOSet } from "./UTXO";
-import { Wallet } from "./Wallet";
-import {
-  CHAINID_IDCHAIN,
-  CHAINID_MAINCHAIN,
-  CHAINID_TOKENCHAIN
-} from "./WalletCommon";
-
 /*
  * Copyright (c) 2019 Elastos Foundation
  *
@@ -52,6 +19,39 @@ import {
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+import BigNumber from "bignumber.js";
+import { SubAccount } from "../account/SubAccount";
+import { ByteStream } from "../common/bytestream";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { ChainConfig } from "../config";
+import { TransferAsset } from "../transactions/payload/TransferAsset";
+import { Transaction, TransactionType } from "../transactions/Transaction";
+import { TransactionOutput } from "../transactions/TransactionOutput";
+import {
+  bytes_t,
+  json,
+  JSONArray,
+  JSONValue,
+  uint16_t,
+  uint256,
+  uint32_t,
+  uint64_t
+} from "../types";
+import { Address, AddressArray } from "../walletcore/Address";
+import { CoinInfo } from "../walletcore/CoinInfo";
+import { IElastosBaseSubWallet, EncodedTx } from "./IElastosBaseSubWallet";
+import { MasterWallet } from "./MasterWallet";
+import { SubWallet } from "./SubWallet";
+import { UTXO, UTXOSet } from "./UTXO";
+import { Wallet } from "./Wallet";
+import {
+  CHAINID_IDCHAIN,
+  CHAINID_MAINCHAIN,
+  CHAINID_TOKENCHAIN
+} from "./WalletCommon";
+import { Secp256 } from "../walletcore/secp256";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 //type WalletManagerPtr = SpvService;
 
@@ -213,7 +213,7 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  signTransaction(tx: json, payPassword: string): json {
+  signTransaction(tx: EncodedTx, payPassword: string): json {
     /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
@@ -252,17 +252,15 @@ export class ElastosBaseSubWallet
   }
 
   verifyDigest(publicKey: string, digest: string, signature: string): boolean {
-    const k = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
-    k.publicKey = Buffer.from(publicKey, "hex");
-    const r: boolean = k.verify(
-      Buffer.from(digest, "hex"),
-      Buffer.from(signature, "hex")
+    const r: boolean = EcdsaSigner.verify(
+      publicKey,
+      Buffer.from(signature, "hex"),
+      Buffer.from(digest, "hex")
     );
-    console.log("r....", r);
     return r;
   }
 
-  public getTransactionSignedInfo(encodedTx: json) {
+  public getTransactionSignedInfo(encodedTx: EncodedTx) {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("tx: {}", encodedTx.dump());
 
@@ -275,7 +273,7 @@ export class ElastosBaseSubWallet
     return info;
   }
 
-  public convertToRawTransaction(tx) {
+  public convertToRawTransaction(tx: EncodedTx) {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("tx: {}", tx.dump());
 
@@ -293,7 +291,6 @@ export class ElastosBaseSubWallet
     let stream = new ByteStream();
     tx.serialize(stream);
     const hex = stream.getBytes();
-    // console.log("encodeTx hex...", hex.toString("hex"));
     result["Algorithm"] = "base64";
     result["ID"] = tx.getHash().toString(16).slice(0, 8);
     result["Data"] = hex.toString("base64");
@@ -301,8 +298,7 @@ export class ElastosBaseSubWallet
     result["Fee"] = tx.getFee().toNumber();
   }
 
-  // TODO: replace json with structured type
-  protected decodeTx(encodedTx: json): Transaction {
+  protected decodeTx(encodedTx: EncodedTx): Transaction {
     if (
       !("Algorithm" in encodedTx) ||
       !("Data" in encodedTx) ||

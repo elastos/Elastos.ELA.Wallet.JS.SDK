@@ -31,6 +31,8 @@ import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { Account, SignType as AccountSignType } from "../account/Account";
+import { Secp256 } from "../walletcore/secp256";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export class Wallet extends Lockable {
   protected _walletID: string;
@@ -238,11 +240,15 @@ export class Wallet extends Lockable {
 
   signWithAddress(addr: Address, msg: string, payPasswd: string): string {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const key: DeterministicKey = this._subAccount.getKeyWithAddress(
+    const privateKey: bytes_t | null = this._subAccount.getKeyWithAddress(
       addr,
       payPasswd
     );
-    return key.sign(Buffer.from(msg)).toString("hex");
+
+    if (privateKey) {
+      const signature = EcdsaSigner.sign(privateKey, Buffer.from(msg, "hex"));
+      return signature.toString("hex");
+    }
   }
 
   signDigestWithAddress(
@@ -251,11 +257,18 @@ export class Wallet extends Lockable {
     payPasswd: string
   ): string {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const key: DeterministicKey = this._subAccount.getKeyWithAddress(
+    const privateKey: bytes_t | null = this._subAccount.getKeyWithAddress(
       addr,
       payPasswd
     );
-    return key.sign(Buffer.from(digest.toString(16), "hex")).toString("hex");
+
+    if (privateKey) {
+      const signature = EcdsaSigner.sign(
+        privateKey,
+        Buffer.from(digest.toString(16), "hex")
+      );
+      return signature.toString("hex");
+    }
   }
 
   signWithOwnerKey(msg: bytes_t, payPasswd: string) {

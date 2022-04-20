@@ -23,6 +23,14 @@
 import { json, JSONArray } from "../types";
 import { ISubWallet } from "./ISubWallet";
 
+export type EncodedTx = {
+  Algorithm: string;
+  Data: string;
+  ChainID: string;
+  ID?: string;
+  Fee?: string;
+};
+
 export interface IElastosBaseSubWallet extends ISubWallet {
   /**
    * Create a normal transaction and return the content of transaction in json format.
@@ -72,5 +80,5 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * @param tx transaction json
    * @return  tx in hex string format.
    */
-  convertToRawTransaction(tx: string): string;
+  convertToRawTransaction(tx: EncodedTx): string;
 }

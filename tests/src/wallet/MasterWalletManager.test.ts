@@ -67,32 +67,31 @@ describe("MasterWalletManager Tests", () => {
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
     const subWallet: any = masterWallet.createSubWallet("ELA");
-    console.log("subWallet....", subWallet);
 
-    const localStore = browserStorage.loadStore(masterWalletID);
-    console.log("localStore...", localStore);
+    // const localStore = browserStorage.loadStore(masterWalletID);
 
+    const address = "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz";
     const addresses = subWallet.getAddresses(0, 1, false);
     // the value of addresses is ['EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz']
-    console.log("addresses...", addresses);
+    expect(addresses[0]).toBe(address);
 
-    const digest =
-      "1aa09cbe96ed691289d4b9cd5358b0d9a0e081a80fdbcaafb60f340602427723";
+    const digest = `88486f91981d11adf53c327e7ab2556b00c8f89b18f56eab8ff72f940c6d8889`;
 
-    const sigHex =
-      "cebe56756058104d8a0f18f86e64e0bd940ab87c055fb1c5367d6c2cd9a8bb3e2593853de4948b6f9b16bb5c90d2534b0945cf6265d648ad3c6749eae8e4cc05";
+    const sigHex = `50cdc759396d1c229852f373d985abb06283c72153032e4b9716dfe426c94cfb45ca4807f6aa6930ef404d631afaaef5c0be48acfddb624a3990e19958aef646`;
 
     const signature = subWallet.signDigest(addresses[0], digest, passwd);
     expect(signature).toBe(sigHex);
 
+    const pubKeyData = [
+      "031f56955cc005122f11cec5264ea5968240a90f01434fb0a1b7429be4b9157d46"
+    ];
+
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
-    console.log("pubKeys...", pubKeys);
+    expect(pubKeys[0]).toBe(pubKeyData[0]);
 
-    // "020c3d28bb2ee7365348722c686b4b60a10ddca032c444e3170022cd35bb079138";
-    const pubKey =
-      "031f56955cc005122f11cec5264ea5968240a90f01434fb0a1b7429be4b9157d46";
-
-    const rs = subWallet.verifyDigest(pubKey, digest, signature);
+    const pubKey = pubKeys[0];
+    // const rs = subWallet.verifyDigest(pubKey, digest, signature);
+    const rs = subWallet.verifyDigest(pubKey, digest, sigHex);
     expect(rs).toBe(true);
 
     const inputsJson = [
@@ -114,16 +113,10 @@ describe("MasterWalletManager Tests", () => {
     const memo = "test creating a transaction";
 
     const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
-    console.log("tx...", tx);
-
     const signedTx = subWallet.signTransaction(tx, passwd);
-    console.log("signedTx...", signedTx);
 
     const signedInfo = subWallet.getTransactionSignedInfo(signedTx);
-    console.log("signedInfo...", signedInfo);
-
     const rawTx = subWallet.convertToRawTransaction(signedTx);
-    console.log("rawTx...", rawTx);
   });
 
   test("get master wallet IDs", () => {
