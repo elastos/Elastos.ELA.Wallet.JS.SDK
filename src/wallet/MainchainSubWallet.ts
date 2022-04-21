@@ -1,6 +1,28 @@
+/*
+ * Copyright (c) 2019 Elastos Foundation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import BigNumber from "bignumber.js";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
-import { json, JSONArray, uint8_t, uint64_t } from "../types";
+import { json, JSONArray, uint8_t, uint64_t, size_t, bytes_t } from "../types";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { MasterWallet } from "./MasterWallet";
 import { ChainConfig } from "../Config";
@@ -26,35 +48,17 @@ import {
 } from "../transactions/TransactionOutput";
 import { Asset } from "../transactions/Asset";
 import { Transaction, TransactionType } from "../transactions/Transaction";
-import { DEPOSIT_OR_WITHDRAW_FEE } from "./SubWallet";
+import { DEPOSIT_OR_WITHDRAW_FEE, SELA_PER_ELA } from "./SubWallet";
 import {
   PayloadCrossChain,
   CrossChainOutputVersion
 } from "../transactions/payload/OutputPayload/PayloadCrossChain";
 import { Payload } from "../transactions/payload/Payload";
 import { DeterministicKey } from "../walletcore/deterministickey";
-
-/*
- * Copyright (c) 2019 Elastos Foundation
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+import { ProducerInfo } from "../transactions/payload/ProducerInfo";
+import { CancelProducer } from "../transactions/payload/CancelProducer";
+import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
+import { ByteStream } from "../common/bytestream";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -237,245 +241,298 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let nodePubKey = Buffer.from(nodePublicKey);
     verifyPubKey.publicKey = nodePubKey;
 
-    // ProducerInfo pr;
-    // pr.SetPublicKey(ownerPubKey);
-    // pr.SetNodePublicKey(nodePubKey);
-    // pr.SetNickName(nickName);
-    // pr.SetUrl(url);
-    // pr.SetAddress(ipAddress);
-    // pr.SetLocation(location);
+    let pr = new ProducerInfo();
+    pr.setPublicKey(ownerPubKey);
+    pr.setNodePublicKey(nodePubKey);
+    pr.setNickName(nickName);
+    pr.setUrl(url);
+    pr.setAddress(ipAddress);
+    pr.setLocation(location);
 
-    // ByteStream ostream;
-    // pr.SerializeUnsigned(ostream, 0);
-    // bytes_t prUnsigned = ostream.GetBytes();
+    let ostream = new ByteStream();
+    pr.serializeUnsigned(ostream, 0);
+    let prUnsigned = ostream.getBytes();
 
-    // pr.SetSignature(_walletManager->GetWallet()->SignWithOwnerKey(prUnsigned, payPasswd));
+    pr.setSignature(this.getWallet().signWithOwnerKey(prUnsigned, payPasswd));
 
-    // nlohmann::json payloadJson = pr.ToJson(0);
+    let payloadJson = pr.toJson(0);
 
     // ArgInfo("r => {}", payloadJson.dump());
-    // return payloadJson;
+    return payloadJson;
   }
-  /*
-			nlohmann::json MainchainSubWallet::GenerateCancelProducerPayload(
-				const std::string &ownerPublicKey,
-				const std::string &payPasswd) const {
 
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-				ArgInfo("ownerPubKey: {}", ownerPublicKey);
-				ArgInfo("payPasswd: *");
+  generateCancelProducerPayload(
+    ownerPublicKey: string,
+    payPasswd: string
+  ): json {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("ownerPubKey: {}", ownerPublicKey);
+    // ArgInfo("payPasswd: *");
 
-				ErrorChecker::CheckPassword(payPasswd, "Generate payload");
-				size_t pubKeyLen = ownerPublicKey.size() >> 1;
-				ErrorChecker::CheckParam(pubKeyLen != 33 && pubKeyLen != 65, Error::PubKeyLength,
-										 "Public key length should be 33 or 65 bytes");
+    ErrorChecker.checkPassword(payPasswd, "Generate payload");
+    let pubKeyLen: size_t = ownerPublicKey.length >> 1;
+    ErrorChecker.checkParam(
+      pubKeyLen != 33 && pubKeyLen != 65,
+      Error.Code.PubKeyLength,
+      "Public key length should be 33 or 65 bytes"
+    );
 
-				CancelProducer pc;
-				pc.SetPublicKey(ownerPublicKey);
+    let pc = new CancelProducer();
+    pc.setPublicKey(Buffer.from(ownerPublicKey));
 
-				ByteStream ostream;
-				pc.SerializeUnsigned(ostream, 0);
-				bytes_t pcUnsigned = ostream.GetBytes();
+    let ostream = new ByteStream();
+    pc.serializeUnsigned(ostream, 0);
+    let pcUnsigned: bytes_t = ostream.getBytes();
 
-				pc.SetSignature(_walletManager->GetWallet()->SignWithOwnerKey(pcUnsigned, payPasswd));
+    pc.setSignature(this.getWallet().signWithOwnerKey(pcUnsigned, payPasswd));
 
-				nlohmann::json payloadJson = pc.ToJson(0);
-				ArgInfo("r => {}", payloadJson.dump());
-				return payloadJson;
-			}
+    let payloadJson: json = pc.toJson(0);
+    // ArgInfo("r => {}", payloadJson.dump());
+    return payloadJson;
+  }
 
-			nlohmann::json MainchainSubWallet::CreateRegisterProducerTransaction(
-				const nlohmann::json &inputsJson,
-				const nlohmann::json &payloadJson,
-				const std::string &amount,
-				const std::string &fee,
-				const std::string &memo) const {
-				WalletPtr wallet = _walletManager->GetWallet();
+  createRegisterProducerTransaction(
+    inputsJson: JSONArray,
+    payloadJson: json,
+    amount: string,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
 
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJson.dump());
-				ArgInfo("amount: {}", amount);
-							ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJson.dump());
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
 
-				ErrorChecker::CheckBigIntAmount(amount);
-				BigInt bgAmount, minAmount(DEPOSIT_MIN_ELA), feeAmount;
-				bgAmount.setDec(amount);
-				feeAmount.setDec(fee);
+    ErrorChecker.checkBigIntAmount(amount);
+    let bgAmount = new BigNumber(amount);
+    let minAmount = new BigNumber(DEPOSIT_MIN_ELA);
+    let feeAmount = new BigNumber(fee);
 
-				minAmount *= SELA_PER_ELA;
+    minAmount = minAmount.multipliedBy(SELA_PER_ELA);
 
-				ErrorChecker::CheckParam(bgAmount < minAmount, Error::DepositAmountInsufficient,
-										 "Producer deposit amount is insufficient");
+    ErrorChecker.checkParam(
+      bgAmount.lt(minAmount),
+      Error.Code.DepositAmountInsufficient,
+      "Producer deposit amount is insufficient"
+    );
 
-				PayloadPtr payload = PayloadPtr(new ProducerInfo());
-				try {
-					payload->FromJson(payloadJson, 0);
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-														"Payload format err: " + std::string(e.what()));
-				}
+    let payload = new ProducerInfo();
+    try {
+      payload.fromJson(payloadJson, 0);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
 
-				bytes_t pubkey = static_cast<ProducerInfo *>(payload.get())->GetPublicKey();
+    let pubkey: bytes_t = payload.getPublicKey();
 
-				OutputArray outputs;
-				Address receiveAddr(PrefixDeposit, pubkey);
-				outputs.push_back(OutputPtr(new TransactionOutput(bgAmount, receiveAddr)));
+    let outputs: OutputArray;
+    let receiveAddr = Address.newWithPubKey(Prefix.PrefixDeposit, pubkey);
+    outputs.push(TransactionOutput.newFromParams(bgAmount, receiveAddr));
 
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::registerProducer, payload, utxo, outputs, memo, feeAmount);
+    let tx = wallet.createTransaction(
+      TransactionType.registerProducer,
+      payload,
+      utxo,
+      outputs,
+      memo,
+      feeAmount
+    );
 
-				nlohmann::json result;
-				EncodeTx(result, tx);
+    let result: json = {};
+    this.encodeTx(result, tx);
 
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
   createUpdateProducerTransaction(
-    inputsJson: json,
+    inputsJson: JSONArray,
     payloadJson: json,
     fee: string,
     memo: string
   ) {
-    // WalletPtr wallet = _walletManager->GetWallet();
+    let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
     // ArgInfo("payload: {}", payloadJson.dump());
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
-    // UTXOSet utxo;
-    // UTXOFromJson(utxo, inputsJson);
-    // PayloadPtr payload = PayloadPtr(new ProducerInfo());
-    // try {
-    // 	payload->FromJson(payloadJson, 0);
-    // } catch (const nlohmann::detail::exception &e) {
-    // 	ErrorChecker::ThrowParamException(Error::JsonFormatError,
-    // 										"Payload format err: " + std::string(e.what()));
-    // }
-    // BigInt feeAmount;
-    // feeAmount.setDec(fee);
-    // TransactionPtr tx = wallet->CreateTransaction(Transaction::updateProducer, payload, utxo, {}, memo, feeAmount);
-    // nlohmann::json result;
-    // EncodeTx(result, tx);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+    let payload = new ProducerInfo();
+    try {
+      payload.fromJson(payloadJson, 0);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.updateProducer,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    let result: json = {};
+    this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
-    // return result;
+    return result;
   }
 
-			nlohmann::json MainchainSubWallet::CreateCancelProducerTransaction(
-				const nlohmann::json &inputsJson,
-				const nlohmann::json &payloadJson,
-				const std::string &fee,
-				const std::string &memo) const {
+  createCancelProducerTransaction(
+    inputsJson: JSONArray,
+    payloadJson: json,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJson.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJson.dump());
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
 
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
+    let payload = new CancelProducer();
+    try {
+      payload.fromJson(payloadJson, 0);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
 
-				PayloadPtr payload = PayloadPtr(new CancelProducer());
-				try {
-					payload->FromJson(payloadJson, 0);
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-														"Payload format err: " + std::string(e.what()));
-				}
+    let feeAmount = new BigNumber(fee);
 
-				BigInt feeAmount;
-				feeAmount.setDec(fee);
+    let tx = wallet.createTransaction(
+      TransactionType.cancelProducer,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
 
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::cancelProducer, payload, utxo, {}, memo, feeAmount);
+    let result: json = {};
+    this.encodeTx(result, tx);
 
-				nlohmann::json result;
-				EncodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
+  createRetrieveDepositTransaction(
+    inputsJson: JSONArray,
+    amount: string,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-					nlohmann::json MainchainSubWallet::CreateRetrieveDepositTransaction(const nlohmann::json &inputsJson,
-					const std::string &amount,
-					const std::string &fee,
-					const std::string &memo) const {
-							WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-							ArgInfo("amount: {}", amount);
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
 
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
+    let feeAmount = new BigNumber(fee);
+    let bgAmount = new BigNumber(amount);
+    let outputs: OutputArray;
+    let receiveAddr: Address = utxo[0].getAddress();
+    outputs.push(
+      TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
+    );
 
-				BigInt feeAmount, bgAmount;
-				feeAmount.setDec(fee);
-				bgAmount.setDec(amount);
+    let payload = new ReturnDepositCoin();
+    let tx = this.getWallet().createTransaction(
+      TransactionType.returnDepositCoin,
+      payload,
+      utxo,
+      outputs,
+      memo,
+      feeAmount,
+      true
+    );
 
-							OutputArray outputs;
-							Address receiveAddr = (*utxo.begin())->GetAddress();
-							outputs.push_back(OutputPtr(new TransactionOutput(bgAmount - feeAmount, receiveAddr)));
+    let result = {};
+    this.encodeTx(result, tx);
 
-				PayloadPtr payload = PayloadPtr(new ReturnDepositCoin());
-				TransactionPtr tx = _walletManager->GetWallet()->CreateTransaction(
-					Transaction::returnDepositCoin, payload, utxo, outputs, memo, feeAmount, true);
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
-				nlohmann::json result;
-				EncodeTx(result, tx);
+  getOwnerPublicKey(): string {
+    // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
+    let publicKey: string = this.getWallet()
+      .getOwnerPublilcKey()
+      .toString("hex");
+    // ArgInfo("r => {}", publicKey);
+    return publicKey;
+  }
 
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
+  getOwnerAddress(): string {
+    // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
 
-			std::string MainchainSubWallet::GetOwnerPublicKey() const {
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-				std::string publicKey = _walletManager->GetWallet()->GetOwnerPublilcKey().getHex();
-				ArgInfo("r => {}", publicKey);
-				return publicKey;
-			}
+    let address = this.getWallet().getOwnerAddress().string();
 
-			std::string MainchainSubWallet::GetOwnerAddress() const {
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("r => {}", address);
 
-				std::string address = _walletManager->GetWallet()->GetOwnerAddress()->String();
+    return address;
+  }
 
-				ArgInfo("r => {}", address);
+  getOwnerDepositAddress(): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
 
-				return address;
-			}
+    let addrPtr = wallet.getOwnerDepositAddress();
+    let addr: string = addrPtr.string();
 
-					std::string MainchainSubWallet::GetOwnerDepositAddress() const {
-					WalletPtr wallet = _walletManager->GetWallet();
-							ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
+    // ArgInfo("r => {}", addr);
 
-							AddressPtr addrPtr = wallet->GetOwnerDepositAddress();
-							std::string addr = addrPtr->String();
+    return addr;
+  }
 
-							ArgInfo("r => {}", addr);
+  voteAmountFromJson(voteAmount: BigNumber, j: string): boolean {
+    ErrorChecker.checkParam(
+      typeof j !== "string",
+      Error.Code.InvalidArgument,
+      "stake value should be big int string"
+    );
+    let voteAmountString: string = j;
+    ErrorChecker.checkBigIntAmount(voteAmountString);
+    voteAmount = new BigNumber(voteAmountString);
+    ErrorChecker.checkParam(
+      voteAmount.lte(0),
+      Error.Code.InvalidArgument,
+      "stake value should larger than 0"
+    );
 
-							return addr;
-			}
+    return true;
+  }
 
-					bool MainchainSubWallet::VoteAmountFromJson(BigInt &voteAmount, const nlohmann::json &j) const {
-							ErrorChecker::CheckParam(!j.is_string(), Error::InvalidArgument, "stake value should be big int string");
-							std::string voteAmountString = j.get<std::string>();
-							ErrorChecker::CheckBigIntAmount(voteAmountString);
-							voteAmount.setDec(voteAmountString);
-							ErrorChecker::CheckParam(voteAmount <= 0, Error::InvalidArgument, "stake value should larger than 0");
-
-							return true;
-			}
-
-					bool MainchainSubWallet::VoteContentFromJson(VoteContentArray &voteContents, BigInt &maxAmount, const nlohmann::json &j) const {
-					BigInt tmpAmount;
+  /*
+					voteContentFromJson(voteContents: VoteContentArray, maxAmount: BigNumber, j: json): boolean {
+					let tmpAmount = new BigNumber(0);
 
 							for (nlohmann::json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
 									if ((*it)["Type"].get<std::string>() == "CRC") {
@@ -590,19 +647,21 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 				ArgInfo("r => {}", result.dump());
 				return result;
 			}
+*/
 
-					std::string MainchainSubWallet::GetCRDepositAddress() const {
-							WalletPtr wallet = _walletManager->GetWallet();
-							ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
+  getCRDepositAddress(): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
 
-							AddressPtr addrPtr = wallet->GetCROwnerDepositAddress();
-							std::string addr = addrPtr->String();
+    let addrPtr = wallet.getCROwnerDepositAddress();
+    let addr = addrPtr.string();
 
-							ArgInfo("r => {}", addr);
+    // ArgInfo("r => {}", addr);
 
-							return addr;
-			}
+    return addr;
+  }
 
+  /*
 			nlohmann::json MainchainSubWallet::GenerateCRInfoPayload(
 					const std::string &crPublicKey,
 					const std::string &did,

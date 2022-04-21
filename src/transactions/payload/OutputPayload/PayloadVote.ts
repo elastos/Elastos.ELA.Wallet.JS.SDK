@@ -2,34 +2,33 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import BigNumber from "bignumber.js";
-import { ErrorChecker } from "../../../common/ErrorChecker";
+import {
+  bytes_t,
+  size_t,
+  uint64_t,
+  uint8_t,
+  json,
+  sizeof_uint64_t,
+  JSONArray
+} from "../../../types";
+import { Payload } from "../Payload";
+import { OutputPayload } from "../OutputPayload/OutputPayload";
 import { Log } from "../../../common/Log";
-import { bytes_t, uint8_t, json, JSONArray, size_t } from "../../../types";
 import { ByteStream } from "../../../common/bytestream";
-import { OutputPayload } from "./OutputPayload";
+import BigNumber from "bignumber.js";
 
 export const VOTE_PRODUCER_CR_VERSION = 0x01;
-
-export enum Type {
-  Delegate,
-  CRC,
-  CRCProposal,
-  CRCImpeachment,
-  Max
-}
 
 export class CandidateVotes {
   private _candidate: bytes_t;
   private _votes: BigNumber;
-
-  candidateVotes() {
+  constructor() {
     this._votes = new BigNumber(0);
   }
 
   newFromParams(candidate: bytes_t, votes: BigNumber) {
-    this._votes = votes;
     this._candidate = candidate;
+    this._votes = new BigNumber(votes);
   }
 
   getCandidate(): bytes_t {
@@ -40,7 +39,7 @@ export class CandidateVotes {
     return this._votes;
   }
 
-  setVotes(votes: BigNumber) {
+  setVotes(votes: uint64_t) {
     this._votes = votes;
   }
 
@@ -48,33 +47,36 @@ export class CandidateVotes {
     ostream.writeVarBytes(this._candidate);
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      ostream.writeBigNumber(this._votes);
+      ostream.writeBNAsUIntOfSize(this._votes, 8);
     }
   }
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
-    if (!istream.readVarBytes(this._candidate)) {
+    let candidate: bytes_t;
+    candidate = istream.readVarBytes(candidate);
+    if (!candidate) {
       Log.error("CandidateVotes deserialize candidate fail");
       return false;
     }
+    this._candidate = candidate;
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      let votes = istream.readUInt64();
+      let votes = istream.readUIntOfBytesAsBN(8);
       if (!votes) {
         Log.error("CandidateVotes deserialize votes fail");
         return false;
       }
-      this._votes = new BigNumber(votes);
+      this._votes = votes;
     }
 
     return true;
   }
 
   toJson(version: uint8_t): json {
-    let j: json;
+    let j: json = {};
     j["Candidate"] = this._candidate.toString("hex");
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      j["Votes"] = this._votes.toNumber();
+      j["Votes"] = this._votes.toString();
     }
     return j;
   }
@@ -82,49 +84,54 @@ export class CandidateVotes {
   fromJson(j: json, version: uint8_t) {
     this._candidate = Buffer.from(j["Candidate"] as string, "hex");
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      this._votes = new BigNumber(j["Votes"] as number);
+      this._votes = new BigNumber(j["Votes"] as string);
     }
   }
 
   equals(cv: CandidateVotes): boolean {
-    return (
-      this._candidate.toString() == cv._candidate.toString() &&
-      this._votes.isEqualTo(cv._votes)
-    );
+    return this._candidate == cv._candidate && this._votes == cv._votes;
   }
+}
+export enum VoteContentType {
+  Delegate,
+  CRC,
+  CRCProposal,
+  CRCImpeachment,
+  Max
 }
 
 export class VoteContent {
-  private _type: Type;
+  private _type: VoteContentType;
   private _candidates: CandidateVotes[];
-
   constructor() {
-    this._type = Type.Delegate;
+    this._type = VoteContentType.Delegate;
   }
 
-  newFromType(t: Type, c?: CandidateVotes[]) {
+  newFromType(t: VoteContentType) {
     this._type = t;
-    if (c) {
-      this._candidates = c;
-    }
   }
 
-  addCandidate(candidateVotes: CandidateVotes) {
+  newFromVoteContent(t: VoteContentType, c: CandidateVotes[]) {
+    this._type = t;
+    this._candidates = c;
+  }
+
+  dddCandidate(candidateVotes: CandidateVotes) {
     this._candidates.push(candidateVotes);
   }
 
-  getType(): Type {
+  getType(): VoteContentType {
     return this._type;
   }
 
   getTypeString(): string {
-    if (this._type == Type.CRC) {
+    if (this._type == VoteContentType.CRC) {
       return "CRC";
-    } else if (this._type == Type.Delegate) {
+    } else if (this._type == VoteContentType.Delegate) {
       return "Delegate";
-    } else if (this._type == Type.CRCProposal) {
+    } else if (this._type == VoteContentType.CRCProposal) {
       return "CRCProposal";
-    } else if (this._type == Type.CRCImpeachment) {
+    } else if (this._type == VoteContentType.CRCImpeachment) {
       return "CRCImpeachment";
     }
 
@@ -139,7 +146,7 @@ export class VoteContent {
     return this._candidates;
   }
 
-  setAllCandidateVotes(votes: BigNumber) {
+  setAllCandidateVotes(votes: uint64_t) {
     for (let i = 0; i < this._candidates.length; ++i) {
       this._candidates[i].setVotes(votes);
     }
@@ -149,9 +156,8 @@ export class VoteContent {
     let max = new BigNumber(0);
 
     for (let i = 0; i < this._candidates.length; i++) {
-      let item = this._candidates[i];
-      if (max.isLessThan(item.getVotes())) {
-        max = item.getVotes();
+      if (max < this._candidates[i].getVotes()) {
+        max = this._candidates[i].getVotes();
       }
     }
 
@@ -172,27 +178,28 @@ export class VoteContent {
     ostream.writeUInt8(this._type);
 
     ostream.writeVarUInt(this._candidates.length);
-    for (let i = 0; i < this._candidates.length; ++i) {
+    for (let i = 0; i < this._candidates.length; i++) {
       this._candidates[i].serialize(ostream, version);
     }
   }
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
-    let type: Type = 0;
-    if (!istream.readUInt8(type)) {
+    let type = istream.readUInt8();
+    if (!type) {
       Log.error("VoteContent deserialize type error");
     }
     this._type = type;
 
-    let size = istream.readVarUInt();
-    if (size === null) {
+    let size = new BigNumber(0);
+    size = istream.readVarUInt();
+    if (!size) {
       Log.error("VoteContent deserialize candidates count error");
       return false;
     }
 
-    this._candidates = new Array(size.toNumber());
+    let candidates: CandidateVotes[] = [];
     for (let i = 0; i < size.toNumber(); ++i) {
-      if (!this._candidates[i].deserialize(istream, version)) {
+      if (!candidates[i].deserialize(istream, version)) {
         Log.error("VoteContent deserialize candidates error");
         return false;
       }
@@ -202,10 +209,10 @@ export class VoteContent {
   }
 
   toJson(version: uint8_t): json {
-    let j: json;
+    let j: json = {};
     j["Type"] = this._type;
 
-    let candidates: json[];
+    let candidates: JSONArray;
     for (let i = 0; i < this._candidates.length; ++i) {
       candidates.push(this._candidates[i].toJson(version));
     }
@@ -215,47 +222,48 @@ export class VoteContent {
   }
 
   fromJson(j: json, version: uint8_t) {
-    this._type = j["Type"] as Type;
+    this._type = j["Type"] as VoteContentType;
 
-    let candidates = j["Candidates"] as json[];
-    this._candidates = new Array(candidates.length);
+    let candidates = j["Candidates"] as [];
     for (let i = 0; i < candidates.length; ++i) {
       this._candidates[i].fromJson(candidates[i], version);
     }
   }
 
+  isEqual(candidates: CandidateVotes[]): boolean {
+    for (let i = 0; i < candidates.length; ++i) {
+      if (!this._candidates[i].equals(candidates[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   equals(vc: VoteContent): boolean {
     return this._type == vc._type && this.isEqual(vc._candidates);
   }
-
-  private isEqual(candidates: CandidateVotes[]) {
-    if (this._candidates.length == candidates.length) {
-      for (let i = 0; i < candidates.length; ++i) {
-        if (!this._candidates[i].equals(candidates[i])) {
-          return false;
-        }
-      }
-      return true;
-    } else {
-      return false;
-    }
-  }
 }
 
-export class PayloadVote {
+export class PayloadVote extends OutputPayload {
   private _version: uint8_t;
   private _content: VoteContent[];
 
-  constructor(version: uint8_t, voteContents?: VoteContent[]) {
-    this._version = version;
-    if (voteContents) {
-      this._content = voteContents;
-    }
+  static newFromVersion(version: uint8_t) {
+    const payloadVote = new PayloadVote();
+    payloadVote._version = version;
+    return payloadVote;
   }
 
-  newFromPayloadVote(payload: PayloadVote) {
-    this.copyPayloadVote(payload);
-    return this;
+  static newFromParams(voteContents: VoteContent[], version: uint8_t) {
+    const payloadVote = new PayloadVote();
+    payloadVote._content = voteContents;
+    payloadVote._version = version;
+    return payloadVote;
+  }
+
+  static newFromPayloadVote(payload: PayloadVote) {
+    const payloadVote = new PayloadVote();
+    return payloadVote.copyPayloadVote(payload);
   }
 
   setVoteContent(voteContent: VoteContent[]) {
@@ -276,19 +284,18 @@ export class PayloadVote {
 
     size += 1;
     size += stream.writeVarUInt(this._content.length);
-    for (let i = 0; i < this._content.length; i++) {
-      let item = this._content[i];
+    for (let i = 0; i < this._content.length; ++i) {
       size += 1;
-      size += stream.writeVarUInt(item.getCandidateVotes().length);
+      size += stream.writeVarUInt(this._content[i].getCandidateVotes().length);
 
-      const candidateVotes: CandidateVotes[] = item.getCandidateVotes();
-      for (let j = 0; j < candidateVotes.length; j++) {
-        let cv = candidateVotes[j];
-        size += stream.writeVarUInt(cv.getCandidate().length);
-        size += cv.getCandidate().length;
+      let candidateVotes = this._content[i].getCandidateVotes();
+
+      for (let i = 0; i < candidateVotes.length; ++i) {
+        size += stream.writeVarUInt(candidateVotes[i].getCandidate().length);
+        size += candidateVotes[i].getCandidate().length;
 
         if (this._version >= VOTE_PRODUCER_CR_VERSION) {
-          size += stream.writeVarUInt(cv.getVotes().toNumber());
+          size += stream.writeVarUInt(candidateVotes[i].getVotes().toNumber());
         }
       }
     }
@@ -296,7 +303,7 @@ export class PayloadVote {
     return size;
   }
 
-  srialize(stream: ByteStream): void {
+  serialize(stream: ByteStream) {
     stream.writeUInt8(this._version);
 
     stream.writeVarUInt(this._content.length);
@@ -305,9 +312,8 @@ export class PayloadVote {
     }
   }
 
-  deserialize(stream: ByteStream): boolean {
-    this._version = stream.readUInt8();
-    if (this._version === null) {
+  deserialize(stream: ByteStream) {
+    if (!stream.readUInt8(this._version)) {
       Log.error("payload vote deserialize version error");
       return false;
     }
@@ -318,7 +324,6 @@ export class PayloadVote {
       return false;
     }
 
-    this._content = new Array(contentCount.toNumber());
     for (let i = 0; i < contentCount.toNumber(); ++i) {
       if (!this._content[i].deserialize(stream, this._version)) {
         Log.error("payload vote deserialize content error");
@@ -330,10 +335,10 @@ export class PayloadVote {
   }
 
   toJson(): json {
-    let j: json;
+    let j: {};
     j["Version"] = this._version;
 
-    let voteContent: json[];
+    let voteContent;
     for (let i = 0; i < this._content.length; ++i) {
       voteContent.push(this._content[i].toJson(this._version));
     }
@@ -343,19 +348,18 @@ export class PayloadVote {
   }
 
   fromJson(j: json) {
-    this._version = j["Version"] as uint8_t;
-    let voteContent = j["VoteContent"] as json[];
-    this._content = new Array(voteContent.length);
+    this._version = j["Version"] as number;
+    let voteContent = j["VoteContent"] as [];
 
     for (let i = 0; i < voteContent.length; ++i) {
       this._content[i].fromJson(voteContent[i], this._version);
     }
   }
 
-  copyPayloadVote(payload: PayloadVote) {
+  copyOutputPayload(payload: OutputPayload) {
     try {
-      this._version = payload._version;
-      this._content = payload._content;
+      const payloadVote = payload as PayloadVote;
+      this.copyPayloadVote(payloadVote);
     } catch (e) {
       Log.error("payload is not instance of PayloadVote");
     }
@@ -363,29 +367,24 @@ export class PayloadVote {
     return this;
   }
 
-  equals(payloadVote: PayloadVote): boolean {
+  copyPayloadVote(payload: PayloadVote) {
+    this._version = payload._version;
+    this._content = payload._content;
+
+    return this;
+  }
+
+  equals(payload: OutputPayload): boolean {
     try {
+      const payloadVote = payload as PayloadVote;
       return (
         this._version == payloadVote._version &&
-        this.isEqual(payloadVote._content)
+        this._content == payloadVote._content
       );
     } catch (e) {
       Log.error("payload is not instance of PayloadVote");
     }
 
     return false;
-  }
-
-  private isEqual(content: VoteContent[]) {
-    if (this._content.length == content.length) {
-      for (let i = 0; i < content.length; ++i) {
-        if (!this._content[i].equals(content[i])) {
-          return false;
-        }
-      }
-      return true;
-    } else {
-      return false;
-    }
   }
 }

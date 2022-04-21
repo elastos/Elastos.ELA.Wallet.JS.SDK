@@ -88,7 +88,7 @@ export class RegisterAsset extends Payload {
     this._controller = uint168.newFrom21BytesBuffer(buffer);
   }
 
-  copyIPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const payloadRegisterAsset = payload as RegisterAsset;
       this.copyRegisterAsset(payloadRegisterAsset);
