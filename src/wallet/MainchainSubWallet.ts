@@ -22,7 +22,16 @@
 
 import BigNumber from "bignumber.js";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
-import { json, JSONArray, uint8_t, uint64_t, size_t, bytes_t } from "../types";
+import {
+  json,
+  JSONArray,
+  uint8_t,
+  uint64_t,
+  size_t,
+  bytes_t,
+  uint256,
+  JSONObject
+} from "../types";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { MasterWallet } from "./MasterWallet";
 import { ChainConfig } from "../Config";
@@ -54,11 +63,28 @@ import {
   CrossChainOutputVersion
 } from "../transactions/payload/OutputPayload/PayloadCrossChain";
 import { Payload } from "../transactions/payload/Payload";
+import { TransferAsset } from "../transactions/payload/TransferAsset";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { ProducerInfo } from "../transactions/payload/ProducerInfo";
 import { CancelProducer } from "../transactions/payload/CancelProducer";
 import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
+import {
+  VoteContent,
+  VoteContentArray,
+  VoteContentType,
+  CandidateVotes,
+  PayloadVote,
+  VOTE_PRODUCER_CR_VERSION
+} from "../transactions/payload/OutputPayload/PayloadVote";
 import { ByteStream } from "../common/bytestream";
+import { CRInfo, CRInfoDIDVersion } from "../transactions/payload/CRInfo";
+import { UnregisterCR } from "../transactions/payload/UnregisterCR";
+import {
+  CRCouncilMemberClaimNode,
+  CRCouncilMemberClaimNodeVersion
+} from "../transactions/payload/CRCouncilMemberClaimNode";
+import { CRCProposalDefaultVersion } from "../transactions/payload/CRCProposal";
+import { SHA256 } from "../walletcore/sha256";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -530,124 +556,164 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return true;
   }
 
-  /*
-					voteContentFromJson(voteContents: VoteContentArray, maxAmount: BigNumber, j: json): boolean {
-					let tmpAmount = new BigNumber(0);
+  voteContentFromJson(
+    voteContents: VoteContentArray,
+    maxAmount: BigNumber,
+    j: json
+  ): boolean {
+    let tmpAmount = new BigNumber(0);
 
-							for (nlohmann::json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
-									if ((*it)["Type"].get<std::string>() == "CRC") {
-											VoteContent vc(VoteContent::Type::CRC);
-											nlohmann::json candidateVotesJson = (*it)["Candidates"];
-											for (nlohmann::json::iterator it = candidateVotesJson.begin(); it != candidateVotesJson.end(); ++it) {
-													BigInt voteAmount;
-													VoteAmountFromJson(voteAmount, it.value());
+    if (j["Type"] == "CRC") {
+      let vc = VoteContent.newFromType(VoteContentType.CRC);
+      let candidateVotesJson = j["Candidates"] as JSONArray;
+      for (let i = 0; i < candidateVotesJson.length; ++i) {
+        let voteAmount = new BigNumber(0);
+        const item = candidateVotesJson[i];
+        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
 
-													std::string key = it.key();
-													Address cid(key);
-													ErrorChecker::CheckParam(!cid.Valid(), Error::InvalidArgument, "invalid candidate cid");
-													bytes_t candidate = cid.ProgramHash().bytes();
+        let key = Object.keys(item)[0];
+        let cid = Address.newFromAddressString(key);
+        ErrorChecker.checkParam(
+          !cid.valid(),
+          Error.Code.InvalidArgument,
+          "invalid candidate cid"
+        );
+        let candidate = cid.programHash().bytes();
 
-													vc.AddCandidate(CandidateVotes(candidate, voteAmount));
-											}
-											tmpAmount = vc.GetTotalVoteAmount();
-											if (tmpAmount > maxAmount)
-													maxAmount = tmpAmount;
-											voteContents.push_back(vc);
-									} else if ((*it)["Type"].get<std::string>() == "CRCProposal") {
-											VoteContent vc(VoteContent::Type::CRCProposal);
-											nlohmann::json candidateVotesJson = (*it)["Candidates"];
-											for (nlohmann::json::iterator it = candidateVotesJson.begin(); it != candidateVotesJson.end(); ++it) {
-													BigInt voteAmount;
-													VoteAmountFromJson(voteAmount, it.value());
+        vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
+      }
+      tmpAmount = vc.getTotalVoteAmount();
+      if (tmpAmount.gt(maxAmount)) {
+        maxAmount = tmpAmount;
+      }
+      voteContents.push(vc);
+    } else if (j["Type"] == "CRCProposal") {
+      let vc = VoteContent.newFromType(VoteContentType.CRCProposal);
+      let candidateVotesJson = j["Candidates"] as JSONArray;
+      for (let i = 0; i < candidateVotesJson.length; ++i) {
+        let voteAmount = new BigNumber(0);
 
-													uint256 proposalHash;
-													proposalHash.SetHex(std::string(it.key()));
-													ErrorChecker::CheckParam(proposalHash.size() != 32, Error::InvalidArgument, "invalid proposal hash");
+        const item = candidateVotesJson[i];
+        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
+        let key = Object.keys(item)[0];
+        let proposalHash = Buffer.from(key, "hex");
 
-													vc.AddCandidate(CandidateVotes(proposalHash.bytes(), voteAmount));
-											}
-											tmpAmount = vc.GetMaxVoteAmount();
-											if (tmpAmount > maxAmount)
-													maxAmount = tmpAmount;
-											voteContents.push_back(vc);
-									} else if ((*it)["Type"].get<std::string>() == "CRCImpeachment") {
-											VoteContent vc(VoteContent::Type::CRCImpeachment);
-											nlohmann::json candidateVotesJson = (*it)["Candidates"];
-											for (nlohmann::json::iterator it = candidateVotesJson.begin(); it != candidateVotesJson.end(); ++it) {
-													BigInt voteAmount;
-													VoteAmountFromJson(voteAmount, it.value());
+        ErrorChecker.checkParam(
+          proposalHash.length != 32,
+          Error.Code.InvalidArgument,
+          "invalid proposal hash"
+        );
 
-													std::string key = it.key();
-													Address cid(key);
-													ErrorChecker::CheckParam(!cid.Valid(), Error::InvalidArgument, "invalid candidate cid");
-													bytes_t candidate = cid.ProgramHash().bytes();
+        vc.addCandidate(CandidateVotes.newFromParams(proposalHash, voteAmount));
+      }
+      tmpAmount = vc.getMaxVoteAmount();
+      if (tmpAmount.gt(maxAmount)) {
+        maxAmount = tmpAmount;
+      }
+      voteContents.push(vc);
+    } else if (j["Type"] == "CRCImpeachment") {
+      let vc = VoteContent.newFromType(VoteContentType.CRCImpeachment);
+      let candidateVotesJson = j["Candidates"] as JSONArray;
+      for (let i = 0; i < candidateVotesJson.length; ++i) {
+        let voteAmount = new BigNumber(0);
 
-													vc.AddCandidate(CandidateVotes(candidate, voteAmount));
-											}
-											tmpAmount = vc.GetTotalVoteAmount();
-											if (tmpAmount > maxAmount)
-													maxAmount = tmpAmount;
-											voteContents.push_back(vc);
-									} else if ((*it)["Type"].get<std::string>() == "Delegate") {
-											VoteContent vc(VoteContent::Type::Delegate);
-											nlohmann::json candidateVotesJson = (*it)["Candidates"];
-											for (nlohmann::json::iterator it = candidateVotesJson.begin(); it != candidateVotesJson.end(); ++it) {
-													BigInt voteAmount;
-													VoteAmountFromJson(voteAmount, it.value());
+        const item = candidateVotesJson[i];
+        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
 
-													bytes_t pubkey;
-													pubkey.setHex(it.key());
+        let key = Object.keys(item)[0];
+        let cid = Address.newFromAddressString(key);
+        ErrorChecker.checkParam(
+          !cid.valid(),
+          Error.Code.InvalidArgument,
+          "invalid candidate cid"
+        );
+        let candidate = cid.programHash().bytes();
 
-													vc.AddCandidate(CandidateVotes(pubkey, voteAmount));
-											}
-											tmpAmount = vc.GetMaxVoteAmount();
-											if (tmpAmount > maxAmount)
-													maxAmount = tmpAmount;
-											voteContents.push_back(vc);
-									}
-							}
+        vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
+      }
+      tmpAmount = vc.getTotalVoteAmount();
+      if (tmpAmount.gt(maxAmount)) {
+        maxAmount = tmpAmount;
+      }
+      voteContents.push(vc);
+    } else if (j["Type"] == "Delegate") {
+      let vc = VoteContent.newFromType(VoteContentType.Delegate);
+      let candidateVotesJson = j["Candidates"] as JSONArray;
+      for (let i = 0; i < candidateVotesJson.length; ++i) {
+        const item = candidateVotesJson[i];
+        let voteAmount = new BigNumber(0);
+        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
 
-							return true;
-			}
+        let key = Object.keys(item)[0];
 
-					nlohmann::json MainchainSubWallet::CreateVoteTransaction(const nlohmann::json &inputsJson,
-					const nlohmann::json &voteContentsJson,
-					const std::string &fee,
-					const std::string &memo) const {
-							WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("voteContent: {}", voteContentsJson.dump());
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
+        let pubkey = Buffer.from(key, "hex");
 
-							UTXOSet utxos;
-							UTXOFromJson(utxos, inputsJson);
+        vc.addCandidate(CandidateVotes.newFromParams(pubkey, voteAmount));
+      }
+      tmpAmount = vc.getMaxVoteAmount();
+      if (tmpAmount.gt(maxAmount)) {
+        maxAmount = tmpAmount;
+      }
+      voteContents.push(vc);
+    }
 
-							BigInt outputAmount;
-							VoteContentArray voteContents;
-							VoteContentFromJson(voteContents, outputAmount, voteContentsJson);
+    return true;
+  }
 
-							OutputPayloadPtr outputPayload(new PayloadVote(voteContents, VOTE_PRODUCER_CR_VERSION));
+  createVoteTransaction(
+    inputsJson: JSONArray,
+    voteContentsJson: json,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("voteContent: {}", voteContentsJson.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-							OutputArray outputs;
-							OutputPtr output(new TransactionOutput(TransactionOutput(outputAmount, (*utxos.begin())->GetAddress(), Asset::GetELAAssetID(), TransactionOutput::VoteOutput, outputPayload)));
-							outputs.push_back(output);
+    let utxos: UTXOSet;
+    this.UTXOFromJson(utxos, inputsJson);
 
-							BigInt feeAmount;
-							feeAmount.setDec(fee);
+    let outputAmount = new BigNumber(0);
+    let voteContents: VoteContentArray;
+    this.voteContentFromJson(voteContents, outputAmount, voteContentsJson);
 
-							PayloadPtr payload = PayloadPtr(new TransferAsset());
-							TransactionPtr tx = wallet->CreateTransaction(Transaction::transferAsset,
-							payload, utxos, outputs, memo, feeAmount, true);
+    let outputPayload = PayloadVote.newFromParams(
+      voteContents,
+      VOTE_PRODUCER_CR_VERSION
+    );
 
-				nlohmann::json result;
-				EncodeTx(result, tx);
+    let outputs: OutputArray;
+    let output = TransactionOutput.newFromParams(
+      outputAmount,
+      utxos[0].getAddress(),
+      Asset.getELAAssetID(),
+      Type.VoteOutput,
+      outputPayload
+    );
+    outputs.push(output);
 
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-*/
+    const feeAmount = new BigNumber(fee);
+
+    const payload = new TransferAsset();
+    const tx = wallet.createTransaction(
+      TransactionType.transferAsset,
+      payload,
+      utxos,
+      outputs,
+      memo,
+      feeAmount,
+      true
+    );
+
+    let result: json = {};
+    this.encodeTx(result, tx);
+
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
 
   getCRDepositAddress(): string {
     let wallet = this.getWallet();
@@ -661,301 +727,371 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return addr;
   }
 
+  generateCRInfoPayload(
+    crPublicKey: string,
+    did: string,
+    nickName: string,
+    url: string,
+    location: uint64_t
+  ): json {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("crPublicKey: {}", crPublicKey);
+    // ArgInfo("did: {}", did);
+    // ArgInfo("nickName: {}", nickName);
+    // ArgInfo("url: {}", url);
+    // ArgInfo("location: {}", location);
+
+    let pubKeyLen: size_t = crPublicKey.length >> 1;
+    ErrorChecker.checkParam(
+      pubKeyLen != 33 && pubKeyLen != 65,
+      Error.Code.PubKeyLength,
+      "Public key length should be 33 or 65 bytes"
+    );
+
+    let pubkey = Buffer.from(crPublicKey);
+
+    let didAddress = Address.newFromAddressString(did);
+    let address = Address.newWithPubKey(Prefix.PrefixStandard, pubkey);
+
+    let crInfo = new CRInfo();
+    crInfo.setCode(address.redeemScript());
+    crInfo.setDID(didAddress.programHash());
+    crInfo.setNickName(nickName);
+    crInfo.setUrl(url);
+    crInfo.setLocation(location);
+
+    let cid = new Address();
+    cid.setRedeemScript(Prefix.PrefixIDChain, crInfo.getCode());
+    crInfo.setCID(cid.programHash());
+
+    let ostream = new ByteStream();
+    crInfo.serializeUnsigned(ostream, CRInfoDIDVersion);
+    let digest = SHA256.encodeToBuffer(ostream.getBytes());
+
+    let payloadJson = crInfo.toJson(CRInfoDIDVersion);
+    payloadJson["Digest"] = digest.toString("hex");
+
+    // ArgInfo("r => {}", payloadJson.dump());
+    return payloadJson;
+  }
+
+  generateUnregisterCRPayload(CID: string): json {
+    // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
+    // ArgInfo("CID: {}", CID);
+
+    let cid = Address.newFromAddressString(CID);
+    ErrorChecker.checkParam(
+      !cid.valid(),
+      Error.Code.InvalidArgument,
+      "invalid crDID"
+    );
+
+    let unregisterCR: UnregisterCR;
+    unregisterCR.setCID(cid.programHash());
+
+    let ostream = new ByteStream();
+    unregisterCR.serializeUnsigned(ostream, 0);
+    let digest = SHA256.encodeToBuffer(ostream.getBytes());
+
+    let payloadJson = unregisterCR.toJson(0);
+    payloadJson["Digest"] = digest.toString("hex");
+
+    // ArgInfo("r => {}", payloadJson.dump());
+    return payloadJson;
+  }
+
+  createRegisterCRTransaction(
+    inputsJson: JSONArray,
+    payloadJSON: json,
+    amount: string,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJSON.dump());
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+
+    ErrorChecker.checkBigIntAmount(amount);
+
+    let bgAmount = new BigNumber(amount);
+    let minAmount = new BigNumber(DEPOSIT_MIN_ELA);
+    let feeAmount = new BigNumber(fee);
+
+    minAmount.multipliedBy(SELA_PER_ELA);
+
+    ErrorChecker.checkParam(
+      bgAmount.lt(minAmount),
+      Error.Code.DepositAmountInsufficient,
+      "cr deposit amount is insufficient"
+    );
+
+    ErrorChecker.checkParam(
+      !payloadJSON["Signature"],
+      Error.Code.InvalidArgument,
+      "Signature can not be empty"
+    );
+
+    let payloadVersion: uint8_t = CRInfoDIDVersion;
+    let payload = new CRInfo();
+    try {
+      payload.fromJson(payloadJSON, payloadVersion);
+      ErrorChecker.checkParam(
+        !payload.isValid(payloadVersion),
+        Error.Code.InvalidArgument,
+        "verify signature failed"
+      );
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
+
+    let code = payload.getCode();
+    let receiveAddr = new Address();
+    receiveAddr.setRedeemScript(Prefix.PrefixDeposit, code);
+
+    let outputs: OutputArray;
+    outputs.push(TransactionOutput.newFromParams(bgAmount, receiveAddr));
+
+    let tx = wallet.createTransaction(
+      TransactionType.registerCR,
+      payload,
+      utxo,
+      outputs,
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(payloadVersion);
+
+    let result = {};
+    this.encodeTx(result, tx);
+
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  createUpdateCRTransaction(
+    inputsJson: JSONArray,
+    payloadJSON: JSONObject,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJSON.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+
+    let payloadVersion: uint8_t = CRInfoDIDVersion;
+    let payload = new CRInfo();
+    try {
+      payload.fromJson(payloadJSON, payloadVersion);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.updateCR,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(payloadVersion);
+
+    let result = {};
+    this.encodeTx(result, tx);
+
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  createUnregisterCRTransaction(
+    inputsJson: JSONArray,
+    payloadJSON: JSONObject,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJSON.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+
+    ErrorChecker.checkParam(
+      !payloadJSON["Signature"],
+      Error.Code.InvalidArgument,
+      "invalied signature"
+    );
+
+    let payload = new UnregisterCR();
+    try {
+      payload.fromJson(payloadJSON, 0);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.JsonFormatError,
+        "Payload format err: " + e.what()
+      );
+    }
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.unregisterCR,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+
+    let result: json = {};
+    this.encodeTx(result, tx);
+
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  createRetrieveCRDepositTransaction(
+    inputsJson: JSONArray,
+    amount: string,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+
+    let feeAmount = new BigNumber(fee);
+    let bgAmount = new BigNumber(amount);
+
+    let outputs: OutputArray;
+    let receiveAddr = utxo[0].getAddress();
+    outputs.push(
+      TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
+    );
+
+    let payload = new ReturnDepositCoin();
+    let tx = wallet.createTransaction(
+      TransactionType.returnCRDepositCoin,
+      payload,
+      utxo,
+      outputs,
+      memo,
+      feeAmount,
+      true
+    );
+
+    let result = {};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  CRCouncilMemberClaimNodeDigest(payload: json): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
+
+    let version: uint8_t = CRCouncilMemberClaimNodeVersion;
+    let p: CRCouncilMemberClaimNode;
+    try {
+      p.fromJsonUnsigned(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
+
+    if (!p.isValidUnsigned(version)) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
+    }
+
+    let digest: string = p.digestUnsigned(version).toString(16);
+
+    // ArgInfo("r => {}", digest);
+    return digest;
+  }
+
+  createCRCouncilMemberClaimNodeTransaction(
+    inputsJson: JSONArray,
+    payloadJson: JSONObject,
+    fee: string,
+    memo: string
+  ): json {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payloadJson.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo: UTXOSet;
+    this.UTXOFromJson(utxo, inputsJson);
+
+    let version: uint8_t = CRCProposalDefaultVersion;
+    let payload = new CRCouncilMemberClaimNode();
+    try {
+      payload.fromJson(payloadJson, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
+
+    if (!payload.isValid(version))
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.crCouncilMemberClaimNode,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = {};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+
+    return result;
+  }
+
   /*
-			nlohmann::json MainchainSubWallet::GenerateCRInfoPayload(
-					const std::string &crPublicKey,
-					const std::string &did,
-					const std::string &nickName,
-					const std::string &url,
-					uint64_t location) const {
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-				ArgInfo("crPublicKey: {}", crPublicKey);
-				ArgInfo("did: {}", did);
-				ArgInfo("nickName: {}", nickName);
-				ArgInfo("url: {}", url);
-				ArgInfo("location: {}", location);
-
-				size_t pubKeyLen = crPublicKey.size() >> 1;
-				ErrorChecker::CheckParam(pubKeyLen != 33 && pubKeyLen != 65, Error::PubKeyLength,
-																 "Public key length should be 33 or 65 bytes");
-
-				bytes_t pubkey(crPublicKey);
-
-				Address didAddress(did);
-				Address address(PrefixStandard, pubkey);
-
-				CRInfo crInfo;
-				crInfo.SetCode(address.RedeemScript());
-				crInfo.SetDID(didAddress.ProgramHash());
-				crInfo.SetNickName(nickName);
-				crInfo.SetUrl(url);
-				crInfo.SetLocation(location);
-
-				Address cid;
-				cid.SetRedeemScript(PrefixIDChain, crInfo.GetCode());
-				crInfo.SetCID(cid.ProgramHash());
-
-				ByteStream ostream;
-				crInfo.SerializeUnsigned(ostream, CRInfoDIDVersion);
-				uint256 digest(sha256(ostream.GetBytes()));
-
-				nlohmann::json payloadJson = crInfo.ToJson(CRInfoDIDVersion);
-				payloadJson["Digest"] = digest.GetHex();
-
-				ArgInfo("r => {}", payloadJson.dump());
-				return payloadJson;
-			}
-
-			nlohmann::json MainchainSubWallet::GenerateUnregisterCRPayload(const std::string &CID) const {
-				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-				ArgInfo("CID: {}", CID);
-
-				Address cid(CID);
-				ErrorChecker::CheckParam(!cid.Valid(), Error::InvalidArgument, "invalid crDID");
-
-				UnregisterCR unregisterCR;
-				unregisterCR.SetCID(cid.ProgramHash());
-
-				ByteStream ostream;
-				unregisterCR.SerializeUnsigned(ostream, 0);
-				uint256 digest(sha256(ostream.GetBytes()));
-
-				nlohmann::json payloadJson = unregisterCR.ToJson(0);
-				payloadJson["Digest"] = digest.GetHex();
-
-				ArgInfo("r => {}", payloadJson.dump());
-				return payloadJson;
-			}
-
-			nlohmann::json MainchainSubWallet::CreateRegisterCRTransaction(
-					const nlohmann::json &inputsJson,
-					const nlohmann::json &payloadJSON,
-					const std::string &amount,
-					const std::string &fee,
-					const std::string &memo) const {
-
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJSON.dump());
-				ArgInfo("amount: {}", amount);
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				ErrorChecker::CheckBigIntAmount(amount);
-				BigInt bgAmount, minAmount(DEPOSIT_MIN_ELA), feeAmount;
-				bgAmount.setDec(amount);
-				feeAmount.setDec(fee);
-
-				minAmount *= SELA_PER_ELA;
-
-				ErrorChecker::CheckParam(bgAmount < minAmount, Error::DepositAmountInsufficient,
-																 "cr deposit amount is insufficient");
-
-				ErrorChecker::CheckParam(payloadJSON.find("Signature") == payloadJSON.end(), Error::InvalidArgument,
-																 "Signature can not be empty");
-
-				uint8_t payloadVersion = CRInfoDIDVersion;
-				PayloadPtr payload = PayloadPtr(new CRInfo());
-				try {
-					payload->FromJson(payloadJSON, payloadVersion);
-					ErrorChecker::CheckParam(!payload->IsValid(payloadVersion), Error::InvalidArgument, "verify signature failed");
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-										"Payload format err: " + std::string(e.what()));
-				}
-
-				bytes_t code = static_cast<CRInfo *>(payload.get())->GetCode();
-				Address receiveAddr;
-				receiveAddr.SetRedeemScript(PrefixDeposit, code);
-
-				OutputArray outputs;
-				outputs.push_back(OutputPtr(new TransactionOutput(bgAmount, receiveAddr)));
-
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::registerCR, payload, utxo, outputs, memo, feeAmount);
-				tx->SetPayloadVersion(payloadVersion);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-
-			nlohmann::json MainchainSubWallet::CreateUpdateCRTransaction(
-					const nlohmann::json &inputsJson,
-					const nlohmann::json &payloadJSON,
-					const std::string &fee,
-					const std::string &memo) const {
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJSON.dump());
-							ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				uint8_t payloadVersion = CRInfoDIDVersion;
-				PayloadPtr payload = PayloadPtr(new CRInfo());
-				try {
-					payload->FromJson(payloadJSON, payloadVersion);
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-					"Payload format err: " + std::string(e.what()));
-				}
-
-				BigInt feeAmount;
-				feeAmount.setDec(fee);
-
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::updateCR, payload, utxo, {}, memo, feeAmount);
-				tx->SetPayloadVersion(payloadVersion);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-
-				ArgInfo("r => {}", result.dump());
-				return result;
-
-			}
-
-			nlohmann::json MainchainSubWallet::CreateUnregisterCRTransaction(
-					const nlohmann::json &inputsJson,
-					const nlohmann::json &payloadJSON,
-					const std::string &fee,
-					const std::string &memo) const {
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJSON.dump());
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				ErrorChecker::CheckParam(payloadJSON.find("Signature") == payloadJSON.end() ||
-				payloadJSON["Signature"].get<std::string>() == "",
-				Error::InvalidArgument, "invalied signature");
-
-				PayloadPtr payload = PayloadPtr(new UnregisterCR());
-				try {
-					payload->FromJson(payloadJSON, 0);
-				} catch (const nlohmann::detail::exception &e) {
-					ErrorChecker::ThrowParamException(Error::JsonFormatError,
-							"Payload format err: " + std::string(e.what()));
-				}
-
-				BigInt feeAmount;
-				feeAmount.setDec(fee);
-
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::unregisterCR, payload, utxo, {}, memo, feeAmount);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-
-			nlohmann::json MainchainSubWallet::CreateRetrieveCRDepositTransaction(
-					const nlohmann::json &inputsJson,
-					const std::string &amount,
-					const std::string &fee,
-					const std::string &memo) const {
-							WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-							ArgInfo("amount: {}", amount);
-				ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				BigInt feeAmount, bgAmount;
-				feeAmount.setDec(fee);
-				bgAmount.setDec(amount);
-
-							OutputArray outputs;
-							Address receiveAddr = (*utxo.begin())->GetAddress();
-							outputs.push_back(OutputPtr(new TransactionOutput(bgAmount - feeAmount, receiveAddr)));
-
-				PayloadPtr payload = PayloadPtr(new ReturnDepositCoin());
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::returnCRDepositCoin, payload, utxo, outputs, memo, feeAmount, true);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-				ArgInfo("r => {}", result.dump());
-				return result;
-			}
-
-			std::string MainchainSubWallet::CRCouncilMemberClaimNodeDigest(const nlohmann::json &payload) const {
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("payload: {}", payload.dump());
-
-
-				uint8_t version = CRCouncilMemberClaimNodeVersion;
-				CRCouncilMemberClaimNode p;
-				try {
-					p.FromJsonUnsigned(payload, version);
-				} catch (const std::exception &e) {
-					ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-				}
-
-				if (!p.IsValidUnsigned(version)) {
-					ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
-				}
-
-				std::string digest = p.DigestUnsigned(version).GetHex();
-
-				ArgInfo("r => {}", digest);
-				return digest;
-			}
-
-			nlohmann::json MainchainSubWallet::CreateCRCouncilMemberClaimNodeTransaction(const nlohmann::json &inputsJson,
-																																											 const nlohmann::json &payloadJson,
-																																											 const std::string &fee,
-																																											 const std::string &memo) const {
-				WalletPtr wallet = _walletManager->GetWallet();
-				ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-				ArgInfo("inputs: {}", inputsJson.dump());
-				ArgInfo("payload: {}", payloadJson.dump());
-							ArgInfo("fee: {}", fee);
-				ArgInfo("memo: {}", memo);
-
-				UTXOSet utxo;
-				UTXOFromJson(utxo, inputsJson);
-
-				uint8_t version = CRCProposalDefaultVersion;
-				PayloadPtr payload(new CRCouncilMemberClaimNode());
-				try {
-					payload->FromJson(payloadJson, version);
-				} catch (const std::exception &e) {
-					ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-				}
-
-				if (!payload->IsValid(version))
-					ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
-
-				BigInt feeAmount;
-				feeAmount.setDec(fee);
-
-				TransactionPtr tx = wallet->CreateTransaction(Transaction::crCouncilMemberClaimNode, payload, utxo, {}, memo, feeAmount);
-				tx->SetPayloadVersion(version);
-
-				nlohmann::json result;
-				EncodeTx(result, tx);
-				ArgInfo("r => {}", result.dump());
-
-				return result;
-			}
-
 			std::string MainchainSubWallet::ProposalOwnerDigest(const nlohmann::json &payload) const {
 				ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
 				ArgInfo("payload: {}", payload.dump());

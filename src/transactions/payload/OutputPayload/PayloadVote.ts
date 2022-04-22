@@ -11,13 +11,13 @@ import {
   sizeof_uint64_t,
   JSONArray
 } from "../../../types";
-import { Payload } from "../Payload";
 import { OutputPayload } from "../OutputPayload/OutputPayload";
 import { Log } from "../../../common/Log";
 import { ByteStream } from "../../../common/bytestream";
 import BigNumber from "bignumber.js";
 
 export const VOTE_PRODUCER_CR_VERSION = 0x01;
+export type VoteContentArray = VoteContent[];
 
 export class CandidateVotes {
   private _candidate: bytes_t;
@@ -26,9 +26,11 @@ export class CandidateVotes {
     this._votes = new BigNumber(0);
   }
 
-  newFromParams(candidate: bytes_t, votes: BigNumber) {
-    this._candidate = candidate;
-    this._votes = new BigNumber(votes);
+  static newFromParams(candidate: bytes_t, votes: BigNumber) {
+    const cv = new CandidateVotes();
+    cv._candidate = candidate;
+    cv._votes = new BigNumber(votes);
+    return cv;
   }
 
   getCandidate(): bytes_t {
@@ -107,16 +109,20 @@ export class VoteContent {
     this._type = VoteContentType.Delegate;
   }
 
-  newFromType(t: VoteContentType) {
-    this._type = t;
+  static newFromType(t: VoteContentType) {
+    const vc = new VoteContent();
+    vc._type = t;
+    return vc;
   }
 
-  newFromVoteContent(t: VoteContentType, c: CandidateVotes[]) {
-    this._type = t;
-    this._candidates = c;
+  static newFromVoteContent(t: VoteContentType, c: CandidateVotes[]) {
+    const vc = new VoteContent();
+    vc._type = t;
+    vc._candidates = c;
+    return vc;
   }
 
-  dddCandidate(candidateVotes: CandidateVotes) {
+  addCandidate(candidateVotes: CandidateVotes) {
     this._candidates.push(candidateVotes);
   }
 
