@@ -29,7 +29,13 @@ import { SHA256 } from "./sha256";
 /**
  * @Internal (tag for docs)
  */
+
 export class EcdsaSigner {
+  public static getKeyFromPublic(publicKey: Buffer | string) {
+    const ec = new EC("p256");
+    return ec.keyFromPublic(publicKey, "hex");
+  }
+
   public static sign(privateKey: Buffer | string, digest: Buffer): Buffer {
     const ec = new EC("p256");
     const key = ec.keyFromPrivate(privateKey, "hex");

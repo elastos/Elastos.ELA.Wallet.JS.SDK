@@ -37,6 +37,8 @@ import {
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
+import { EcdsaSigner } from "../../walletcore/ecdsasigner";
+import { sign } from "crypto";
 
 export const CRCProposalDefaultVersion = 0;
 export const CRCProposalVersion01 = 0x01;
@@ -883,5 +885,1608 @@ export class CRCProposal {
     }
 
     return true;
+  }
+
+  serializeChangeOwnerCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeChangeOwnerUnsigned(stream, version);
+
+    stream.writeVarBytes(this._signature);
+    stream.writeVarBytes(this._newOwnerSignature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeChangeOwnerCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeChangeOwnerUnsigned(stream, version)) {
+      // SPVLOG_ERROR("deserialize change owner unsigned");
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize change owner signature");
+      return false;
+    }
+    this._signature = signature;
+
+    let newOwnerSignature: bytes_t;
+    newOwnerSignature = stream.readVarBytes(newOwnerSignature);
+    if (!newOwnerSignature) {
+      // SPVLOG_ERROR("deserialize change owner new owner signature");
+      return false;
+    }
+    this._newOwnerSignature = newOwnerSignature;
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize sponsor did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeChangeOwner(stream: ByteStream, version: uint8_t) {
+    this.serializeChangeOwnerCRCouncilMemberUnsigned(stream, version);
+
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeChangeOwner(stream: ByteStream, version: uint8_t): boolean {
+    if (!this.deserializeChangeOwnerCRCouncilMemberUnsigned(stream, version)) {
+      // SPVLOG_ERROR("deserialize change owner cr council member unsigned");
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize change owner cr council member signature");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+
+    return true;
+  }
+
+  toJsonChangeOwnerUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+
+    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
+    j[JsonKeyNewRecipient] = this._newRecipient.string();
+    j[JsonKeyNewOwnerPublicKey] = this._newOwnerPublicKey.toString("hex");
+
+    return j;
+  }
+
+  fromJsonChangeOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData = j[JsonKeyDraftData];
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._targetProposalHash = new BigNumber(
+      j[JsonKeyTargetProposalHash] as string,
+      16
+    );
+    this._newRecipient = Address.newFromAddressString(
+      j[JsonKeyNewRecipient] as string
+    );
+    this._newOwnerPublicKey = Buffer.from(
+      j[JsonKeyNewOwnerPublicKey] as string,
+      "hex"
+    );
+  }
+
+  toJsonChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j = this.toJsonChangeOwnerUnsigned(version);
+
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyNewOwnerSignature] = this._newOwnerSignature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+
+    return j;
+  }
+
+  fromJsonChangeOwnerCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonChangeOwnerUnsigned(j, version);
+
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._newOwnerSignature = Buffer.from(
+      j[JsonKeyNewOwnerSignature] as string,
+      "hex"
+    );
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidChangeOwnerUnsigned(version: uint8_t): boolean {
+    if (this._type != CRCProposalType.changeProposalOwner) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+      let key1 = EcdsaSigner.getKeyFromPublic(this._newOwnerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid pubkey");
+      return false;
+    }
+
+    if (this._draftHash.isZero() || this._targetProposalHash.isZero()) {
+      // SPVLOG_ERROR("invalid hash");
+      return false;
+    }
+
+    if (!this._newRecipient.valid()) {
+      // SPVLOG_ERROR("invalid new recipient");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidChangeOwnerUnsigned(version)) {
+      return false;
+    }
+
+    try {
+      // _ownerPublicKey
+      const data = this.digestChangeOwnerUnsigned(version).toString(16);
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          Buffer.from(data, "hex")
+        )
+      ) {
+        // SPVLOG_ERROR("verify signature fail");
+        return false;
+      }
+
+      if (
+        !EcdsaSigner.verify(
+          this._newOwnerPublicKey,
+          this._newOwnerSignature,
+          Buffer.from(data, "hex")
+        )
+      ) {
+        // SPVLOG_ERROR("verify new owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr council member did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestChangeOwnerUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeChangeOwnerUnsigned(stream, version);
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  digestChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeChangeOwnerCRCouncilMemberUnsigned(stream, version);
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  // terminate proposal
+  serializeTerminateProposalUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    // stream.writeBytes(this._draftHash);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    // stream.writeBytes(this._targetProposalHash);
+    stream.writeBNAsUIntOfSize(this._targetProposalHash, 32);
+  }
+
+  deserializeTerminateProposalUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize terminate proposal category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize terminate proposal owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash: bytes_t;
+    draftHash = stream.readBytes(draftHash, 32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize terminate proposal draft hash");
+      return false;
+    }
+    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize terminate proposal draftData");
+        return false;
+      }
+      this._draftData = draftData;
+    }
+
+    let targetProposalHash: bytes_t;
+    targetProposalHash = stream.readBytes(draftHash, 32);
+    if (!targetProposalHash) {
+      // SPVLOG_ERROR("deserialize terminate proposal target proposal hash");
+      return false;
+    }
+    this._targetProposalHash = new BigNumber(
+      targetProposalHash.toString("hex"),
+      16
+    );
+
+    return true;
+  }
+
+  serializeTerminateProposalCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeTerminateProposalUnsigned(stream, version);
+
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeTerminateProposalCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    if (!this.deserializeTerminateProposalUnsigned(stream, version)) {
+      // SPVLOG_ERROR("deserialize terminate proposal unsigned");
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize terminate proposal signature");
+      return false;
+    }
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize sponsor did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeTerminateProposal(stream: ByteStream, version: uint8_t) {
+    this.serializeTerminateProposalCRCouncilMemberUnsigned(stream, version);
+
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeTerminateProposal(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeTerminateProposalCRCouncilMemberUnsigned(stream, version)
+    ) {
+      // SPVLOG_ERROR("deserialize terminate proposal cr council member unsigned");
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize change owner cr council member signature");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+
+    return true;
+  }
+
+  toJsonTerminateProposalOwnerUnsigned(version: uint8_t) {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01)
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
+
+    return j;
+  }
+
+  fromJsonTerminateProposalOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._targetProposalHash = new BigNumber(
+      j[JsonKeyTargetProposalHash] as string,
+      16
+    );
+  }
+
+  toJsonTerminateProposalCRCouncilMemberUnsigned(version: uint8_t) {
+    let j = this.toJsonTerminateProposalOwnerUnsigned(version);
+
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+
+    return j;
+  }
+
+  fromJsonTerminateProposalCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonTerminateProposalOwnerUnsigned(j, version);
+
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidTerminateProposalOwnerUnsigned(version: uint8_t) {
+    if (this._type != CRCProposalType.terminateProposal) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      // Key key(CTElastos, _ownerPublicKey);
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid pubkey");
+      return false;
+    }
+
+    if (this._draftHash.eq(0) || this._targetProposalHash.eq(0)) {
+      // SPVLOG_ERROR("invalid hash");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidTerminateProposalCRCouncilMemberUnsigned(version: uint8_t) {
+    if (!this.isValidTerminateProposalOwnerUnsigned(version)) {
+      // SPVLOG_ERROR("terminate proposal unsigned is not valid");
+      return false;
+    }
+
+    try {
+      const data = this.digestTerminateProposalOwnerUnsigned(version);
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          Buffer.from(data.toString(16), "hex")
+        )
+      ) {
+        // SPVLOG_ERROR("verify signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr council member did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestTerminateProposalOwnerUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeTerminateProposalUnsigned(stream, version);
+
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  digestTerminateProposalCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeTerminateProposalCRCouncilMemberUnsigned(stream, version);
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  // change secretary general
+  serializeSecretaryElectionUnsigned(stream: ByteStream, version: uint8_t) {
+    stream.writeUInt16(this._type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    stream.writeVarBytes(this._secretaryPublicKey);
+    stream.writeBytes(this._secretaryDID.programHash().bytes());
+  }
+
+  deserializeSecretaryElectionUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash = stream.readUIntOfBytesAsBN(32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize draft hash");
+      return false;
+    }
+    this._draftHash = draftHash;
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize draft data");
+        return false;
+      }
+      this._draftData = draftData;
+    }
+
+    let secretaryPublicKey: bytes_t;
+    secretaryPublicKey = stream.readVarBytes(secretaryPublicKey);
+    if (!secretaryPublicKey) {
+      // SPVLOG_ERROR("deserialize secretary pubkey");
+      return false;
+    }
+    this._secretaryPublicKey = secretaryPublicKey;
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize sponsor did");
+      return false;
+    }
+    this._secretaryDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeSecretaryElectionCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeSecretaryElectionUnsigned(stream, version);
+
+    stream.writeVarBytes(this._signature);
+    stream.writeVarBytes(this._secretarySignature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeSecretaryElectionCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeSecretaryElectionUnsigned(stream, version)) {
+      // SPVLOG_ERROR("deserialize change secretary secretary unsigned");
+      return false;
+    }
+
+    if (!stream.readVarBytes(this._signature)) {
+      // SPVLOG_ERROR("deserialize signature");
+      return false;
+    }
+
+    if (!stream.readVarBytes(this._secretarySignature)) {
+      // SPVLOG_ERROR("deserialize secretary signature");
+      return false;
+    }
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize cr council mem did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeSecretaryElection(stream: ByteStream, version: uint8_t) {
+    this.serializeSecretaryElectionCRCouncilMemberUnsigned(stream, version);
+
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeSecretaryElection(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeSecretaryElectionCRCouncilMemberUnsigned(stream, version)
+    ) {
+      return false;
+    }
+
+    if (!stream.readVarBytes(this._crCouncilMemberSignature)) {
+      // SPVLOG_ERROR("deserialize change secretary cr council member signature");
+      return false;
+    }
+
+    return true;
+  }
+
+  toJsonSecretaryElectionUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+    j[JsonKeySecretaryPublicKey] = this._secretaryPublicKey.toString("hex");
+    j[JsonKeySecretaryDID] = this._secretaryDID.string();
+
+    return j;
+  }
+
+  fromJsonSecretaryElectionUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._secretaryPublicKey = Buffer.from(
+      j[JsonKeySecretaryPublicKey] as string,
+      "hex"
+    );
+    this._secretaryDID = Address.newFromAddressString(
+      j[JsonKeySecretaryDID] as string
+    );
+  }
+
+  toJsonSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j = this.toJsonSecretaryElectionUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeySecretarySignature] = this._secretarySignature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+
+    return j;
+  }
+
+  fromJsonSecretaryElectionCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonSecretaryElectionUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string);
+    this._secretarySignature = Buffer.from(
+      j[JsonKeySecretarySignature] as string
+    );
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidSecretaryElectionUnsigned(version: uint8_t): boolean {
+    if (this._type != CRCProposalType.secretaryGeneralElection) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+      let key1 = EcdsaSigner.getKeyFromPublic(this._secretaryPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid ...");
+      return false;
+    }
+
+    if (!this._secretaryDID.valid()) {
+      // SPVLOG_ERROR("invalid secretary did");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidSecretaryElectionUnsigned(version)) {
+      // SPVLOG_ERROR("secretary election secretary unsigned not valid");
+      return false;
+    }
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          this.digestSecretaryElectionUnsigned(version)
+        )
+      ) {
+        // SPVLOG_ERROR("verify owner signature fail");
+        return false;
+      }
+      if (
+        !EcdsaSigner.verify(
+          this._secretaryPublicKey,
+          this._secretarySignature,
+          this.digestSecretaryElectionUnsigned(version)
+        )
+      ) {
+        // SPVLOG_ERROR("verify secretary signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestSecretaryElectionUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeSecretaryElectionUnsigned(stream, version);
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  digestSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeSecretaryElectionCRCouncilMemberUnsigned(stream, version);
+    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
+    return new BigNumber(rs, 16);
+  }
+
+  serializeReserveCustomIDUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    // stream.writeBytes(this._draftHash);
+    stream.writeBNAsUIntOfSize(this._draftHash, 21);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    stream.writeVarUInt(this._reservedCustomIDList.length);
+    for (let reservedCustomID of this._reservedCustomIDList) {
+      stream.writeVarString(reservedCustomID);
+    }
+  }
+
+  deserializeReserveCustomIDUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize reserved custom id category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize reserved custom id owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash: bytes_t;
+    draftHash = stream.readBytes(draftHash, 32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize reserved custom id draft hash");
+      return false;
+    }
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize reserved custom id draft data");
+        return false;
+      }
+    }
+
+    let size: uint64_t = new BigNumber(0);
+    size = stream.readVarUInt();
+    if (!size) {
+      // SPVLOG_ERROR("deserialize reserved custom id list size");
+      return false;
+    }
+    for (let i = 0; i < size.toNumber(); ++i) {
+      let reservedCustomID: string = stream.readVarString();
+      if (!reservedCustomID) {
+        // SPVLOG_ERROR("deserialize reserved custom id list[{}]", i);
+        return false;
+      }
+      this._reservedCustomIDList.push(reservedCustomID);
+    }
+
+    return true;
+  }
+
+  serializeReserveCustomIDCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeReserveCustomIDUnsigned(stream, version);
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeReserveCustomIDCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    if (!this.deserializeReserveCustomIDUnsigned(stream, version)) {
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize reserved custom id signature");
+      return false;
+    }
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize cr council mem did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeReserveCustomID(stream: ByteStream, version: uint8_t) {
+    this.serializeReserveCustomIDCRCouncilMemberUnsigned(stream, version);
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeReserveCustomID(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeReserveCustomIDCRCouncilMemberUnsigned(stream, version)
+    ) {
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize reserved custom id council member sign");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+    return true;
+  }
+
+  toJsonReserveCustomIDOwnerUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+    j[JsonKeyReservedCustomIDList] = this._reservedCustomIDList;
+
+    return j;
+  }
+
+  fromJsonReserveCustomIDOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._reservedCustomIDList = j[JsonKeyReservedCustomIDList] as string[];
+  }
+
+  toJsonReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t) {
+    let j = this.toJsonReserveCustomIDOwnerUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonReserveCustomIDCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonReserveCustomIDOwnerUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidReserveCustomIDOwnerUnsigned(version: uint8_t): boolean {
+    if (this._type != CRCProposalType.reserveCustomID) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidReserveCustomIDOwnerUnsigned(version)) return false;
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          this.digestReserveCustomIDOwnerUnsigned(version)
+        )
+      ) {
+        // SPVLOG_ERROR("reserve custom id verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestReserveCustomIDOwnerUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeReserveCustomIDUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  digestReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeReserveCustomIDCRCouncilMemberUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  // ReceiveCustomID
+  serializeReceiveCustomIDUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    // stream.writeBytes(_draftHash);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    stream.writeVarUInt(this._receivedCustomIDList.length);
+    for (let receivedCustomID of this._receivedCustomIDList) {
+      stream.writeVarString(receivedCustomID);
+    }
+
+    stream.writeBytes(this._receiverDID.programHash().bytes());
+  }
+
+  deserializeReceiveCustomIDUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.ReadVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize receive custom category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize receive custom owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash: BigNumber;
+    draftHash = stream.readUIntOfBytesAsBN(32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize receive custom draft hash");
+      return false;
+    }
+    this._draftHash = draftHash;
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize receive custom draft data");
+        return false;
+      }
+      this._draftData = draftData;
+    }
+
+    let size = stream.readVarUInt();
+    if (!size) {
+      // SPVLOG_ERROR("deserialize receive custom id list size");
+      return false;
+    }
+    for (let i = 0; i < size.toNumber(); ++i) {
+      let receivedCustomID = stream.readVarString();
+      if (!receivedCustomID) {
+        // SPVLOG_ERROR("deserialize receive custom id list[{}]", i);
+        return false;
+      }
+      this._receivedCustomIDList.push(receivedCustomID);
+    }
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize receiver did");
+      return false;
+    }
+    this._receiverDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeReceiveCustomIDCRCCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeReceiveCustomIDUnsigned(stream, version);
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeReceiveCustomIDCRCCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeReceiveCustomIDUnsigned(stream, version)) {
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize reserved custom id signature");
+      return false;
+    }
+    this._signature = signature;
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize cr council mem did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeReceiveCustomID(stream: ByteStream, version: uint8_t) {
+    this.serializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version);
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeReceiveCustomID(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version)
+    ) {
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize receive custom id council member sign");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+
+    return true;
+  }
+
+  toJsonReceiveCustomIDOwnerUnsigned(version: uint8_t) {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+
+    j[JsonKeyReceivedCustomIDList] = this._receivedCustomIDList;
+    j[JsonKeyReceiverDID] = this._receiverDID.string();
+
+    return j;
+  }
+
+  fromJsonReceiveCustomIDOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._receivedCustomIDList = j[JsonKeyReservedCustomIDList] as string[];
+    this._receiverDID = Address.newFromAddressString(
+      j[JsonKeyReceiverDID] as string
+    );
+  }
+
+  toJsonReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j = this.toJsonReceiveCustomIDOwnerUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonReceiveCustomIDCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonReceiveCustomIDOwnerUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidReceiveCustomIDOwnerUnsigned(version: uint8_t): boolean {
+    if (this._type != CRCProposalType.receiveCustomID) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      // Key key(CTElastos, _ownerPublicKey);
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidReceiveCustomIDOwnerUnsigned(version)) return false;
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          this.digestReceiveCustomIDOwnerUnsigned(version)
+        )
+      ) {
+        // SPVLOG_ERROR("receive custom id verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestReceiveCustomIDOwnerUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeReceiveCustomIDUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  digestReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  // ChangeCustomIDFee
+  serializeChangeCustomIDFeeUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    // stream.writeBytes(_draftHash);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    this._customIDFeeRateInfo.serialize(stream, version);
+  }
+
+  deserializeChangeCustomIDFeeUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize change custom id category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize change custom id owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash = new BigNumber(0);
+    draftHash = stream.readUIntOfBytesAsBN(32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize change custom id draft hash");
+      return false;
+    }
+    this._draftHash = draftHash;
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize change custom id draft data");
+        return false;
+      }
+      this._draftData = draftData;
+    }
+
+    if (!this._customIDFeeRateInfo.deserialize(stream, version)) {
+      // SPVLOG_ERROR("deserialize change custom id fee");
+      return false;
+    }
+
+    return true;
+  }
+
+  serializeChangeCustomIDFeeCRCCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeChangeCustomIDFeeUnsigned(stream, version);
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeChangeCustomIDFeeCRCCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeChangeCustomIDFeeUnsigned(stream, version)) {
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize change custom id fee signature");
+      return false;
+    }
+    this._signature = signature;
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize change custom id fee cr council mem did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeChangeCustomIDFee(stream: ByteStream, version: uint8_t) {
+    this.serializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version);
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeChangeCustomIDFee(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeChangeCustomIDFeeCRCCouncilMemberUnsigned(
+        stream,
+        version
+      )
+    ) {
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize change custom id fee council mem sign");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+
+    return true;
+  }
+
+  toJsonChangeCustomIDFeeOwnerUnsigned(version: uint8_t) {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(_draftData);
+    }
+
+    j[JsonKeyCustomIDFeeRateInfo] = this._customIDFeeRateInfo.toJson(version);
+
+    return j;
+  }
+
+  fromJsonChangeCustomIDFeeOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._customIDFeeRateInfo.fromJson(
+      j[JsonKeyCustomIDFeeRateInfo] as json,
+      version
+    );
+  }
+
+  toJsonChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t) {
+    let j = this.toJsonChangeCustomIDFeeOwnerUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonChangeCustomIDFeeOwnerUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidChangeCustomIDFeeOwnerUnsigned(version: uint8_t) {
+    if (this._type != CRCProposalType.changeCustomIDFee) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidChangeCustomIDFeeOwnerUnsigned(version)) return false;
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          this.digestChangeCustomIDFeeOwnerUnsigned(version)
+        )
+      ) {
+        // SPVLOG_ERROR("change custom id fee verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestChangeCustomIDFeeOwnerUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeChangeCustomIDFeeUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  digestChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  serializeRegisterSidechainUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
+
+    this._sidechainInfo.serialize(stream, version);
+  }
+
+  deserializeRegisterSidechainUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize change custom id category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize change custom id owner pubkey");
+      return false;
+    }
+
+    let draftHash: bytes_t;
+    draftHash = stream.readBytes(draftHash, 32);
+
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize change custom id draft hash");
+      return false;
+    }
+    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
+
+    if (version >= CRCProposalVersion01) {
+      let draftData: bytes_t;
+      draftData = stream.readVarBytes(draftData);
+      if (!draftData) {
+        // SPVLOG_ERROR("deserialize change custom id draft data");
+        return false;
+      }
+      this._draftData = draftData;
+    }
+
+    if (!this._sidechainInfo.deserialize(stream, version)) {
+      // SPVLOG_ERROR("deserialize change custom id fee");
+      return false;
+    }
+
+    return true;
+  }
+
+  serializeRegisterSidechainCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeRegisterSidechainUnsigned(stream, version);
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeRegisterSidechainCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeRegisterSidechainUnsigned(stream, version)) {
+      return false;
+    }
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize id signature");
+      return false;
+    }
+    this._signature = signature;
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize cr council mem did");
+      return false;
+    }
+
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+    return true;
+  }
+
+  serializeRegisterSidechain(stream: ByteStream, version: uint8_t) {
+    this.serializeRegisterSidechainCRCouncilMemberUnsigned(stream, version);
+    stream.writeVarBytes(this._crCouncilMemberSignature);
   }
 }
