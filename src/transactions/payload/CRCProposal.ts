@@ -22,7 +22,6 @@
 
 import BigNumber from "bignumber.js";
 import { ByteStream } from "../../common/bytestream";
-import { uint168 } from "../../common/uint168";
 import {
   uint8_t,
   json,
@@ -33,12 +32,15 @@ import {
   sizeof_uint16_t,
   size_t,
   sizeof_uint256_t,
-  uint16_t
+  uint16_t,
+  JSONArray
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
-import { sign } from "crypto";
+import { ErrorChecker, Error } from "../../common/ErrorChecker";
+import { BASE64 as Base64 } from "../../walletcore/base64";
+import { Payload } from "./Payload";
 
 export const CRCProposalDefaultVersion = 0;
 export const CRCProposalVersion01 = 0x01;
@@ -77,16 +79,19 @@ export enum BudgetType {
   maxType
 }
 
+const DRAFT_DATA_MAX_SIZE = 1024 * 1024;
+
 export class Budget {
   private _type: BudgetType;
   private _stage: uint8_t;
   private _amount: BigNumber;
 
-  newFromParams(type: BudgetType, stage: uint8_t, amount: BigNumber) {
+  static newFromParams(type: BudgetType, stage: uint8_t, amount: BigNumber) {
     const budget = new Budget();
     budget._type = type;
     budget._stage = stage;
     budget._amount = amount;
+    return budget;
   }
 
   getType(): BudgetType {
@@ -434,7 +439,7 @@ export enum CRCProposalType {
   maxType
 }
 
-export class CRCProposal {
+export class CRCProposal extends Payload {
   private _type: CRCProposalType;
   private _categoryData: string;
   private _ownerPublicKey: bytes_t;
@@ -691,8 +696,9 @@ export class CRCProposal {
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
     if (version >= CRCProposalVersion01) stream.writeVarBytes(this._draftData);
     stream.writeVarUInt(this._budgets.length);
-    for (let i = 0; i < this._budgets.length; ++i)
+    for (let i = 0; i < this._budgets.length; ++i) {
       this._budgets[i].serialize(stream);
+    }
     stream.writeBytes(this._recipient.programHash().bytes());
   }
 
@@ -986,7 +992,7 @@ export class CRCProposal {
     );
     this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
     if (version >= CRCProposalVersion01) {
-      let draftData = j[JsonKeyDraftData];
+      let draftData = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
         draftData,
         this._draftHash
@@ -1604,11 +1610,12 @@ export class CRCProposal {
     }
 
     try {
+      let rs = this.digestSecretaryElectionUnsigned(version);
       if (
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          this.digestSecretaryElectionUnsigned(version)
+          Buffer.from(rs.toString(16), "hex")
         )
       ) {
         // SPVLOG_ERROR("verify owner signature fail");
@@ -1618,7 +1625,7 @@ export class CRCProposal {
         !EcdsaSigner.verify(
           this._secretaryPublicKey,
           this._secretarySignature,
-          this.digestSecretaryElectionUnsigned(version)
+          Buffer.from(rs.toString(16), "hex")
         )
       ) {
         // SPVLOG_ERROR("verify secretary signature fail");
@@ -1853,11 +1860,13 @@ export class CRCProposal {
     if (!this.isValidReserveCustomIDOwnerUnsigned(version)) return false;
 
     try {
+      let rs = this.digestReserveCustomIDOwnerUnsigned(version);
+
       if (
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          this.digestReserveCustomIDOwnerUnsigned(version)
+          Buffer.from(rs.toString(16), "hex")
         )
       ) {
         // SPVLOG_ERROR("reserve custom id verify owner signature fail");
@@ -1914,7 +1923,7 @@ export class CRCProposal {
     stream: ByteStream,
     version: uint8_t
   ): boolean {
-    let categoryData = stream.ReadVarString();
+    let categoryData = stream.readVarString();
     if (!categoryData) {
       // SPVLOG_ERROR("deserialize receive custom category data");
       return false;
@@ -2114,11 +2123,12 @@ export class CRCProposal {
     if (!this.isValidReceiveCustomIDOwnerUnsigned(version)) return false;
 
     try {
+      let rs = this.digestReceiveCustomIDOwnerUnsigned(version);
       if (
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          this.digestReceiveCustomIDOwnerUnsigned(version)
+          Buffer.from(rs.toString(16), "hex")
         )
       ) {
         // SPVLOG_ERROR("receive custom id verify owner signature fail");
@@ -2283,7 +2293,7 @@ export class CRCProposal {
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
     j[JsonKeyDraftHash] = this._draftHash.toString(16);
     if (version >= CRCProposalVersion01) {
-      j[JsonKeyDraftData] = this.encodeDraftData(_draftData);
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
 
     j[JsonKeyCustomIDFeeRateInfo] = this._customIDFeeRateInfo.toJson(version);
@@ -2352,11 +2362,12 @@ export class CRCProposal {
     if (!this.isValidChangeCustomIDFeeOwnerUnsigned(version)) return false;
 
     try {
+      let rs = this.digestChangeCustomIDFeeOwnerUnsigned(version);
       if (
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          this.digestChangeCustomIDFeeOwnerUnsigned(version)
+          Buffer.from(rs.toString(16), "hex")
         )
       ) {
         // SPVLOG_ERROR("change custom id fee verify owner signature fail");
@@ -2488,5 +2499,927 @@ export class CRCProposal {
   serializeRegisterSidechain(stream: ByteStream, version: uint8_t) {
     this.serializeRegisterSidechainCRCouncilMemberUnsigned(stream, version);
     stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeRegisterSidechain(stream: ByteStream, version: uint8_t): boolean {
+    if (
+      !this.deserializeRegisterSidechainCRCouncilMemberUnsigned(stream, version)
+    ) {
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize register side-chain council member sign");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+    return true;
+  }
+
+  toJsonRegisterSidechainUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+
+    j[JsonKeySidechainInfo] = this._sidechainInfo.toJson(version);
+
+    return j;
+  }
+
+  fromJsonRegisterSidechainUnsigned(j: json, version: uint8_t) {
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber((j[JsonKeyDraftHash] as string, 16));
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    this._sidechainInfo.fromJson(j[JsonKeySidechainInfo] as json, version);
+  }
+
+  toJsonRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j = this.toJsonRegisterSidechainUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonRegisterSidechainCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonRegisterSidechainUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidRegisterSidechainUnsigned(version: uint8_t): boolean {
+    if (this._type != CRCProposalType.registerSideChain) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      return false;
+    }
+
+    if (!this._sidechainInfo.isValid(version)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidRegisterSidechainUnsigned(version)) {
+      return false;
+    }
+
+    try {
+      let rs = this.digestRegisterSidechainUnsigned(version);
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          Buffer.from(rs.toString(16), "hex")
+        )
+      ) {
+        // SPVLOG_ERROR("change register side-chain verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestRegisterSidechainUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeRegisterSidechainUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  digestRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeRegisterSidechainCRCouncilMemberUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  // upgrade code
+  serializeUpgradeCodeUnsigned(stream: ByteStream, version: uint8_t) {
+    let type: uint16_t = this._type;
+    stream.writeUInt16(type);
+    stream.writeVarString(this._categoryData);
+    stream.writeVarBytes(this._ownerPublicKey);
+    // stream.writeBytes(_draftHash);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
+    this._upgradeCodeInfo.serialize(stream, version);
+  }
+
+  deserializeUpgradeCodeUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    let categoryData = stream.readVarString();
+    if (!categoryData) {
+      // SPVLOG_ERROR("deserialize upgrade code category data");
+      return false;
+    }
+    this._categoryData = categoryData;
+
+    let ownerPublicKey: bytes_t;
+    ownerPublicKey = stream.readVarBytes(ownerPublicKey);
+    if (!ownerPublicKey) {
+      // SPVLOG_ERROR("deserialize upgrade code owner pubkey");
+      return false;
+    }
+    this._ownerPublicKey = ownerPublicKey;
+
+    let draftHash = stream.readUIntOfBytesAsBN(32);
+    if (!draftHash) {
+      // SPVLOG_ERROR("deserialize upgrade code draft hash");
+      return false;
+    }
+
+    if (!this._upgradeCodeInfo.deserialize(stream, version)) {
+      // SPVLOG_ERROR("deserialize upgrade code");
+      return false;
+    }
+
+    return true;
+  }
+
+  serializeUpgradeCodeCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ) {
+    this.serializeUpgradeCodeUnsigned(stream, version);
+    stream.writeVarBytes(this._signature);
+    stream.writeBytes(this._crCouncilMemberDID.programHash().bytes());
+  }
+
+  deserializeUpgradeCodeCRCouncilMemberUnsigned(
+    stream: ByteStream,
+    version: uint8_t
+  ): boolean {
+    if (!this.deserializeUpgradeCodeUnsigned(stream, version)) {
+      return false;
+    }
+
+    let signature: bytes_t;
+    signature = stream.readVarBytes(signature);
+    if (!signature) {
+      // SPVLOG_ERROR("deserialize upgrade code signature failed");
+      return false;
+    }
+
+    let programHash: bytes_t;
+    programHash = stream.readBytes(programHash, 21);
+    if (!programHash) {
+      // SPVLOG_ERROR("deserialize upgrade code cr council did");
+      return false;
+    }
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      programHash.toString("hex")
+    );
+
+    return true;
+  }
+
+  serializeUpgradeCode(stream: ByteStream, version: uint8_t) {
+    this.serializeUpgradeCodeCRCouncilMemberUnsigned(stream, version);
+    stream.writeVarBytes(this._crCouncilMemberSignature);
+  }
+
+  deserializeUpgradeCode(stream: ByteStream, version: uint8_t): boolean {
+    if (!this.deserializeUpgradeCodeCRCouncilMemberUnsigned(stream, version)) {
+      return false;
+    }
+
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      // SPVLOG_ERROR("deserialize cr council mem sign failed");
+      return false;
+    }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
+
+    return true;
+  }
+
+  toJsonUpgradeCodeUnsigned(version: uint8_t): json {
+    let j: json = {};
+
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyUpgradeCodeInfo] = this._upgradeCodeInfo.toJson(version);
+
+    return j;
+  }
+
+  fromJsonUpgradeCode(j: json, version: uint8_t) {
+    let type = j[JsonKeyType] as CRCProposalType;
+    this._type = type;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    this._upgradeCodeInfo.fromJson(j[JsonKeyUpgradeCodeInfo] as json, version);
+  }
+
+  toJsonUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j: json = this.toJsonUpgradeCodeUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonUpgradeCodeCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonUpgradeCode(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  isValidUpgradeCodeUnsigned(version: uint8_t): boolean {
+    if (
+      this._type != CRCProposalType.mainChainUpgradeCode &&
+      this._type != CRCProposalType.ethUpdateCode &&
+      this._type != CRCProposalType.didUpdateCode
+    ) {
+      // SPVLOG_ERROR("invalid type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid owner pubkey");
+      return false;
+    }
+
+    if (!this._upgradeCodeInfo.isValid(version)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidUpgradeCodeUnsigned(version)) {
+      return false;
+    }
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          Buffer.from(
+            this.digestUpgradeCodeUnsigned(version).toString(16),
+            "hex"
+          )
+        )
+      ) {
+        // SPVLOG_ERROR("change upgrade code verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  digestUpgradeCodeUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeUpgradeCodeUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  digestUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+    let stream = new ByteStream();
+    this.serializeUpgradeCodeCRCouncilMemberUnsigned(stream, version);
+    let rs = SHA256.encodeToBuffer(stream.getBytes());
+    return new BigNumber(rs.toString("hex"), 16);
+  }
+
+  // top serialize or deserialize
+  serialize(stream: ByteStream, version: uint8_t) {
+    switch (this._type) {
+      case CRCProposalType.changeProposalOwner:
+        this.serializeChangeOwner(stream, version);
+        break;
+
+      case CRCProposalType.terminateProposal:
+        this.serializeTerminateProposal(stream, version);
+        break;
+
+      case CRCProposalType.secretaryGeneralElection:
+        this.serializeSecretaryElection(stream, version);
+        break;
+
+      case CRCProposalType.reserveCustomID:
+        this.serializeReserveCustomID(stream, version);
+        break;
+
+      case CRCProposalType.receiveCustomID:
+        this.serializeReceiveCustomID(stream, version);
+        break;
+
+      case CRCProposalType.changeCustomIDFee:
+        this.serializeChangeCustomIDFee(stream, version);
+        break;
+
+      case CRCProposalType.registerSideChain:
+        this.serializeRegisterSidechain(stream, version);
+        break;
+
+      case CRCProposalType.normal:
+      case CRCProposalType.elip:
+        this.serializeNormalOrELIP(stream, version);
+        break;
+
+      default:
+        // SPVLOG_ERROR("serialize cr proposal unknown type");
+        break;
+    }
+  }
+
+  deserialize(stream: ByteStream, version: uint8_t): boolean {
+    let type = stream.readUInt16();
+    if (!type) {
+      // SPVLOG_ERROR("deserialize type");
+      return false;
+    }
+    this._type = type as CRCProposalType;
+
+    let r: boolean = false;
+    switch (this._type) {
+      case CRCProposalType.changeProposalOwner:
+        r = this.deserializeChangeOwner(stream, version);
+        break;
+
+      case CRCProposalType.terminateProposal:
+        r = this.deserializeTerminateProposal(stream, version);
+        break;
+
+      case CRCProposalType.secretaryGeneralElection:
+        r = this.deserializeSecretaryElection(stream, version);
+        break;
+
+      case CRCProposalType.reserveCustomID:
+        r = this.deserializeReserveCustomID(stream, version);
+        break;
+
+      case CRCProposalType.receiveCustomID:
+        r = this.deserializeReceiveCustomID(stream, version);
+        break;
+
+      case CRCProposalType.changeCustomIDFee:
+        r = this.deserializeChangeCustomIDFee(stream, version);
+        break;
+
+      case CRCProposalType.registerSideChain:
+        r = this.deserializeRegisterSidechain(stream, version);
+        break;
+
+      case CRCProposalType.mainChainUpgradeCode:
+      case CRCProposalType.didUpdateCode:
+      case CRCProposalType.ethUpdateCode:
+        r = this.deserializeUpgradeCode(stream, version);
+        break;
+
+      case CRCProposalType.normal:
+      case CRCProposalType.elip:
+        r = this.deserializeNormalOrELIP(stream, version);
+        break;
+
+      default:
+        // SPVLOG_ERROR("unknow type: {}", _type);
+        r = false;
+        break;
+    }
+
+    return r;
+  }
+
+  toJsonNormalOwnerUnsigned(version: uint8_t): json {
+    let j: json = {};
+    j[JsonKeyType] = this._type;
+    j[JsonKeyCategoryData] = this._categoryData;
+    j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
+    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    if (version >= CRCProposalVersion01) {
+      j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
+    }
+    let budgets = [];
+    for (let i = 0; i < this._budgets.length; ++i) {
+      budgets.push(this._budgets[i].toJson());
+    }
+    j[JsonKeyBudgets] = budgets;
+    j[JsonKeyRecipient] = this._recipient.string();
+    return j;
+  }
+
+  fromJsonNormalOwnerUnsigned(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    this._categoryData = j[JsonKeyCategoryData] as string;
+    this._ownerPublicKey = Buffer.from(
+      j[JsonKeyOwnerPublicKey] as string,
+      "hex"
+    );
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    if (version >= CRCProposalVersion01) {
+      let draftData: string = j[JsonKeyDraftData] as string;
+      this._draftData = this.checkAndDecodeDraftData(
+        draftData,
+        this._draftHash
+      );
+    }
+    let budgets = j[JsonKeyBudgets] as JSONArray;
+    for (let i = 0; i < budgets.length; ++i) {
+      let budget = new Budget();
+      budget.fromJson(budgets[i] as json);
+      this._budgets.push(budget);
+    }
+
+    this._recipient = Address.newFromAddressString(
+      j[JsonKeyRecipient] as string
+    );
+  }
+
+  toJsonNormalCRCouncilMemberUnsigned(version: uint8_t): json {
+    let j: json = this.toJsonNormalOwnerUnsigned(version);
+    j[JsonKeySignature] = this._signature.toString("hex");
+    j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
+    return j;
+  }
+
+  fromJsonNormalCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+    this.fromJsonNormalOwnerUnsigned(j, version);
+    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID] as string
+    );
+  }
+
+  toJson(version: uint8_t) {
+    let j: json = {};
+    switch (this._type) {
+      case CRCProposalType.normal:
+      case CRCProposalType.elip:
+        j = this.toJsonNormalCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.secretaryGeneralElection:
+        j = this.toJsonSecretaryElectionCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.changeProposalOwner:
+        j = this.toJsonChangeOwnerCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.terminateProposal:
+        j = this.toJsonTerminateProposalCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.reserveCustomID:
+        j = this.toJsonReserveCustomIDCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.receiveCustomID:
+        j = this.toJsonReceiveCustomIDCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.changeCustomIDFee:
+        j = this.toJsonChangeCustomIDFeeCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.registerSideChain:
+        j = this.toJsonRegisterSidechainCRCouncilMemberUnsigned(version);
+        break;
+      default:
+        // SPVLOG_ERROR("unknow type: {}", _type);
+        return j;
+    }
+    j[JsonKeyCRCouncilMemberSignature] =
+      this._crCouncilMemberSignature.toString("hex");
+    return j;
+  }
+
+  fromJson(j: json, version: uint8_t) {
+    this._type = j[JsonKeyType] as CRCProposalType;
+    switch (this._type) {
+      case CRCProposalType.normal:
+      case CRCProposalType.elip:
+        this.fromJsonNormalCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.secretaryGeneralElection:
+        this.fromJsonSecretaryElectionCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.changeProposalOwner:
+        this.fromJsonChangeOwnerCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.terminateProposal:
+        this.fromJsonTerminateProposalCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.reserveCustomID:
+        this.fromJsonReserveCustomIDCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.receiveCustomID:
+        this.fromJsonReceiveCustomIDCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.changeCustomIDFee:
+        this.fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(j, version);
+        break;
+      case CRCProposalType.registerSideChain:
+        this.fromJsonRegisterSidechainCRCouncilMemberUnsigned(j, version);
+      default:
+        // SPVLOG_ERROR("unknow type: {}", _type);
+        return;
+    }
+    this._crCouncilMemberSignature = Buffer.from(
+      j[JsonKeyCRCouncilMemberSignature] as string,
+      "hex"
+    );
+  }
+
+  isValidNormalOwnerUnsigned(version: uint8_t): boolean {
+    if (this._type >= CRCProposalType.maxType) {
+      // SPVLOG_ERROR("invalid proposal type: {}", _type);
+      return false;
+    }
+
+    if (this._categoryData.length > 4096) {
+      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      return false;
+    }
+
+    try {
+      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+    } catch (e) {
+      // SPVLOG_ERROR("invalid proposal owner pubkey");
+      return false;
+    }
+
+    for (let budget of this._budgets) {
+      if (!budget.isValid()) {
+        // SPVLOG_ERROR("invalid budget");
+        return false;
+      }
+    }
+
+    if (!this._recipient.valid()) {
+      // SPVLOG_ERROR("invalid recipient");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValidNormalCRCouncilMemberUnsigned(version: uint8_t): boolean {
+    if (!this.isValidNormalOwnerUnsigned(version)) return false;
+
+    try {
+      if (
+        !EcdsaSigner.verify(
+          this._ownerPublicKey,
+          this._signature,
+          Buffer.from(
+            this.digestNormalOwnerUnsigned(version).toString(16),
+            "hex"
+          )
+        )
+      ) {
+        // SPVLOG_ERROR("verify owner signature fail");
+        return false;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      return false;
+    }
+
+    if (!this._crCouncilMemberDID.valid()) {
+      // SPVLOG_ERROR("invalid cr committee did");
+      return false;
+    }
+
+    return true;
+  }
+
+  isValid(version: uint8_t): boolean {
+    let isValid: boolean = false;
+    switch (this._type) {
+      case CRCProposalType.normal:
+      case CRCProposalType.elip:
+        isValid = this.isValidNormalCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.secretaryGeneralElection:
+        isValid = this.isValidSecretaryElectionCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.changeProposalOwner:
+        isValid = this.isValidChangeOwnerCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.terminateProposal:
+        isValid = this.isValidTerminateProposalCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.reserveCustomID:
+        isValid = this.isValidReserveCustomIDCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.receiveCustomID:
+        isValid = this.isValidReceiveCustomIDCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.changeCustomIDFee:
+        isValid = this.isValidChangeCustomIDFeeCRCouncilMemberUnsigned(version);
+        break;
+      case CRCProposalType.registerSideChain:
+        isValid = this.isValidRegisterSidechainCRCouncilMemberUnsigned(version);
+        break;
+      default:
+        break;
+    }
+    if (!this._crCouncilMemberSignature) {
+      // SPVLOG_ERROR("cr committee not signed");
+      isValid = false;
+    }
+    return isValid;
+  }
+
+  copyCRCProposal(payload: CRCProposal) {
+    this._type = payload._type;
+    this._categoryData = payload._categoryData;
+    this._ownerPublicKey = payload._ownerPublicKey;
+    this._draftHash = payload._draftHash;
+    this._draftData = payload._draftData;
+    this._budgets = payload._budgets;
+    this._recipient = payload._recipient;
+    this._targetProposalHash = payload._targetProposalHash;
+    this._reservedCustomIDList = payload._reservedCustomIDList;
+    this._receivedCustomIDList = payload._receivedCustomIDList;
+    this._receiverDID = payload._receiverDID;
+    this._customIDFeeRateInfo = payload._customIDFeeRateInfo;
+    this._newRecipient = payload._newRecipient;
+    this._newOwnerPublicKey = payload._newOwnerPublicKey;
+    this._secretaryPublicKey = payload._secretaryPublicKey;
+    this._secretaryDID = payload._secretaryDID;
+    this._signature = payload._signature;
+    this._newOwnerSignature = payload._newOwnerSignature;
+    this._secretarySignature = payload._secretarySignature;
+    this._upgradeCodeInfo = payload._upgradeCodeInfo;
+    this._sidechainInfo = payload._sidechainInfo;
+
+    this._crCouncilMemberDID = payload._crCouncilMemberDID;
+    this._crCouncilMemberSignature = payload._crCouncilMemberSignature;
+    return this;
+  }
+
+  equals(payload: Payload, version: uint8_t): boolean {
+    let equal: boolean = false;
+    let p = payload as CRCProposal;
+
+    try {
+      switch (this._type) {
+        case CRCProposalType.normal:
+        case CRCProposalType.elip:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this.isEqualBudgets(p._budgets) &&
+            this._recipient.equals(p._recipient) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.secretaryGeneralElection:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this._secretaryPublicKey.toString() ==
+              p._secretaryPublicKey.toString() &&
+            this._secretaryDID.equals(p._secretaryDID) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._secretarySignature.toString() ==
+              p._secretarySignature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.changeProposalOwner:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this._targetProposalHash.eq(p._targetProposalHash) &&
+            this._newRecipient.equals(p._newRecipient) &&
+            this._newOwnerPublicKey.toString() ==
+              p._newOwnerPublicKey.toString() &&
+            this._signature.toString() == p._signature.toString() &&
+            this._newOwnerSignature.toString() ==
+              p._newOwnerSignature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.terminateProposal:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this._targetProposalHash.eq(p._targetProposalHash) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.reserveCustomID:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this.isEqualReservedCustomIDList(p._reservedCustomIDList) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.receiveCustomID:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this.isEqualReceivedCustomIDList(p._receivedCustomIDList) &&
+            this._receiverDID.equals(p._receiverDID) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.changeCustomIDFee:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this._customIDFeeRateInfo.equals(p._customIDFeeRateInfo) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        case CRCProposalType.registerSideChain:
+          equal =
+            this._type == p._type &&
+            this._categoryData == p._categoryData &&
+            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._draftHash.eq(p._draftHash) &&
+            this._sidechainInfo.equals(p._sidechainInfo) &&
+            this._signature.toString() == p._signature.toString() &&
+            this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
+            this._crCouncilMemberSignature.toString() ==
+              p._crCouncilMemberSignature.toString();
+          break;
+        default:
+          equal = false;
+          break;
+      }
+    } catch (e) {
+      // SPVLOG_ERROR("payload is not instance of CRCProposal");
+      equal = false;
+    }
+    if (version >= CRCProposalVersion01)
+      equal = equal && this._draftData.toString() == p._draftData.toString();
+    return equal;
+  }
+
+  copyPayload(payload: Payload) {
+    try {
+      const crcProposal = payload as CRCProposal;
+      this.copyCRCProposal(crcProposal);
+    } catch (e) {
+      // SPVLOG_ERROR("payload is not instance of CRCProposal");
+    }
+    return this;
+  }
+
+  // should ask how to deal with '#define'
+  // #define DraftData_Hexstring
+  private encodeDraftData(draftData: bytes_t, hexStr: boolean = true): string {
+    if (hexStr) {
+      return draftData.toString("hex");
+    } else {
+      return Base64.encode(draftData.toString("hex"));
+    }
+  }
+
+  private checkAndDecodeDraftData(
+    draftData: string,
+    draftHash: uint256,
+    hexStr: boolean = true
+  ): bytes_t {
+    let draftDataDecoded: bytes_t;
+    if (hexStr) {
+      draftDataDecoded = Buffer.from(draftData, "hex");
+    } else {
+      draftDataDecoded = Buffer.from(Base64.decode(draftData), "hex");
+    }
+    ErrorChecker.checkParam(
+      draftDataDecoded.length > DRAFT_DATA_MAX_SIZE,
+      Error.Code.ProposalContentTooLarge,
+      "proposal origin content too large"
+    );
+    let draftHashDecoded = SHA256.hashTwice(draftDataDecoded);
+
+    ErrorChecker.checkParam(
+      draftHash.toString(16) != draftHashDecoded.toString("hex"),
+      Error.Code.ProposalHashNotMatch,
+      "proposal hash not match"
+    );
+    return draftDataDecoded;
+  }
+
+  private isEqualBudgets(budges: Budget[]): boolean {
+    if (this._budgets.length !== budges.length) {
+      return false;
+    }
+    for (let i = 0; i < budges.length; ++i) {
+      if (!this._budgets[i].equals(budges[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private isEqualReservedCustomIDList(reservedCustomIDList: string[]): boolean {
+    if (this._reservedCustomIDList.length !== reservedCustomIDList.length) {
+      return false;
+    }
+    for (let i = 0; i < reservedCustomIDList.length; ++i) {
+      if (this._reservedCustomIDList[i] !== reservedCustomIDList[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private isEqualReceivedCustomIDList(receivedCustomIDList: string[]): boolean {
+    if (this._receivedCustomIDList.length !== receivedCustomIDList.length) {
+      return false;
+    }
+    for (let i = 0; i < receivedCustomIDList.length; ++i) {
+      if (this._receivedCustomIDList[i] !== receivedCustomIDList[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 }
