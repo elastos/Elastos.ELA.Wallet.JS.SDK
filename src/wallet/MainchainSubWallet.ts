@@ -90,6 +90,16 @@ import {
   CRCProposalType
 } from "../transactions/payload/CRCProposal";
 import { SHA256 } from "../walletcore/sha256";
+import {
+  CRCProposalReview,
+  CRCProposalReviewDefaultVersion,
+  CRCProposalReviewVersion01
+} from "../transactions/payload/CRCProposalReview";
+import {
+  CRCProposalTracking,
+  CRCProposalTrackingDefaultVersion,
+  CRCProposalTrackingVersion01
+} from "../transactions/payload/CRCProposalTracking";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -1283,7 +1293,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposalReview.digestUnsigned(version).GetHex();
+    let digest: string = proposalReview.digestUnsigned(version).toString(16);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -1367,7 +1377,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
     let digest: string = proposalTracking
-      .DigestOwnerUnsigned(version)
+      .digestOwnerUnsigned(version)
       .toString(16);
 
     // ArgInfo("r => {}", digest);
@@ -1399,7 +1409,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     }
 
     let digest: string = proposalTracking
-      .DigestNewOwnerUnsigned(version)
+      .digestNewOwnerUnsigned(version)
       .toString(16);
 
     // ArgInfo("r => {}", digest);
@@ -1435,7 +1445,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     }
 
     let digest: string = proposalTracking
-      .DigestSecretaryUnsigned(version)
+      .digestSecretaryUnsigned(version)
       .toString(16);
 
     // ArgInfo("r => {}", digest);
