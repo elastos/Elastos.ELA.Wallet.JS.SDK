@@ -48,7 +48,7 @@ export class Account {
   private _btcMasterPubKey: HDKey;
   private _cosignerIndex: number;
   private _curMultiSigner: HDKey; // multi sign current wallet signer
-  private _allMultiSigners: HDKey[]; // including _multiSigner and sorted
+  private _allMultiSigners: HDKey[] = []; // including _multiSigner and sorted
   private _ownerPubKey: bytes_t;
   private _requestPubKey: bytes_t;
 
@@ -63,8 +63,6 @@ export class Account {
         this._localstore.getRequestPubKey(),
         "hex"
       );
-
-    // let bytes: bytes_t; // TODO: alloc
 
     let xpubRing = this._localstore.getPublicKeyRing();
     for (let i = 0; i < xpubRing.length - 1; ++i) {

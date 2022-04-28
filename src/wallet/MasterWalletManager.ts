@@ -130,6 +130,15 @@ export class MasterWalletManager {
     return mnemonic;
   }
 
+  /**
+   * Create a new master wallet by mnemonic and phrase password, or return existing master wallet if current master wallet manager has the master wallet id.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param mnemonic use to generate seed which deriving the master private key and chain code.
+   * @param passphrase combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+   * @param passwd use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
+   * @return If success will return a pointer of master wallet interface.
+   */
   createMasterWallet(
     masterWalletID: string,
     mnemonic: string,
@@ -183,6 +192,12 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Create master wallet with single private key (for eth side-chain single private key)
+   * @masterWalletID unique ID of master wallet
+   * @singlePrivateKey uint256 hex string of private key
+   * @passwd pay password
+   */
   createMasterWalletWithPrivateKey(
     masterWalletID: string,
     singlePrivateKey: string,
@@ -214,13 +229,23 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Create a multi-sign master wallet by related co-signers, or return existing master wallet if current master wallet manager has the master wallet id. Note this creating method generate an readonly multi-sign account which can not append sign into a transaction.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param cosigners JSON array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param m specify minimum count of signature to accomplish related transaction.
+   * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
+   * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
+   * @return If success will return a pointer of master wallet interface.
+   */
   createMultiSignMasterWallet(
     masterWalletID: string,
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean,
-    timestamp: time_t
+    compatible: boolean = false,
+    timestamp: time_t = 0
   ): MasterWallet {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
@@ -263,7 +288,7 @@ export class MasterWalletManager {
           );
         }
       }
-      pubKeyRing.push(new PublicKeyRing(xpub));
+      pubKeyRing.push(new PublicKeyRing(undefined, xpub));
     }
 
     if (this._masterWalletMap.has(masterWalletID)) {
@@ -277,7 +302,7 @@ export class MasterWalletManager {
       pubKeyRing,
       m,
       this._config,
-      this._storage, // TODO
+      this._storage,
       singleAddress,
       compatible
     );
@@ -289,6 +314,18 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Create a multi-sign master wallet by private key and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param xprv root extend private key of wallet.
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param cosigners JSON array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param m specify minimum count of signature to accomplish related transaction.
+   * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
+   * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
+   * @return If success will return a pointer of master wallet interface.
+   */
   createMultiSignMasterWalletWithPrivateKey(
     masterWalletID: string,
     xprv: string,
@@ -296,8 +333,8 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean,
-    timestamp: time_t
+    compatible: boolean = false,
+    timestamp: time_t = 0
   ) {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
@@ -368,6 +405,19 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Create a multi-sign master wallet by private key and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param mnemonic use to generate seed which deriving the master private key and chain code.
+   * @param passphrase combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param cosigners JSON array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param m specify minimum count of signature to accomplish related transactions.
+   * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
+   * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
+   * @return If success will return a pointer of master wallet interface.
+   */
   createMultiSignMasterWalletWithMnemonic(
     masterWalletID: string,
     mnemonic: string,
@@ -376,8 +426,8 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean,
-    timestamp: time_t
+    compatible: boolean = false,
+    timestamp: time_t = 0
   ): MasterWallet {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);

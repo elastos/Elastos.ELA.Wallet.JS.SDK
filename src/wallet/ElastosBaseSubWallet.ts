@@ -50,7 +50,6 @@ import {
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
 } from "./WalletCommon";
-import { Secp256 } from "../walletcore/secp256";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 //type WalletManagerPtr = SpvService;

@@ -123,6 +123,38 @@ describe("MasterWalletManager Tests", () => {
     const masterWallets = masterWalletManager.getAllMasterWallets();
     expect(masterWallets.length).toBe(1);
   });
+
+  test("create a multi-sign wallet", () => {
+    const netType = "TestNet";
+    const masterWalletID = "master-wallet-id-4";
+    const browserStorage = new BrowserLocalStorage(masterWalletID);
+    const netConfig = { NetType: netType, ELA: {} };
+
+    masterWalletManager = new MasterWalletManager(
+      browserStorage,
+      netType,
+      netConfig
+    );
+    expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
+
+    const cosigners = [
+      "xpub6D85mnCjCnAh7JtBicwxdeW2qmUayEppbRBt84UwYFzmYKWuwfHW9nTrKqMmXvPjspDQU1zcbFv8wmSDyQh4kG96FA1eKc6i6Mwae2mGyGU",
+      "xpub6CTnJPzTxyn95eAr1iD4t91Xt9cgrb4FczDwGh9VuXmfEP7XhcBZ1BShEa3A9kAGHJcmA1gj3UBWzA4zQurtBkY7uYZgY7RztH1j4ZoC1tb"
+    ];
+    const m = 2;
+    const singleAddress = true;
+
+    const masterWallet = masterWalletManager.createMultiSignMasterWallet(
+      masterWalletID,
+      cosigners,
+      m,
+      singleAddress
+    );
+    expect(masterWallet).toBeInstanceOf(MasterWallet);
+
+    const localStore = browserStorage.loadStore(masterWalletID);
+    console.log("multi-sign localStore...", localStore);
+  });
 });
 
 /* localStore data of the master wallet with master-wallet-id-3

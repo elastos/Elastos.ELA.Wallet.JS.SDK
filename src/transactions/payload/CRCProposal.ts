@@ -3075,6 +3075,7 @@ export class CRCProposal extends Payload {
         break;
       case CRCProposalType.registerSideChain:
         this.fromJsonRegisterSidechainCRCouncilMemberUnsigned(j, version);
+        break;
       default:
         // SPVLOG_ERROR("unknow type: {}", _type);
         return;
