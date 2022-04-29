@@ -288,7 +288,7 @@ export class MasterWalletManager {
           );
         }
       }
-      pubKeyRing.push(new PublicKeyRing(undefined, xpub));
+      pubKeyRing.push(new PublicKeyRing("", xpub));
     }
 
     if (this._masterWalletMap.has(masterWalletID)) {
@@ -378,7 +378,7 @@ export class MasterWalletManager {
           );
         }
       }
-      pubKeyRing.push(new PublicKeyRing(xpub));
+      pubKeyRing.push(new PublicKeyRing("", xpub));
     }
 
     if (this._masterWalletMap.has(masterWalletID)) {
@@ -449,7 +449,7 @@ export class MasterWalletManager {
     ErrorChecker.checkParam(
       !Array.isArray(cosigners),
       Error.Code.PubKeyFormat,
-      "cosigners should be JOSN array"
+      "cosigners should be string array"
     );
     ErrorChecker.checkParam(m < 1, Error.Code.InvalidArgument, "Invalid m");
 
@@ -476,9 +476,8 @@ export class MasterWalletManager {
           );
         }
       }
-      pubKeyRing.push(new PublicKeyRing(xpub));
+      pubKeyRing.push(new PublicKeyRing("", xpub));
     }
-
     const masterWallet = MasterWallet.newFromMnemonicAndPublicKeyRings(
       masterWalletID,
       mnemonic,

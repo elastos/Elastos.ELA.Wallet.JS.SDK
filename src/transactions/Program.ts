@@ -49,11 +49,10 @@ export class Program extends ELAMessage implements JsonSerializer {
       Log.error("Invalid Redeem script");
       return false;
     }
-
     let stream = new ByteStream(this._parameter);
     let signature: bytes_t;
-
-    while (stream.readVarBytes(signature)) {
+    signature = stream.readVarBytes(signature);
+    while (signature) {
       let verified = false;
       for (let i = 0; i < publicKeys.length; ++i) {
         key.publicKey = publicKeys[i];
@@ -67,6 +66,7 @@ export class Program extends ELAMessage implements JsonSerializer {
       }
 
       signatureCount++;
+      signature = stream.readVarBytes(signature);
       if (!verified) {
         Log.error("Transaction signature verify failed");
         return false;

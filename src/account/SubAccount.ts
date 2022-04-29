@@ -92,16 +92,26 @@ export class SubAccount {
   }
 
   isProducerDepositAddress(address: Address): boolean {
-    return this._depositAddress.valid() && this._depositAddress.equals(address);
+    return (
+      this._depositAddress &&
+      this._depositAddress.valid() &&
+      this._depositAddress.equals(address)
+    );
   }
 
   isOwnerAddress(address: Address): boolean {
-    return this._ownerAddress.valid() && this._ownerAddress.equals(address);
+    return (
+      this._ownerAddress &&
+      this._ownerAddress.valid() &&
+      this._ownerAddress.equals(address)
+    );
   }
 
   isCRDepositAddress(address: Address): boolean {
     return (
-      this._crDepositAddress.valid() && this._crDepositAddress.equals(address)
+      this._crDepositAddress &&
+      this._crDepositAddress.valid() &&
+      this._crDepositAddress.equals(address)
     );
   }
 
@@ -201,14 +211,13 @@ export class SubAccount {
     let addrChain = this._chainAddressCached.get(chain);
     let derivateCount =
       index + count > addrChain.length ? index + count - addrChain.length : 0;
-
     if (this._parent.getSignType() == AccountSignType.MultiSign) {
       let keychains: HDKey[] = [];
-
-      if (derivateCount > 0)
-        for (let keychain of this._parent.multiSignCosigner())
+      if (derivateCount > 0) {
+        for (let keychain of this._parent.multiSignCosigner()) {
           keychains.push(keychain.deriveWithIndex(chain));
-
+        }
+      }
       if (keychains.length === 0) {
         derivateCount = 0;
         Log.error("keychains is empty when derivate address");
@@ -277,6 +286,7 @@ export class SubAccount {
   ): { found: boolean; key?: HDKey } {
     let key: HDKey;
     let root = this._parent.rootKey(payPasswd);
+
     // for special path
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let pubkey of pubkeys) {

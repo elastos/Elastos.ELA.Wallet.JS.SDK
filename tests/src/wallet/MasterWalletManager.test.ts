@@ -68,7 +68,8 @@ describe("MasterWalletManager Tests", () => {
 
     const subWallet: any = masterWallet.createSubWallet("ELA");
 
-    // const localStore = browserStorage.loadStore(masterWalletID);
+    const localStore = browserStorage.loadStore(masterWalletID);
+    // console.log("localStore....", localStore);
 
     const address = "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz";
     const addresses = subWallet.getAddresses(0, 1, false);
@@ -124,7 +125,7 @@ describe("MasterWalletManager Tests", () => {
     expect(masterWallets.length).toBe(1);
   });
 
-  test("create a multi-sign wallet", () => {
+  test("create a multisign wallet", () => {
     const netType = "TestNet";
     const masterWalletID = "master-wallet-id-4";
     const browserStorage = new BrowserLocalStorage(masterWalletID);
@@ -137,23 +138,55 @@ describe("MasterWalletManager Tests", () => {
     );
     expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
 
+    const mnemonic = `cloth always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const payPassword = "11111111";
+    const singleAddress = true;
     const cosigners = [
-      "xpub6D85mnCjCnAh7JtBicwxdeW2qmUayEppbRBt84UwYFzmYKWuwfHW9nTrKqMmXvPjspDQU1zcbFv8wmSDyQh4kG96FA1eKc6i6Mwae2mGyGU",
       "xpub6CTnJPzTxyn95eAr1iD4t91Xt9cgrb4FczDwGh9VuXmfEP7XhcBZ1BShEa3A9kAGHJcmA1gj3UBWzA4zQurtBkY7uYZgY7RztH1j4ZoC1tb"
     ];
     const m = 2;
-    const singleAddress = true;
-
-    const masterWallet = masterWalletManager.createMultiSignMasterWallet(
-      masterWalletID,
-      cosigners,
-      m,
-      singleAddress
-    );
+    const masterWallet =
+      masterWalletManager.createMultiSignMasterWalletWithMnemonic(
+        masterWalletID,
+        mnemonic,
+        passphrase,
+        payPassword,
+        cosigners,
+        m,
+        singleAddress
+      );
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
     const localStore = browserStorage.loadStore(masterWalletID);
-    console.log("multi-sign localStore...", localStore);
+    console.log("multisign localStore...", localStore);
+
+    const subWallet: any = masterWallet.createSubWallet("ELA");
+    const addresses = subWallet.getAddresses(0, 1, false);
+    console.log("addresses...", addresses);
+    const inputsJson = [
+      {
+        Address: addresses[0],
+        // Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
+        Amount: "499990000",
+        TxHash:
+          "e10e3ab2bd5f4fb5d6cade98bb2c4f4f56d64bac50e7e8d8a9d37feb0e804df0",
+        Index: 1
+      }
+    ];
+    const outputsJson = [
+      {
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "200000000"
+      }
+    ];
+    const fee = "10000";
+    const memo = "test creating a multisign transaction";
+
+    const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
+    console.log("multisig tx", tx);
+    // const signedTx = subWallet.signTransaction(tx, payPassword);
+    // console.log("multisig signedTx...", signedTx);
   });
 });
 

@@ -155,14 +155,12 @@ export class Account {
             .toString("hex")
             .localeCompare(b.getPublicKeyBytes().toString("hex"));
         });
-
         for (let i = 0; i < sortedSigners.length; ++i) {
           let tmp = sortedSigners[i].deriveWithIndex(i);
           if (
             this._curMultiSigner &&
             this._cosignerIndex == -1 &&
-            // TODO: compare two HDKey objects
-            this._curMultiSigner == sortedSigners[i]
+            this._curMultiSigner.equals(sortedSigners[i])
           ) {
             this._curMultiSigner = tmp;
             this._cosignerIndex = i;
@@ -258,7 +256,7 @@ export class Account {
       DeterministicKey.ELASTOS_VERSIONS
     );
     const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
-    const privateKey = rootkey.getPrivateKeyBytes();
+    const privateKey = rootkey.serializeBase58();
 
     const encryptedxPrvKey: string = AESEncrypt(privateKey, payPasswd);
     const xPubKey: string = rootkey
@@ -267,11 +265,11 @@ export class Account {
 
     const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
     const encryptedRequestPrvKey: string = AESEncrypt(
-      requestKey.getPrivateKeyBytes(),
+      requestKey.serializeBase58(),
       payPasswd
     );
     const requestPubKey: string = requestKey
-      .getPrivateKeyBytes()
+      .getPublicKeyBytes()
       .toString("hex");
 
     const account = new Account();
@@ -340,7 +338,7 @@ export class Account {
     const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
     const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
     const encryptedethPrvKey: string = AESEncrypt(
-      ethkey.getPrivateKeyBytes(),
+      ethkey.serializeBase58(),
       payPasswd
     );
 
@@ -356,7 +354,7 @@ export class Account {
 
     const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
     const encryptedxPrvKey: string = AESEncrypt(
-      rootkey.getPrivateKeyBytes(),
+      rootkey.serializeBase58(),
       payPasswd
     );
     const xPubKey: string = rootkey
@@ -369,7 +367,7 @@ export class Account {
 
     const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
     const encryptedRequestPrvKey: string = AESEncrypt(
-      requestKey.getPrivateKeyBytes(),
+      requestKey.serializeBase58(),
       payPasswd
     );
     const requestPubKey: string = requestKey
@@ -402,9 +400,9 @@ export class Account {
       account._localstore.setxPubKeyHDPM(xPubKey);
     } else {
       account._localstore.setDerivationStrategy("BIP45");
-      const xpubPurpose: string = Base58Check.encode(
-        rootkey.deriveWithPath("m/45'").getPublicKeyBytes()
-      );
+      const xpubPurpose: string = rootkey
+        .deriveWithPath("m/45'")
+        .serializePublicKeyBase58();
       account._localstore.addPublicKeyRing(
         new PublicKeyRing(requestPubKey, xpubPurpose)
       );

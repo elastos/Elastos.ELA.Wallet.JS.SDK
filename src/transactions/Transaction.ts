@@ -113,15 +113,15 @@ export class Transaction {
   public static newFromParams(type: uint8_t, payload: Payload): Transaction {
     let tx = new Transaction();
     tx._version = TxVersion.Default;
-    (tx._lockTime = TX_LOCKTIME),
-      (tx._blockHeight = TX_UNCONFIRMED),
-      (tx._payloadVersion = 0),
-      (tx._fee = new BigNumber(0)),
-      (tx._type = type),
-      (tx._isRegistered = false),
-      (tx._txHash = new BigNumber(0)),
-      (tx._timestamp = 0),
-      (tx._payload = payload); // WAS std::move(payload)
+    tx._lockTime = TX_LOCKTIME;
+    tx._blockHeight = TX_UNCONFIRMED;
+    tx._payloadVersion = 0;
+    tx._fee = new BigNumber(0);
+    tx._type = type;
+    tx._isRegistered = false;
+    tx._txHash = new BigNumber(0);
+    tx._timestamp = 0;
+    tx._payload = payload; // WAS std::move(payload)
 
     return tx;
   }

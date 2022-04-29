@@ -115,6 +115,23 @@ export class HDKey {
     this.spec = spec || KeySpec.Elastos;
   }
 
+  public equals(obj: HDKey): boolean {
+    let equal =
+      this.spec === obj.spec &&
+      this.key.depth === obj.key.depth &&
+      this.key.chainCode === obj.key.chainCode &&
+      this.key._fingerprint === obj.key._fingerprint &&
+      this.key.parentFingerprint === obj.key.parentFingerprint &&
+      this.key._identifier.toString() === obj.key._identifier.toString() &&
+      this.key._publicKey.toString() === obj.key._publicKey.toString();
+    if (this.key._privateKey && obj.key._privateKey) {
+      return (equal =
+        this.key._privateKey.toString() === obj.key._privateKey.toString());
+    } else {
+      return (equal = this.key._privateKey === obj.key._privateKey);
+    }
+  }
+
   public getPrivateKeyBytes(): Buffer {
     return this.key.privateKey;
   }
