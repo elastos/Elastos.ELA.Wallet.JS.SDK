@@ -386,6 +386,7 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromXPrivateKey(
       masterWalletID,
       xprv,
@@ -478,6 +479,8 @@ export class MasterWalletManager {
       }
       pubKeyRing.push(new PublicKeyRing("", xpub));
     }
+
+    this._storage.currentMasterWalletID = masterWalletID;
     const masterWallet = MasterWallet.newFromMnemonicAndPublicKeyRings(
       masterWalletID,
       mnemonic,

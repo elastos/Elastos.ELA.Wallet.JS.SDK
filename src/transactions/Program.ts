@@ -8,6 +8,7 @@ import { ELAMessage } from "../ELAMessage";
 import { bytes_t, json, size_t, uint256, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
 import { DeterministicKey } from "../walletcore/deterministickey";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export type ProgramPtr = Program;
 export type ProgramArray = ProgramPtr[];
@@ -37,11 +38,7 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public verifySignature(md: uint256): boolean {
-    let key: DeterministicKey = new DeterministicKey(
-      DeterministicKey.ELASTOS_VERSIONS
-    );
     let signatureCount: uint8_t = 0;
-
     let publicKeys: bytes_t[] = [];
 
     let type: SignType = this.decodePublicKey(publicKeys);
@@ -55,10 +52,14 @@ export class Program extends ELAMessage implements JsonSerializer {
     while (signature) {
       let verified = false;
       for (let i = 0; i < publicKeys.length; ++i) {
-        key.publicKey = publicKeys[i];
+        let publicKey = publicKeys[i];
         if (
           signature &&
-          key.verify(Buffer.from(md.toString(), "hex"), signature)
+          EcdsaSigner.verify(
+            publicKey,
+            signature,
+            Buffer.from(md.toString(16), "hex")
+          )
         ) {
           verified = true;
           break;
@@ -107,17 +108,20 @@ export class Program extends ELAMessage implements JsonSerializer {
       return info;
     }
 
-    let key: DeterministicKey = new DeterministicKey(
-      DeterministicKey.ELASTOS_VERSIONS
-    );
     let stream = new ByteStream(this._parameter);
     let signature: bytes_t = Buffer.alloc(0);
     let signers: string[] = [];
     signature = stream.readVarBytes(signature);
     while (signature) {
       for (let i = 0; i < publicKeys.length; ++i) {
-        key.publicKey = publicKeys[i];
-        if (key.verify(Buffer.from(md.toString(16), "hex"), signature)) {
+        let publicKey = publicKeys[i];
+        if (
+          EcdsaSigner.verify(
+            publicKey,
+            signature,
+            Buffer.from(md.toString(16), "hex")
+          )
+        ) {
           signers.push(publicKeys[i].toString("hex"));
           break;
         }

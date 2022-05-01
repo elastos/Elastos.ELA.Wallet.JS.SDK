@@ -258,7 +258,6 @@ export class SubAccount {
         this._chainAddressCached.set(chain, addrChain);
       }
     }
-
     let addresses: Address[] = [];
     for (let i = index; i < index + count; i++) {
       addresses.push(addrChain[i]);
@@ -373,7 +372,8 @@ export class SubAccount {
       if (programs[i].getParameter().length > 0) {
         let verifyStream = new ByteStream(programs[i].getParameter());
         let publicKey = rs.key.getPublicKeyBytes();
-        while (verifyStream.readVarBytes(signature)) {
+        signature = verifyStream.readVarBytes(signature);
+        while (signature) {
           ErrorChecker.checkLogic(
             EcdsaSigner.verify(
               publicKey,
@@ -383,6 +383,7 @@ export class SubAccount {
             Error.Code.AlreadySigned,
             "Already signed"
           );
+          signature = verifyStream.readVarBytes(signature);
         }
         stream.writeBytes(programs[i].getParameter());
       }

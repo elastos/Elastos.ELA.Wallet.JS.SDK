@@ -98,16 +98,16 @@ describe("MasterWalletManager Tests", () => {
     const inputsJson = [
       {
         Address: addresses[0],
-        Amount: "499990000",
+        Amount: "299980000",
         TxHash:
-          "e10e3ab2bd5f4fb5d6cade98bb2c4f4f56d64bac50e7e8d8a9d37feb0e804df0",
+          "25040f33e9dbfa05f7f2d4398a3d060b68920d41a320f43076ce5217d434db3f",
         Index: 1
       }
     ];
     const outputsJson = [
       {
-        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
-        Amount: "200000000"
+        Address: "8VG2YGpbjGCoVbvjBrtd6kdagmDhsPWB7p",
+        Amount: "100000000"
       }
     ];
     const fee = "10000";
@@ -118,79 +118,16 @@ describe("MasterWalletManager Tests", () => {
 
     const signedInfo = subWallet.getTransactionSignedInfo(signedTx);
     const rawTx = subWallet.convertToRawTransaction(signedTx);
+    // then call rpc`sendrawtransaction` to send the rawTx to the ela testnet
   });
 
   test("get master wallet IDs", () => {
     const masterWallets = masterWalletManager.getAllMasterWallets();
     expect(masterWallets.length).toBe(1);
   });
-
-  test("create a multisign wallet", () => {
-    const netType = "TestNet";
-    const masterWalletID = "master-wallet-id-4";
-    const browserStorage = new BrowserLocalStorage(masterWalletID);
-    const netConfig = { NetType: netType, ELA: {} };
-
-    masterWalletManager = new MasterWalletManager(
-      browserStorage,
-      netType,
-      netConfig
-    );
-    expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
-
-    const mnemonic = `cloth always junk crash fun exist stumble shift over benefit fun toe`;
-    const passphrase = "";
-    const payPassword = "11111111";
-    const singleAddress = true;
-    const cosigners = [
-      "xpub6CTnJPzTxyn95eAr1iD4t91Xt9cgrb4FczDwGh9VuXmfEP7XhcBZ1BShEa3A9kAGHJcmA1gj3UBWzA4zQurtBkY7uYZgY7RztH1j4ZoC1tb"
-    ];
-    const m = 2;
-    const masterWallet =
-      masterWalletManager.createMultiSignMasterWalletWithMnemonic(
-        masterWalletID,
-        mnemonic,
-        passphrase,
-        payPassword,
-        cosigners,
-        m,
-        singleAddress
-      );
-    expect(masterWallet).toBeInstanceOf(MasterWallet);
-
-    const localStore = browserStorage.loadStore(masterWalletID);
-    console.log("multisign localStore...", localStore);
-
-    const subWallet: any = masterWallet.createSubWallet("ELA");
-    const addresses = subWallet.getAddresses(0, 1, false);
-    console.log("addresses...", addresses);
-    const inputsJson = [
-      {
-        Address: addresses[0],
-        // Address: "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz",
-        Amount: "499990000",
-        TxHash:
-          "e10e3ab2bd5f4fb5d6cade98bb2c4f4f56d64bac50e7e8d8a9d37feb0e804df0",
-        Index: 1
-      }
-    ];
-    const outputsJson = [
-      {
-        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
-        Amount: "200000000"
-      }
-    ];
-    const fee = "10000";
-    const memo = "test creating a multisign transaction";
-
-    const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
-    console.log("multisig tx", tx);
-    // const signedTx = subWallet.signTransaction(tx, payPassword);
-    // console.log("multisig signedTx...", signedTx);
-  });
 });
 
-/* localStore data of the master wallet with master-wallet-id-3
+/* localStore data of the master wallet with id 'master-wallet-id-3'
 {
   "xPrivKey": "U2FsdGVkX187fKODb1BguK6y894KpOxg501rUrr1O70P559TzUbMTGvVRXcGpCd5bLEkPerKAntIlIDZrqep1+RzC4BXBcoRRs2mNOnbgeCTXRZ60PYWEzwcUoSOtZHH60NkuJYZWXt4TF4JdiR4iT0qi5qtxL6DblJshuZimWkhn4eqDviJ8pumELUBmyC7IJoEWl3bqE7NXsIe6u1dPANo6bSVlEcMWW96FgEGu3k=",
   "xPubKey": "xpub6D85mnCjCnAh7JtBicwxdeW2qmUayEppbRBt84UwYFzmYKWuwfHW9nTrKqMmXvPjspDQU1zcbFv8wmSDyQh4kG96FA1eKc6i6Mwae2mGyGU",
