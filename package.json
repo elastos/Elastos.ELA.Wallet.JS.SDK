@@ -12,6 +12,7 @@
     "tsc:w": "tsc -w"
   },
   "exports": {
+    "node": "./dist/wallet.js",
     "browser": {
       "import": "./dist/es/wallet.browser.js"
     }

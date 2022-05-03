@@ -349,5 +349,5 @@ export default (command) => {
     ]
   };
 
-  return [commonJSBuild /*, esmBuild , browserBuilds */];
+  return [commonJSBuild, esmBuild, browserBuilds];
 };

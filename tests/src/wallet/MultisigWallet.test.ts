@@ -27,7 +27,6 @@ import {
 
 describe("MasterWalletManager Tests", () => {
   let masterWalletManager: MasterWalletManager;
-  test("create a multisign wallet", () => {});
 
   test("create a multisign wallet", () => {
     const netType = "TestNet";
