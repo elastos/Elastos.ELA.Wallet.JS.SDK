@@ -87,9 +87,29 @@ const onwarn = (warning) => {
   )
     return; // TMP: don't get flooded by our "internals" circular dependencies for now
 
+  // eslint-disable-next-line no-console
+  if (
+    warning.code &&
+    warning.code === "CIRCULAR_DEPENDENCY" &&
+    (warning.importer.indexOf("node_modules") > -1 ||
+      warning.importer.indexOf("internals.ts") > -1 ||
+      warning.importer.indexOf("src/browser/readable-stream") > -1)
+  )
+    return; // TMP: don't get flooded by our "internals" circular dependencies for now
+
   if (warning.code && warning.code === "THIS_IS_UNDEFINED") return; // TMP: don't get flooded by this for now
 
   if (warning.code && warning.code === "EVAL") return; // TMP: don't get flooded by this for now
+
+  if (
+    prodBuild &&
+    warning.code &&
+    warning.code === "PLUGIN_WARNING" &&
+    warning.plugin &&
+    warning.plugin === "typescript" &&
+    warning.message.indexOf("Rollup 'sourcemap' option") > -1
+  )
+    return;
 
   console.warn("Rollup build warning:", warning);
 };
@@ -223,34 +243,30 @@ export default (command) => {
       // Replace some node files with their browser-specific versions.
       // Ex: fs.browser.ts -> fs.ts
       /* replaceFiles({
-                fileReplacements: [
-                    { replace: "http.ts", with: "http.browser.ts" },
-                    { replace: "https.ts", with: "https.browser.ts" }
-                ]
-            }), */
+         fileReplacements: [
+           { replace: "http.ts", with: "http.browser.ts" },
+           { replace: "https.ts", with: "https.browser.ts" }
+         ]
+       }), */
       // Dirty circular dependency removal atttempt
-      /* replace({
-                delimiters: ['', ''],
-                preventAssignment: true,
-                include: [
-                    'node_modules/assert/build/internal/errors.js'
-                ],
-                values: {
-                    'require(\'../assert\')': 'null',
-                }
-            }), */
+      replace({
+        delimiters: ["", ""],
+        preventAssignment: true,
+        include: ["node_modules/assert/build/internal/errors.js"],
+        values: {
+          "require('../assert')": "null"
+        }
+      }),
       // Dirty hack to remove circular deps between brorand and crypto-browserify as in browser,
       // brorand doesn't use 'crypto' even if its source code includes it.
-      //replace({
-      //    delimiters: ['', ''],
-      //    preventAssignment: true,
-      //    include: [
-      //        'node_modules/brorand/**/*.js'
-      //    ],
-      //    values: {
-      //        'require(\'crypto\')': 'null',
-      //    }
-      //}),
+      replace({
+        delimiters: ["", ""],
+        preventAssignment: true,
+        include: ["node_modules/brorand/**/*.js"],
+        values: {
+          "require('crypto')": "null"
+        }
+      }),
       // Circular dependencies tips: https://github.com/rollup/rollup/issues/3816
       replace({
         delimiters: ["", ""],

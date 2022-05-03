@@ -28,7 +28,11 @@ import { Address } from "../walletcore/Address";
 import { Asset } from "./Asset";
 import { OutputPayload } from "./payload/OutputPayload/OutputPayload";
 import { PayloadDefault } from "./payload/OutputPayload/PayloadDefault";
-import { TxVersion } from "./Transaction";
+
+enum TxVersion {
+  Default = 0x00,
+  V09 = 0x09
+}
 
 export enum Type {
   Default = 0x00,
