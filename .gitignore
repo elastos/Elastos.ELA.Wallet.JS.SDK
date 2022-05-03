@@ -11,6 +11,7 @@
 *.tmp.*
 src/**/*.map
 src/**/*.js
+!src/browser/**/*.js
 tests/**/*.map
 tests/**/*.js
 log.txt
