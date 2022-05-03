@@ -19,13 +19,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 import { Account } from "../account/Account";
 import { Config, ChainConfig, ConfigMap } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { SubWallet } from "./SubWallet";
-import { ISubWallet } from "./ISubWallet";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Mnemonic } from "../walletcore/mnemonic";
@@ -39,7 +37,7 @@ import {
 } from "../wallet/WalletCommon";
 import { CONFIG_MAINNET } from "../config";
 import { MainchainSubWallet } from "./MainchainSubWallet";
-import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
+// import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
 import { EthereumNetworks } from "./EthereumNetwork";
 
 type WalletMap = {

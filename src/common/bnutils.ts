@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import { ByteStream } from "./bytestream";
 

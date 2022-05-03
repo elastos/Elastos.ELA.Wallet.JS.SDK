@@ -1,13 +1,12 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
-
+import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
 import { bytes_t, json, size_t, uint256, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
-import { DeterministicKey } from "../walletcore/deterministickey";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export type ProgramPtr = Program;

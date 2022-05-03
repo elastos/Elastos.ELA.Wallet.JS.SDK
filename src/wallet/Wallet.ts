@@ -1,7 +1,7 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import randomInteger from "random-int";
 import { SubAccount } from "../account/SubAccount";
@@ -19,7 +19,6 @@ import {
 import {
   bytes_t,
   json,
-  JSONArray,
   JSONValue,
   size_t,
   uint256,
@@ -30,8 +29,7 @@ import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
 import { DeterministicKey } from "../walletcore/deterministickey";
-import { Account, SignType as AccountSignType } from "../account/Account";
-import { Secp256 } from "../walletcore/secp256";
+import { SignType as AccountSignType } from "../account/Account";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export class Wallet extends Lockable {

@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+import { Buffer } from "buffer";
 import { BigNumber, ethers } from "ethers";
 import { MasterWallet } from "./MasterWallet";
 import { CoinInfo } from "../walletcore/CoinInfo";

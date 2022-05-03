@@ -19,14 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
 import { Address } from "../../walletcore/Address";
 import { bytes_t, size_t, uint8_t, json, uint256 } from "../../types";
 import { SHA256 } from "../../walletcore/sha256";
-import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import BigNumber from "bignumber.js";
-import { uint168 } from "../../common/uint168";
 
 export const JsonKeyNodePublicKey = "NodePublicKey";
 export const JsonKeyCRCouncilMemberDID = "CRCouncilMemberDID";

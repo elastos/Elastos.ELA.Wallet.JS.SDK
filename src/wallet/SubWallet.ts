@@ -19,7 +19,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 import { warnLog } from "../common/Log";
 import { ChainConfig } from "../config";
 import { json, JSONValue, uint32_t } from "../types";

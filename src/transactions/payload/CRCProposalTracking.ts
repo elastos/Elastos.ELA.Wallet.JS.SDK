@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import {
   bytes_t,
@@ -30,7 +30,6 @@ import {
   sizeof_uint8_t,
   json
 } from "../../types";
-import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";

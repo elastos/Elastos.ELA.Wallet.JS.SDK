@@ -24,9 +24,8 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
 import { bytes_t, json } from "../types";
-import { Base58, Base58Check } from "../walletcore/base58";
+import { Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
-import { CoinType } from "../walletcore/cointype";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { DeterministicKey, Version } from "../walletcore/deterministickey";
 import { Mnemonic } from "../walletcore/mnemonic";
@@ -34,6 +33,7 @@ import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { Secp256 } from "../walletcore/secp256";
+import { Buffer } from "buffer";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 

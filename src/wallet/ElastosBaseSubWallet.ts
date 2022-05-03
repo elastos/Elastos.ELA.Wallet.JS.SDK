@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import { SubAccount } from "../account/SubAccount";
 import { ByteStream } from "../common/bytestream";

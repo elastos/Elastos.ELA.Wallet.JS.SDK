@@ -1,7 +1,6 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 import BigNumber from "bignumber.js";
 import { TransactionInput } from "../transactions/TransactionInput";
 import { INT32_MAX, uint16_t, uint256 } from "../types";

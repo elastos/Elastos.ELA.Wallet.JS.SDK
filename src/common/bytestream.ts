@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import { bytes_t, size_t, UINT16_MAX, UINT32_MAX, uint8_t } from "../types";
 

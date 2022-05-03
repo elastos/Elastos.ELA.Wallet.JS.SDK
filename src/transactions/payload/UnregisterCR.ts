@@ -1,7 +1,7 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+import { Buffer } from "buffer";
 import { uint168 } from "../../common/uint168";
 import { bytes_t, size_t, uint8_t, json } from "../../types";
 import { Address } from "../../walletcore/Address";
