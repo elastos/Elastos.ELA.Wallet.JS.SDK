@@ -2,7 +2,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
 import resolve from "@rollup/plugin-node-resolve";
 import fs from "fs";
-//import { terser } from 'rollup-plugin-terser';
+import { terser } from "rollup-plugin-terser";
 import typescript from "@rollup/plugin-typescript";
 import emitModulePackageFile from "./build-plugins/emit-module-package-file.js";
 //import replaceBrowserModules from './build-plugins/replace-browser-modules.js';
@@ -344,7 +344,8 @@ export default (command) => {
       inject({
         BrowserFS: "browserfs"
       }),
-      size(),
+      // size(),
+      ...(prodBuild ? [terser()] : []),
       visualizer({
         filename: "./browser-bundle-stats.html"
       }) // To visualize bundle dependencies sizes on a UI.
