@@ -158,7 +158,7 @@ const nodePlugins = [
 
 export default (command) => {
   //const { collectLicenses, writeLicense } = getLicenseHandler();
-  const commonJSBuild = {
+  const nodeBuild = {
     input: {
       "wallet.js": "src/index.ts"
     },
@@ -206,11 +206,11 @@ export default (command) => {
   };
 
   if (command.configTest) {
-    return commonJSBuild;
+    return nodeBuild;
   }
 
-  const esmBuild = {
-    ...commonJSBuild,
+  const nodeEsmBuild = {
+    ...nodeBuild,
     input: { "wallet.js": "src/index.ts" },
     plugins: [
       ...nodePlugins,
@@ -218,7 +218,7 @@ export default (command) => {
       //collectLicenses()
     ],
     output: {
-      ...commonJSBuild.output,
+      ...nodeBuild.output,
       dir: "dist/es",
       format: "es",
       sourcemap: !prodBuild,
@@ -226,10 +226,27 @@ export default (command) => {
     }
   };
 
-  const browserBuilds = {
+  const browserEsmBuild = {
     input: "src/index.ts",
     onwarn,
     external: [
+      "@ethersproject/abstract-provider",
+      "@ethersproject/transactions",
+      "bignumber.js",
+      "bip32",
+      "bip39",
+      "bn.js",
+      "bs58",
+      "bs58check",
+      "create-hash",
+      "crypto-browserify",
+      "crypto-js",
+      "dayjs",
+      "ethers",
+      "events",
+      "js-sha3",
+      "random-int",
+      "string_decoder",
       //'browserfs'
       /* 'readable-stream',
             'readable-stream/transform' */
@@ -366,5 +383,5 @@ export default (command) => {
     ]
   };
 
-  return [commonJSBuild, esmBuild, browserBuilds];
+  return [/* nodeBuild, nodeEsmBuild, */ browserEsmBuild];
 };
