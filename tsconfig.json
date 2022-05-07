@@ -1,11 +1,24 @@
 {
-  "include": ["src/index.ts", "src/walletcore/*", "src/**/*.ts"],
-  "exclude": ["node_modules", "tests", "data", "dist", "dist.esm"],
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "data",
+    "dist",
+    "dist.esm"
+  ],
   "compilerOptions": {
     "target": "es2015",
     "module": "es2015",
-    "lib": ["es2017", "es7", "es6", "dom"],
-    "moduleResolution": "node",
+    "lib": [
+      "es2017",
+      "es7",
+      "es6",
+      "dom"
+    ],
+    "moduleResolution": "Node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "emitDeclarationOnly": false,
@@ -22,6 +35,13 @@
     "resolveJsonModule": true,
     // "rootDirs": ["src/"],
     "rootDir": "src",
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "paths": {
+      "elliptic": [
+        "./node_modules/elliptic"
+      ]
+    }
   }
 }

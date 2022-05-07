@@ -1,8 +1,9 @@
-import { HDKey, KeySpec } from "./walletcore/hdkey";
-import { Mnemonic } from "./walletcore/mnemonic";
-import { MasterWalletManager } from "./wallet/MasterWalletManager";
 import { BrowserLocalStorage } from "./persistence/implementations/BrowserLocalStorage";
 import { MasterWallet } from "./wallet/MasterWallet";
+import { MasterWalletManager } from "./wallet/MasterWalletManager";
+import { SubWallet } from "./wallet/SubWallet";
+import { HDKey, KeySpec } from "./walletcore/hdkey";
+import { Mnemonic } from "./walletcore/mnemonic";
 
 export {
   Mnemonic,
@@ -10,5 +11,6 @@ export {
   HDKey,
   MasterWallet,
   MasterWalletManager,
-  BrowserLocalStorage
+  BrowserLocalStorage,
+  SubWallet
 };

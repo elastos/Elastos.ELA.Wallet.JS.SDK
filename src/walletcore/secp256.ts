@@ -26,7 +26,7 @@ import BN from "bn.js";
 import { Buffer } from "buffer";
 //import { createHash } from 'crypto';
 import { createHash } from "crypto-browserify";
-import * as elliptic from "elliptic";
+import { ec } from "elliptic";
 
 export class Secp256 {
   public static CURVE_R1 = "p256";
@@ -80,7 +80,7 @@ export class Secp256 {
   private ecparams = null;
 
   public constructor(curve: string) {
-    this.ec = new elliptic.ec(curve);
+    this.ec = new ec(curve);
     this.ecparams = this.ec.curve;
   }
 
@@ -108,9 +108,9 @@ export class Secp256 {
     return bn.isZero()
       ? Buffer.alloc(32)
       : this.ecparams.n
-          .sub(bn)
-          .umod(this.ecparams.n)
-          .toArrayLike(Buffer, "be", 32);
+        .sub(bn)
+        .umod(this.ecparams.n)
+        .toArrayLike(Buffer, "be", 32);
   }
 
   public privateKeyModInverse(privateKey: Buffer) {

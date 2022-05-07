@@ -15,3 +15,26 @@ This JS SDK diverges a little bit from that original SDK in a few ways:
 - The current version is based on that [f1eba107](https://github.com/elastos/Elastos.ELA.SPV.Cpp/tree/no_p2p) commit ID.
 - For now we continue to migrate C++ -> TS on this version
 - When we will have a first stable version of the TS SDK, we will "replay" the diff between no_p2p and dev c++ branches into TS
+
+## App integration - known issues
+
+### "$n" is not a constructor
+
+This issue is related to a bundler (rollup, webpack) conflict in elliptic/bn.js libraries. For some reasons, sometimes the imported "BN" class is a constructor, sometimes it's just an object that contains a BN constructor inside (mess with exported "default" symbols in libraries).
+
+**Solution:**
+
+On the application side, in tsconfig.json, add:
+
+```
+compilerOptions: {
+  paths: {
+    "elliptic": [
+      "./node_modules/elliptic"
+    ],
+    "bn.js": [
+      "./node_modules/bn.js"
+    ]
+  }
+}
+```
