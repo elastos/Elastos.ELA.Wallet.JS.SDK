@@ -236,6 +236,7 @@ export default (command) => {
       "bip32",
       // "bip39", // TODO: Check this - seems like on the app side, english mnemonics try to use the chinese word list and fail, if we use this lib from the app bundle
       "bn.js",
+      "elliptic",
       "bs58",
       "bs58check",
       "create-hash",
