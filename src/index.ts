@@ -8,7 +8,6 @@ import { HDKey, KeySpec } from "./walletcore/hdkey";
 import { Mnemonic } from "./walletcore/mnemonic";
 
 export {
-  WalletStorage,
   BrowserLocalStorage,
 
   // Crypto
@@ -22,3 +21,7 @@ export {
   SubWallet,
   MainchainSubWallet
 };
+export type {
+  WalletStorage
+};
+
