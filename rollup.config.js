@@ -234,7 +234,7 @@ export default (command) => {
       "@ethersproject/transactions",
       "bignumber.js",
       "bip32",
-      // "bip39", // TODO: Check this - seems like on the app side, english mnemonics try to use the chinese word list and fail, if we use this lib from the app bundle
+      "bip39",
       "bn.js",
       "elliptic",
       "bs58",
@@ -247,7 +247,7 @@ export default (command) => {
       "events",
       "js-sha3",
       "random-int",
-      "string_decoder",
+      "string_decoder"
       //'browserfs'
       /* 'readable-stream',
             'readable-stream/transform' */

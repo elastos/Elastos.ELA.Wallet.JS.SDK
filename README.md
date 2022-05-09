@@ -38,3 +38,13 @@ compilerOptions: {
   }
 }
 ```
+
+### run on a create-react-app with webpack 5
+
+```
+Module not found: Error: Can't resolve 'stream'
+BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules by default.
+This is no longer the case. Verify if you need this module and configure a polyfill for it.
+```
+
+solution: https://alchemy.com/blog/how-to-polyfill-node-core-modules-in-webpack-5
