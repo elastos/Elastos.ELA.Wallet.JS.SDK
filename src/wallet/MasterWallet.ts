@@ -200,6 +200,39 @@ export class MasterWallet {
     return masterWallet;
   }
 
+  public static newFromSeed(
+    id: string,
+    seed: string,
+    payPassword: string,
+    cosigners: PublicKeyRing[],
+    m: uint32_t,
+    config: Config,
+    storage: WalletStorage,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 < m,
+      Error.Code.InvalidArgument,
+      "Invalid M"
+    );
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = Account.newFromSeed(
+      storage,
+      seed,
+      payPassword,
+      cosigners,
+      m,
+      singleAddress,
+      compatible
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
+
   public static newFromMnemonicAndPublicKeyRings(
     id: string,
     mnemonic: string,

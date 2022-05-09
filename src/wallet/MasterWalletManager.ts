@@ -36,13 +36,6 @@ import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { MasterWallet } from "./MasterWallet";
 
-const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json"; // TODO: move to store
-const LOCAL_STORE_FILE = "LocalStore.json"; //  TODO: move to store
-
-// type MasterWalletMap = {
-//   [walletID: string]: MasterWallet;
-// };
-
 export class MasterWalletManager {
   protected _lock: Lockable;
   protected _config: Config;
@@ -231,7 +224,7 @@ export class MasterWalletManager {
   /**
    * Create a multi-sign master wallet by related co-signers, or return existing master wallet if current master wallet manager has the master wallet id. Note this creating method generate an readonly multi-sign account which can not append sign into a transaction.
    * @param masterWalletID is the unique identification of a master wallet object.
-   * @param cosigners JSON array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param cosigners string array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
    * @param m specify minimum count of signature to accomplish related transaction.
    * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
    * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
@@ -260,7 +253,7 @@ export class MasterWalletManager {
     ErrorChecker.checkParam(
       !Array.isArray(cosigners),
       Error.Code.PubKeyFormat,
-      "cosigners should be JOSN array"
+      "cosigners should be string array"
     );
     ErrorChecker.checkParam(
       cosigners.length < 2,
@@ -318,7 +311,7 @@ export class MasterWalletManager {
    * @param masterWalletID is the unique identification of a master wallet object.
    * @param xprv root extend private key of wallet.
    * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-   * @param cosigners JSON array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param cosigners string array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
    * @param m specify minimum count of signature to accomplish related transaction.
    * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
    * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
@@ -352,7 +345,7 @@ export class MasterWalletManager {
     ErrorChecker.checkParam(
       !Array.isArray(cosigners),
       Error.Code.PubKeyFormat,
-      "cosigners should be JOSN array"
+      "cosigners should be string array"
     );
     ErrorChecker.checkParam(
       cosigners.length === 0,
@@ -389,6 +382,87 @@ export class MasterWalletManager {
     const masterWallet = MasterWallet.newFromXPrivateKey(
       masterWalletID,
       xprv,
+      payPassword,
+      pubKeyRing,
+      m,
+      this._config,
+      this._storage,
+      singleAddress,
+      compatible
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+
+    // ArgInfo("r => create multi sign wallet");
+
+    return masterWallet;
+  }
+
+  /**
+   * Create a multi-sign master wallet by seed and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param seed seed hex-string of uint512
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param cosigners string array of signer's extend public key. Such as: ["xpub6CLgvYFxzqHDJCWyGDCRQzc5cwCFp4HJ6QuVJsAZqURxmW9QKWQ7hVKzZEaHgCQWCq1aNtqmE4yQ63Yh7frXWUW3LfLuJWBtDtsndGyxAQg", "xpub6CWEYpNZ3qLG1z2dxuaNGz9QQX58wor9ax8AiKBvRytdWfEifXXio1BgaVcT4t7ouP34mnabcvpJLp9rPJPjPx2m6izpHmjHkZAHAHZDyrc"]
+   * @param m specify minimum count of signature to accomplish related transaction.
+   * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
+   * @param compatible if true, will compatible with web multi-sign wallet. false: BIP45, true: BIP44
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
+   * @return If success will return a pointer of master wallet interface.
+   */
+  createMultiSignMasterWalletWithSeed(
+    masterWalletID: string,
+    seed: string,
+    payPassword: string,
+    cosigners: string[],
+    m: uint32_t,
+    singleAddress: boolean,
+    compatible: boolean = false,
+    timestamp: time_t = 0
+  ) {
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkParamNotEmpty(seed, "seed");
+    ErrorChecker.checkPassword(payPassword, "Pay");
+    ErrorChecker.checkParam(
+      !Array.isArray(cosigners),
+      Error.Code.PubKeyFormat,
+      "cosigners should be string array"
+    );
+    ErrorChecker.checkParam(
+      cosigners.length === 0,
+      Error.Code.PubKeyFormat,
+      "cosigners should at least contain 1 elements"
+    );
+    ErrorChecker.checkParam(m < 1, Error.Code.InvalidArgument, "Invalid m");
+
+    let pubKeyRing: PublicKeyRing[] = [];
+    for (let i = 0; i < cosigners.length; i++) {
+      ErrorChecker.checkCondition(
+        !(typeof cosigners[i] === "string"),
+        Error.Code.PubKeyFormat,
+        "cosigners should be string"
+      );
+      let xpub: string = cosigners[i];
+      for (let i = 0; i < pubKeyRing.length; ++i) {
+        if (pubKeyRing[i].getxPubKey() === xpub) {
+          ErrorChecker.throwParamException(
+            Error.Code.PubKeyFormat,
+            "Contain same xpub"
+          );
+        }
+      }
+      pubKeyRing.push(new PublicKeyRing("", xpub));
+    }
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
+
+    this._storage.currentMasterWalletID = masterWalletID;
+    const masterWallet = MasterWallet.newFromSeed(
+      masterWalletID,
+      seed,
       payPassword,
       pubKeyRing,
       m,

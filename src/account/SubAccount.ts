@@ -217,10 +217,10 @@ export class SubAccount {
         for (let keychain of this._parent.multiSignCosigner()) {
           keychains.push(keychain.deriveWithIndex(chain));
         }
-      }
-      if (keychains.length === 0) {
-        derivateCount = 0;
-        Log.error("keychains is empty when derivate address");
+        if (keychains.length === 0) {
+          derivateCount = 0;
+          Log.error("keychains is empty when derivate address");
+        }
       }
 
       while (derivateCount--) {

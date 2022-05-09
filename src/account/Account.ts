@@ -245,17 +245,87 @@ export class Account {
       Error.Code.MultiSign,
       "Too much signers"
     );
-    // bytes_t bytes;
-    ErrorChecker.checkLogic(
-      !Base58Check.decode(xprv),
-      Error.Code.InvalidArgument,
-      "Invalid xprv"
-    );
+    let bytes = Base58Check.decode(xprv);
+    ErrorChecker.checkLogic(!bytes, Error.Code.InvalidArgument, "Invalid xprv");
 
-    const deterministicKey: DeterministicKey = new DeterministicKey(
+    let deterministicKey: DeterministicKey = DeterministicKey.fromExtendedKey(
+      xprv,
       DeterministicKey.ELASTOS_VERSIONS
     );
     const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+
+    const encryptedxPrvKey: string = AESEncrypt(xprv, payPasswd);
+    const xPubKey: string = rootkey
+      .deriveWithPath("m/44'/0'/0'")
+      .serializePublicKeyBase58();
+
+    const requestKey: HDKey = rootkey.deriveWithPath("m/1'/0");
+    const encryptedRequestPrvKey: string = AESEncrypt(
+      requestKey.serializeBase58(),
+      payPasswd
+    );
+    const requestPubKey: string = requestKey
+      .getPublicKeyBytes()
+      .toString("hex");
+
+    const account = new Account();
+    account._localstore = new LocalStore(storage);
+    account._localstore.setM(m);
+    account._localstore.setN(cosigners.length + 1);
+    account._localstore.setSingleAddress(singleAddress);
+    account._localstore.setReadonly(false);
+    account._localstore.setHasPassPhrase(false);
+    account._localstore.setPublicKeyRing(cosigners);
+    account._localstore.setMnemonic("");
+    account._localstore.setxPrivKey(encryptedxPrvKey);
+    account._localstore.setxPubKey(xPubKey);
+    account._localstore.setRequestPubKey(requestPubKey);
+    account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
+    account._localstore.setOwnerPubKey("");
+    account._localstore.setSeed("");
+    account._localstore.setETHSCPrimaryPubKey("");
+    account._localstore.setRipplePrimaryPubKey("");
+    account._localstore.setxPubKeyBitcoin("");
+    account._localstore.setSinglePrivateKey("");
+
+    if (compatible) {
+      account._localstore.setDerivationStrategy("BIP44");
+      account._localstore.addPublicKeyRing(new PublicKeyRing("", xPubKey));
+      account._localstore.setxPubKeyHDPM(xPubKey);
+    } else {
+      account._localstore.setDerivationStrategy("BIP45");
+      const xpubPurpose: string = rootkey
+        .deriveWithPath("m/45'")
+        .serializePublicKeyBase58();
+      account._localstore.addPublicKeyRing(
+        new PublicKeyRing(requestPubKey, xpubPurpose)
+      );
+      account._localstore.setxPubKeyHDPM(xpubPurpose);
+    }
+
+    account.init();
+    return account;
+  }
+
+  public static newFromSeed(
+    storage: WalletStorage,
+    seed: string,
+    payPasswd: string,
+    cosigners: PublicKeyRing[],
+    m: number,
+    singleAddress: boolean,
+    compatible: boolean
+  ) {
+    ErrorChecker.checkParam(
+      cosigners.length + 1 > MAX_MULTISIGN_COSIGNERS,
+      Error.Code.MultiSign,
+      "Too much signers"
+    );
+
+    let bytes = Buffer.from(seed);
+    const encryptedSeed: string = AESEncrypt(bytes, payPasswd);
+
+    const rootkey: HDKey = HDKey.fromMasterSeed(bytes, KeySpec.Elastos);
     const privateKey = rootkey.serializeBase58();
 
     const encryptedxPrvKey: string = AESEncrypt(privateKey, payPasswd);
@@ -286,9 +356,9 @@ export class Account {
     account._localstore.setRequestPubKey(requestPubKey);
     account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
     account._localstore.setOwnerPubKey("");
-    account._localstore.setSeed("");
+    account._localstore.setSeed(encryptedSeed);
     account._localstore.setETHSCPrimaryPubKey("");
-    // account._localstore.setRipplePrimaryPubKey("");
+    account._localstore.setRipplePrimaryPubKey("");
     account._localstore.setxPubKeyBitcoin("");
     account._localstore.setSinglePrivateKey("");
 
