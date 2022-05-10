@@ -91,6 +91,32 @@ export class MasterWallet {
     return masterWallet;
   }
 
+  public static newFromSeed(
+    id: string,
+    seed: Buffer,
+    payPasswd: string,
+    singleAddress: boolean,
+    mnemonic: string, // can be empty
+    passphrase: string, // can be empty
+    config: Config,
+    storage: WalletStorage
+  ) {
+    let masterWallet = new MasterWallet();
+    masterWallet._id = id;
+    masterWallet._config = config;
+    masterWallet._account = Account.newFromSeed(
+      storage,
+      seed,
+      payPasswd,
+      singleAddress,
+      mnemonic,
+      passphrase
+    );
+    masterWallet._account.save();
+    masterWallet.setupNetworkParameters();
+    return masterWallet;
+  }
+
   public static newFromSinglePrivateKey(
     id: string,
     singlePrivateKey: string,
@@ -200,7 +226,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newFromSeed(
+  public static newMultisignFromSeed(
     id: string,
     seed: string,
     payPassword: string,
@@ -219,7 +245,7 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = Account.newFromSeed(
+    masterWallet._account = Account.newMultisignFromSeed(
       storage,
       seed,
       payPassword,

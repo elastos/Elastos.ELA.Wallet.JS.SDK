@@ -460,7 +460,7 @@ export class MasterWalletManager {
     }
 
     this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromSeed(
+    const masterWallet = MasterWallet.newMultisignFromSeed(
       masterWalletID,
       seed,
       payPassword,
@@ -743,6 +743,69 @@ export class MasterWalletManager {
 
     return masterWallet;
     */
+  }
+
+  importWalletWithSeed(
+    masterWalletID: string,
+    seed: string,
+    payPassword: string,
+    singleAddress: boolean,
+    mnemonic: string,
+    passphrase: string
+  ) {
+    // ArgInfo("{}", GetFunName());
+    // ArgInfo("masterWalletID: {}", masterWalletID);
+    // ArgInfo("seed: *");
+    // ArgInfo("payPassword: *");
+    // ArgInfo("singleAddr: {}", singleAddress);
+    // ArgInfo("mnemonic: *, empty: {}", mnemonic.empty());
+    // ArgInfo("passphrase: *, empty: {}", passphrase.empty());
+
+    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
+
+    ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
+    ErrorChecker.checkPassword(payPassword, "Pay");
+
+    let seedBytes = Buffer.from(seed, "hex");
+
+    if (mnemonic) {
+      const lang = Mnemonic.getLanguage(mnemonic);
+      const mnemonicObj = Mnemonic.getInstance(lang);
+      ErrorChecker.checkParam(
+        !mnemonicObj.isValid(mnemonic),
+        Error.Code.Mnemonic,
+        "Invalid mnemonic"
+      );
+      let stmp = Mnemonic.toSeed(mnemonic, passphrase);
+      ErrorChecker.checkParam(
+        seed != stmp.toString("hex"),
+        Error.Code.Mnemonic,
+        "seed not matches [mnemonic+passphrase]"
+      );
+    }
+
+    if (this._masterWalletMap.has(masterWalletID)) {
+      // ArgInfo("r => already exist");
+      return this._masterWalletMap.get(masterWalletID);
+    }
+    this._storage.currentMasterWalletID = masterWalletID;
+
+    let masterWallet = MasterWallet.newFromSeed(
+      masterWalletID,
+      seedBytes,
+      payPassword,
+      singleAddress,
+      mnemonic,
+      passphrase,
+      this._config,
+      this._storage
+    );
+    this.checkRedundant(masterWallet);
+    this._masterWalletMap.set(masterWalletID, masterWallet);
+
+    // ArgInfo("r => import with seed + [mnemonic:passphrase]");
+
+    return masterWallet;
   }
 
   /*

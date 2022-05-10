@@ -46,13 +46,14 @@ describe("MasterWalletManager Tests", () => {
     const singleAddress = true;
 
     const masterWalletID = "master-wallet-id-8";
-    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
-    const masterWallet = masterWalletManager.createMasterWallet(
+    const seed = `3c6f6c0a5aba9e1456a827587f36a45430812ef04aa8cac4774a7d533ecb486dca476c004ae65271305f8907128583d2112e1648a902d44e61d942b02121c2a4`;
+    const masterWallet = masterWalletManager.importWalletWithSeed(
       masterWalletID,
-      mnemonic,
-      passphrase,
+      seed,
       payPassword,
-      singleAddress
+      singleAddress,
+      "",
+      passphrase
     );
 
     const localStore = browserStorage.loadStore(masterWalletID);
@@ -66,13 +67,14 @@ describe("MasterWalletManager Tests", () => {
     const ids = browserStorage.getMasterWalletIDs();
     console.log("ids...", ids);
 
-    const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
-    const masterWallet1 = masterWalletManager.createMasterWallet(
+    const seed1 = `9d6c79835481f5ce97a7396f7f474151b28f8183c9be2ddbcacbcc32e0480c5849d0bfe5ca8884277dc4f07c5eda3ec97298ebc1e8c7e67ce41f914fa47fee05`;
+    const masterWallet1 = masterWalletManager.importWalletWithSeed(
       "master-wallet-id-9",
-      mnemonic1,
-      passphrase,
+      seed1,
       payPassword,
-      singleAddress
+      singleAddress,
+      "",
+      passphrase
     );
 
     const localStore1 = browserStorage.loadStore("master-wallet-id-9");
@@ -86,13 +88,14 @@ describe("MasterWalletManager Tests", () => {
     // [ 'EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw' ]
     console.log("addresses1...", addresses1);
 
-    const mnemonic2 = `cheap exotic web cabbage discover camera vanish damage version allow merge scheme`;
-    const masterWallet2 = masterWalletManager.createMasterWallet(
+    const seed2 = `26acf44706d7d81ffac1cbe5ca2eea3df134bc9708f4938704bb2773b4fa49a76e2d9dd54989c5d6e9a2bedff72820be798b92ee83d4411dac535422387357e7`;
+    const masterWallet2 = masterWalletManager.importWalletWithSeed(
       "master-wallet-id-10",
-      mnemonic2,
-      passphrase,
+      seed2,
       payPassword,
-      singleAddress
+      singleAddress,
+      "",
+      passphrase
     );
 
     const localStore2 = browserStorage.loadStore("master-wallet-id-10");
@@ -107,12 +110,8 @@ describe("MasterWalletManager Tests", () => {
     // [ 'EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo' ]
     console.log("addresses2...", addresses2);
 
-    const mnemonic3 = `multiple always junk crash fun exist stumble shift over benefit fun toe`;
-    const seed = Mnemonic.toSeed(mnemonic3, "").toString("hex");
-    console.log("seed...", seed);
-    expect(seed).toEqual(
-      "0960dd6877cf94a07837e590337ea29e19713de8a6cad64035fd36b6de1d0745a9e7c135a6e0555be0dd1d39f0c0139611951b1929c6df3bcb2208ee4eeb08fd"
-    );
+    const seed3 = `0960dd6877cf94a07837e590337ea29e19713de8a6cad64035fd36b6de1d0745a9e7c135a6e0555be0dd1d39f0c0139611951b1929c6df3bcb2208ee4eeb08fd`;
+
     const cosigners = [
       localStore.xPubKeyHDPM as string,
       localStore1.xPubKeyHDPM as string,
@@ -122,7 +121,7 @@ describe("MasterWalletManager Tests", () => {
     const masterWallet3 =
       masterWalletManager.createMultiSignMasterWalletWithSeed(
         "master-wallet-id-11",
-        seed,
+        seed3,
         payPassword,
         cosigners,
         m,
