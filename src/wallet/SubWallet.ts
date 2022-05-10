@@ -112,7 +112,7 @@ export abstract class SubWallet {
     index: uint32_t,
     count: uint32_t,
     internal = false
-  ): JSONValue {
+  ): string[] {
     warnLog();
     return;
   }

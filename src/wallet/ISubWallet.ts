@@ -80,7 +80,7 @@ export interface ISubWallet {
     index: uint32_t,
     count: uint32_t,
     internal: boolean /* TODO = false */
-  ): JSONValue;
+  ): string[];
 
   /**
    * For Elastos-based or btc wallet: Get @count public keys from @index.  Note that if create the

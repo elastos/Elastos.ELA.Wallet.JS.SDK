@@ -127,7 +127,7 @@ export class ElastosBaseSubWallet
     index: uint32_t,
     count: uint32_t,
     internal: boolean
-  ): JSONValue {
+  ): string[] {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("index: {}", index);
     //ArgInfo("count: {}", count);
@@ -145,7 +145,7 @@ export class ElastosBaseSubWallet
       internal
     );
 
-    let addressStrings: JSONValue = [];
+    let addressStrings: string[] = [];
     for (let address of addresses) {
       addressStrings.push(address.string());
     }

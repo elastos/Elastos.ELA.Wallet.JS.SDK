@@ -224,9 +224,9 @@ export class EthSidechainSubWallet
     return j;
   }
 
-  getAddresses(index: uint32_t, count: uint32_t, internal: boolean): JSONArray {
+  getAddresses(index: uint32_t, count: uint32_t, internal: boolean): string[] {
     let addr: string = this._wallet.getPrimaryAddress();
-    let j: JSONArray;
+    let j: string[] = [];
     j.push(addr);
     return j;
   }
