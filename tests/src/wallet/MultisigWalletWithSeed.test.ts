@@ -22,8 +22,7 @@
 
 import {
   MasterWalletManager,
-  BrowserLocalStorage,
-  Mnemonic
+  BrowserLocalStorage
 } from "@elastosfoundation/wallet-js-sdk";
 
 describe("MasterWalletManager Tests", () => {
@@ -136,7 +135,7 @@ describe("MasterWalletManager Tests", () => {
 
     const subWallet3: any = masterWallet3.createSubWallet("ELA");
     const addresses3 = subWallet3.getAddresses(0, 1, false);
-    //['8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n']
+    //['8PLW7g55K5oXEQzNmQrtRzV9nFADX9w7hd']
     console.log("addresses3...", addresses3);
 
     const inputsJson = [
@@ -144,14 +143,14 @@ describe("MasterWalletManager Tests", () => {
         Address: addresses3[0],
         Amount: "100000000",
         TxHash:
-          "b9bf4f41d1844c5f76cc86f82e5c3e113388ed97fa48e78051c367e1d9399f9b",
+          "3fba8615b62a95104f0e65131d0db353c5def1afd84664ce3f00b0faf5812dbf",
         Index: 0
       }
     ];
     const outputsJson = [
       {
         Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
-        Amount: "40000000"
+        Amount: "10000000"
       }
     ];
     const fee = "10000";
@@ -159,14 +158,14 @@ describe("MasterWalletManager Tests", () => {
 
     const tx = subWallet3.createTransaction(inputsJson, outputsJson, fee, memo);
     console.log("multisig tx", tx);
-    const signedTx = subWallet1.signTransaction(tx, payPassword);
+    const signedTx = subWallet.signTransaction(tx, payPassword);
     console.log("multisig signedTx...", signedTx);
-    const signedTx1 = subWallet2.signTransaction(signedTx, payPassword);
-    console.log("multisig signedTx1...", signedTx1);
+    const signedTx1 = subWallet1.signTransaction(signedTx, payPassword);
+    console.log("multisig signedTx...", signedTx1);
 
-    const signedInfo = subWallet.getTransactionSignedInfo(signedTx1);
+    const signedInfo = subWallet1.getTransactionSignedInfo(signedTx1);
     console.log("multisig signedInfo", signedInfo);
-    const rawTx = subWallet.convertToRawTransaction(signedTx1);
+    const rawTx = subWallet1.convertToRawTransaction(signedTx1);
     console.log("multisig rawTx", rawTx);
     // then call rpc 'sendrawtransaction' to send the rawTx to the ela testnet
   });
