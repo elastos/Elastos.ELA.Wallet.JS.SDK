@@ -460,9 +460,10 @@ export class MasterWalletManager {
     }
 
     this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newMultisignFromSeed(
+    let seedBytes = Buffer.from(seed, "hex");
+    const masterWallet = MasterWallet.newFromMultisignSeed(
       masterWalletID,
-      seed,
+      seedBytes,
       payPassword,
       pubKeyRing,
       m,

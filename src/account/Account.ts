@@ -308,9 +308,9 @@ export class Account {
   }
 
   // multi-sign seed
-  public static newMultisignFromSeed(
+  public static newFromMultisignSeed(
     storage: WalletStorage,
-    seed: string,
+    seed: Buffer,
     payPasswd: string,
     cosigners: PublicKeyRing[],
     m: number,
@@ -323,10 +323,9 @@ export class Account {
       "Too much signers"
     );
 
-    let bytes = Buffer.from(seed);
-    const encryptedSeed: string = AESEncrypt(bytes, payPasswd);
+    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
 
-    const rootkey: HDKey = HDKey.fromMasterSeed(bytes, KeySpec.Elastos);
+    const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
     const privateKey = rootkey.serializeBase58();
 
     const encryptedxPrvKey: string = AESEncrypt(privateKey, payPasswd);
@@ -343,6 +342,33 @@ export class Account {
       .getPublicKeyBytes()
       .toString("hex");
 
+    const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
+    const ethkey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
+
+    const encryptedethPrvKey: string = AESEncrypt(
+      ethkey.serializeBase58(),
+      payPasswd
+    );
+
+    const ownerPubKey: string = rootkey
+      .deriveWithPath("m/44'/0'/1'/0/0")
+      .getPublicKeyBytes()
+      .toString("hex");
+
+    const xpubBitcoin: string = stdrootkey
+      .deriveWithPath("m/44'/0'/0'")
+      .serializePublicKeyBase58();
+
+    const secp256 = new Secp256(Secp256.CURVE_K1);
+    const ethscPubKey: string = secp256
+      .publicKeyConvert(ethkey.getPublicKeyBytes(), false)
+      .toString("hex");
+
+    const ripplePubKey: string = stdrootkey
+      .deriveWithPath("m/44'/144'/0'/0/0")
+      .getPublicKeyBytes()
+      .toString("hex");
+
     const account = new Account();
     account._localstore = new LocalStore(storage);
     account._localstore.setM(m);
@@ -356,12 +382,12 @@ export class Account {
     account._localstore.setxPubKey(xPubKey);
     account._localstore.setRequestPubKey(requestPubKey);
     account._localstore.setRequestPrivKey(encryptedRequestPrvKey);
-    account._localstore.setOwnerPubKey("");
+    account._localstore.setOwnerPubKey(ownerPubKey);
     account._localstore.setSeed(encryptedSeed);
-    account._localstore.setETHSCPrimaryPubKey("");
-    account._localstore.setRipplePrimaryPubKey("");
-    account._localstore.setxPubKeyBitcoin("");
-    account._localstore.setSinglePrivateKey("");
+    account._localstore.setETHSCPrimaryPubKey(ethscPubKey);
+    account._localstore.setRipplePrimaryPubKey(ripplePubKey);
+    account._localstore.setxPubKeyBitcoin(xpubBitcoin);
+    account._localstore.setSinglePrivateKey(encryptedethPrvKey);
 
     if (compatible) {
       account._localstore.setDerivationStrategy("BIP44");
@@ -1456,11 +1482,11 @@ export class Account {
       );
       haveRootkey = true;
     } else if (this._localstore.getxPrivKey()) {
-      const bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
-      const deterministicKey = new DeterministicKey(
+      const privateKey = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+      const deterministicKey = DeterministicKey.fromExtendedKey(
+        privateKey,
         DeterministicKey.ELASTOS_VERSIONS
       );
-      deterministicKey.privateKey = bytes;
       rootkey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
       haveRootkey = true;
     }
@@ -1487,9 +1513,9 @@ export class Account {
 
     // bitcoin master public key
     if (!this._localstore.getxPubKeyBitcoin() && havestdrootkey) {
-      tmpstr = Base58Check.encode(
-        stdrootkey.deriveWithPath("m/44'/0'/0'").getPublicKeyBytes()
-      );
+      tmpstr = stdrootkey
+        .deriveWithPath("m/44'/0'/0'")
+        .serializePublicKeyBase58();
       this._localstore.setxPubKeyBitcoin(tmpstr);
     }
 
@@ -1500,10 +1526,15 @@ export class Account {
       havestdrootkey
     ) {
       const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
-      tmpstr = ethkey.getPublicKeyBytes().toString("hex");
-      this._localstore.setETHSCPrimaryPubKey(tmpstr);
+
+      const secp256 = new Secp256(Secp256.CURVE_K1);
+      const ethscPubKey: string = secp256
+        .publicKeyConvert(ethkey.getPublicKeyBytes(), false)
+        .toString("hex");
+
+      this._localstore.setETHSCPrimaryPubKey(ethscPubKey);
       this._localstore.setSinglePrivateKey(
-        AESEncrypt(ethkey.getPrivateKeyBytes(), payPasswd)
+        AESEncrypt(ethkey.serializeBase58(), payPasswd)
       );
     }
 
@@ -1519,9 +1550,7 @@ export class Account {
 
     if (!this._localstore.getxPubKeyHDPM() && haveRootkey) {
       const xpubHDPM: HDKey = rootkey.deriveWithPath("m/45'");
-      this._localstore.setxPubKeyHDPM(
-        Base58Check.encode(xpubHDPM.getPublicKeyBytes())
-      );
+      this._localstore.setxPubKeyHDPM(xpubHDPM.serializePublicKeyBase58());
     }
 
     // 44'/coinIndex'/account'/change/index
@@ -1563,8 +1592,7 @@ export class Account {
 
   getSeed(payPasswd: string): Buffer {
     const seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
-    const bytes = Buffer.from(seed);
-    return bytes;
+    return seed;
   }
 
   getETHSCPubKey(): Buffer {

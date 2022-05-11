@@ -226,9 +226,9 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newMultisignFromSeed(
+  public static newFromMultisignSeed(
     id: string,
-    seed: string,
+    seed: Buffer,
     payPassword: string,
     cosigners: PublicKeyRing[],
     m: uint32_t,
@@ -245,7 +245,7 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = Account.newMultisignFromSeed(
+    masterWallet._account = Account.newFromMultisignSeed(
       storage,
       seed,
       payPassword,

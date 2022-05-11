@@ -63,9 +63,6 @@ describe("MasterWalletManager Tests", () => {
     // [ 'EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L' ]
     console.log("addresses...", addresses);
 
-    const ids = browserStorage.getMasterWalletIDs();
-    console.log("ids...", ids);
-
     const seed1 = `9d6c79835481f5ce97a7396f7f474151b28f8183c9be2ddbcacbcc32e0480c5849d0bfe5ca8884277dc4f07c5eda3ec97298ebc1e8c7e67ce41f914fa47fee05`;
     const masterWallet1 = masterWalletManager.importWalletWithSeed(
       "master-wallet-id-9",
@@ -101,9 +98,6 @@ describe("MasterWalletManager Tests", () => {
 
     console.log("localStore2.xPubKeyHDPM....", localStore2.xPubKeyHDPM);
 
-    const ids2 = browserStorage.getMasterWalletIDs();
-    console.log("ids2...", ids2);
-
     const subWallet2: any = masterWallet2.createSubWallet("ELA");
     const addresses2 = subWallet2.getAddresses(0, 1, false);
     // [ 'EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo' ]
@@ -130,13 +124,10 @@ describe("MasterWalletManager Tests", () => {
     const localStore3 = browserStorage.loadStore("master-wallet-id-11");
     console.log("localStore3...", localStore3);
 
-    const ids3 = browserStorage.getMasterWalletIDs();
-    console.log("ids3...", ids3);
-
     const subWallet3: any = masterWallet3.createSubWallet("ELA");
     const addresses3 = subWallet3.getAddresses(0, 1, false);
-    //['8PLW7g55K5oXEQzNmQrtRzV9nFADX9w7hd']
-    console.log("addresses3...", addresses3);
+    //['8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n']
+    expect(addresses3[0]).toEqual("8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n");
 
     const inputsJson = [
       {
@@ -158,10 +149,10 @@ describe("MasterWalletManager Tests", () => {
 
     const tx = subWallet3.createTransaction(inputsJson, outputsJson, fee, memo);
     console.log("multisig tx", tx);
-    const signedTx = subWallet.signTransaction(tx, payPassword);
+    const signedTx = subWallet3.signTransaction(tx, payPassword);
     console.log("multisig signedTx...", signedTx);
     const signedTx1 = subWallet1.signTransaction(signedTx, payPassword);
-    console.log("multisig signedTx...", signedTx1);
+    console.log("multisig signedTx1...", signedTx1);
 
     const signedInfo = subWallet1.getTransactionSignedInfo(signedTx1);
     console.log("multisig signedInfo", signedInfo);
