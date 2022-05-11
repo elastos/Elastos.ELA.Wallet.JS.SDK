@@ -6,22 +6,19 @@ import { MasterWalletManager } from "./wallet/MasterWalletManager";
 import { SubWallet } from "./wallet/SubWallet";
 import { HDKey, KeySpec } from "./walletcore/hdkey";
 import { Mnemonic } from "./walletcore/mnemonic";
+import { WalletErrorException } from "./common/exceptions/walleterror.exception";
 
 export {
   BrowserLocalStorage,
-
   // Crypto
   Mnemonic,
   KeySpec,
   HDKey,
-
   // Wallets
   MasterWallet,
   MasterWalletManager,
   SubWallet,
-  MainchainSubWallet
+  MainchainSubWallet,
+  WalletErrorException
 };
-export type {
-  WalletStorage
-};
-
+export type { WalletStorage };

@@ -1,7 +1,8 @@
-import { Error as WalletError } from "../ErrorChecker";
-
 export class WalletErrorException extends Error {
-  constructor(error: WalletError) {
-    super(JSON.stringify(error));
+  constructor(public code: number, public reason: string) {
+    super(`Code: ${code}, Reason: ${reason}`);
+    this.code = code;
+    this.reason = reason;
+    this.name = this.constructor.name;
   }
 }

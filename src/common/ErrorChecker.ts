@@ -164,9 +164,9 @@ export class ErrorChecker {
       if (enableLog) Log.error(errJson);
 
       if (type == Exception.Type.LogicError) {
-        throw new LogicErrorException(errJson);
+        throw new LogicErrorException(err, msg);
       } else if (type == Exception.Type.InvalidArgument) {
-        throw new InvalidArgumentException(errJson);
+        throw new InvalidArgumentException(err, msg);
       }
     }
   }
