@@ -205,7 +205,7 @@ export class SubAccount {
       internal = false;
     }
 
-    let chain: uint32_t = internal
+    let chain: number = internal
       ? SEQUENCE_INTERNAL_CHAIN
       : SEQUENCE_EXTERNAL_CHAIN;
     let addrChain = this._chainAddressCached.get(chain);

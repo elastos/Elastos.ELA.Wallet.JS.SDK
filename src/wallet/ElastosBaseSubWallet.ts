@@ -52,6 +52,12 @@ import {
   CHAINID_TOKENCHAIN
 } from "./WalletCommon";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
+import {
+  HDKey,
+  KeySpec,
+  SEQUENCE_EXTERNAL_CHAIN,
+  SEQUENCE_INTERNAL_CHAIN
+} from "../walletcore/hdkey";
 
 //type WalletManagerPtr = SpvService;
 
@@ -271,6 +277,46 @@ export class ElastosBaseSubWallet
     //ArgInfo("r => {}", info.dump());
 
     return info;
+  }
+
+  // only support single address wallet
+  public getPublicKeysFromxPubKeys(
+    encodedTx: EncodedTx,
+    xPubKeys: string[],
+    internal: boolean
+  ): { xPubKey: string; publicKey: string; signed: boolean }[] {
+    let sortedSigners = [];
+    for (let i = 0; i < xPubKeys.length; ++i) {
+      let xPubKey = xPubKeys[i];
+      let hdKey = HDKey.deserializeBase58(xPubKey, KeySpec.Elastos);
+      let pubKey = hdKey.getPublicKeyBytes().toString("hex");
+      sortedSigners.push({ hdKey, pubKey, xPubKey });
+    }
+
+    sortedSigners.sort((a, b) => {
+      return a.pubKey.localeCompare(b.pubKey);
+    });
+
+    let info: any[] = this.getTransactionSignedInfo(encodedTx);
+    let signedSigners: string[] = info[0].Signers;
+
+    let chain: number = internal
+      ? SEQUENCE_INTERNAL_CHAIN
+      : SEQUENCE_EXTERNAL_CHAIN;
+    let rs = [];
+    for (let i = 0; i < sortedSigners.length; ++i) {
+      let xPubKey: string = sortedSigners[i].xPubKey;
+      let publicKey = sortedSigners[i].hdKey
+        .deriveWithIndex(i)
+        .deriveWithIndex(chain)
+        .deriveWithIndex(0)
+        .getPublicKeyBytes()
+        .toString("hex");
+      const signed = signedSigners.includes(publicKey);
+      rs.push({ publicKey, xPubKey, signed });
+    }
+
+    return rs;
   }
 
   public convertToRawTransaction(tx: EncodedTx) {
