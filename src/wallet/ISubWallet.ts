@@ -114,7 +114,7 @@ export interface ISubWallet {
    * @passwd pay password.
    * @return If success, signature will be returned.
    */
-  signDigest(address: string, digest: string, passwd: string): string;
+  signDigest(address: string, digest: string, passwd: string): Promise<string>;
 
   /**
    * Verify signature with specify public key

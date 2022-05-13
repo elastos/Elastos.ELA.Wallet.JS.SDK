@@ -236,9 +236,13 @@ export class Wallet extends Lockable {
     this._subAccount.signTransaction(tx, payPassword);
   }
 
-  signWithAddress(addr: Address, msg: string, payPasswd: string): string {
+  async signWithAddress(
+    addr: Address,
+    msg: string,
+    payPasswd: string
+  ): Promise<string> {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const privateKey: bytes_t | null = this._subAccount.getKeyWithAddress(
+    const privateKey: bytes_t | null = await this._subAccount.getKeyWithAddress(
       addr,
       payPasswd
     );
@@ -249,13 +253,13 @@ export class Wallet extends Lockable {
     }
   }
 
-  signDigestWithAddress(
+  async signDigestWithAddress(
     addr: Address,
     digest: uint256,
     payPasswd: string
-  ): string {
+  ): Promise<string> {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const privateKey: bytes_t | null = this._subAccount.getKeyWithAddress(
+    const privateKey: bytes_t | null = await this._subAccount.getKeyWithAddress(
       addr,
       payPasswd
     );
@@ -269,9 +273,11 @@ export class Wallet extends Lockable {
     }
   }
 
-  signWithOwnerKey(msg: bytes_t, payPasswd: string) {
+  async signWithOwnerKey(msg: bytes_t, payPasswd: string) {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const key: DeterministicKey = this._subAccount.deriveOwnerKey(payPasswd);
+    const key: DeterministicKey = await this._subAccount.deriveOwnerKey(
+      payPasswd
+    );
     return key.sign(msg);
   }
 

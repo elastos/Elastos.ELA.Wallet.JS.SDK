@@ -233,7 +233,11 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  signDigest(address: string, digest: string, payPassword: string): string {
+  async signDigest(
+    address: string,
+    digest: string,
+    payPassword: string
+  ): Promise<string> {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("address: {}", address);
     // ArgInfo("digest: {}", digest);
@@ -245,7 +249,7 @@ export class ElastosBaseSubWallet
       "invalid digest"
     );
     const didAddress: Address = Address.newFromAddressString(address);
-    const signature: string = this._wallet.signDigestWithAddress(
+    const signature: string = await this._wallet.signDigestWithAddress(
       didAddress,
       new BigNumber(digest, 16),
       payPassword

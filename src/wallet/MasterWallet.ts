@@ -65,7 +65,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newFromMnemonic(
+  public static async newFromMnemonic(
     id: string, // masterWalletID
     mnemonic: string,
     passphrase: string,
@@ -86,12 +86,12 @@ export class MasterWallet {
       singleAddress
     );
 
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  public static newFromSeed(
+  public static async newFromSeed(
     id: string,
     seed: Buffer,
     payPasswd: string,
@@ -112,12 +112,12 @@ export class MasterWallet {
       mnemonic,
       passphrase
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  public static newFromSinglePrivateKey(
+  public static async newFromSinglePrivateKey(
     id: string,
     singlePrivateKey: string,
     passwd: string,
@@ -132,7 +132,7 @@ export class MasterWallet {
       singlePrivateKey,
       passwd
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
@@ -164,7 +164,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newFromPublicKeyRings(
+  public static async newFromPublicKeyRings(
     id: string,
     pubKeyRings: PublicKeyRing[],
     m: uint32_t,
@@ -172,7 +172,7 @@ export class MasterWallet {
     storage: WalletStorage,
     singleAddress: boolean,
     compatible: boolean
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     ErrorChecker.checkParam(
       pubKeyRings.length < m,
       Error.Code.InvalidArgument,
@@ -188,12 +188,12 @@ export class MasterWallet {
       singleAddress,
       compatible
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  public static newFromXPrivateKey(
+  public static async newFromXPrivateKey(
     id: string,
     xprv: string,
     payPassword: string,
@@ -221,12 +221,12 @@ export class MasterWallet {
       singleAddress,
       compatible
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  public static newFromMultisignSeed(
+  public static async newFromMultisignSeed(
     id: string,
     seed: Buffer,
     payPassword: string,
@@ -254,12 +254,12 @@ export class MasterWallet {
       singleAddress,
       compatible
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
 
-  public static newFromMnemonicAndPublicKeyRings(
+  public static async newFromMnemonicAndPublicKeyRings(
     id: string,
     mnemonic: string,
     passphrase: string,
@@ -289,7 +289,7 @@ export class MasterWallet {
       singleAddress,
       compatible
     );
-    masterWallet._account.save();
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
@@ -338,7 +338,7 @@ export class MasterWallet {
     return null;
   }
 
-  public createSubWallet(chainID: string) {
+  public async createSubWallet(chainID: string) {
     //ArgInfo("{} {}", _id, GetFunName());
     //ArgInfo("chainID: {}", chainID);
 
@@ -373,7 +373,7 @@ export class MasterWallet {
     );
     this._createdWallets[chainID] = subWallet;
     this._account.addSubWalletInfoList(info);
-    this._account.save();
+    await this._account.save();
 
     return subWallet;
   }
@@ -387,19 +387,25 @@ export class MasterWallet {
     return r;
   }
 
-  verifyPassPhrase(passphrase: string, payPasswd: string): boolean {
+  async verifyPassPhrase(
+    passphrase: string,
+    payPasswd: string
+  ): Promise<boolean> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("passphrase: *");
     // ArgInfo("payPasswd: *");
-    const r: boolean = this._account.verifyPassPhrase(passphrase, payPasswd);
+    const r: boolean = await this._account.verifyPassPhrase(
+      passphrase,
+      payPasswd
+    );
     // ArgInfo("r => {}", r);
     return r;
   }
 
-  verifyPayPassword(payPasswd: string): boolean {
+  async verifyPayPassword(payPasswd: string): Promise<boolean> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPasswd: *");
-    const r: boolean = this._account.verifyPayPassword(payPasswd);
+    const r: boolean = await this._account.verifyPayPassword(payPasswd);
     // ArgInfo("r => {}", r);
     return r;
   }
@@ -481,17 +487,17 @@ export class MasterWallet {
     return j;
   }
 
-  exportMnemonic(payPassword: string): string {
+  async exportMnemonic(payPassword: string): Promise<string> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPassword: *");
 
-    const mnemonic = this._account.exportMnemonic(payPassword);
+    const mnemonic = await this._account.exportMnemonic(payPassword);
 
     // ArgInfo("r => *");
     return mnemonic;
   }
 
-  exportPrivateKey(payPasswd: string): string {
+  async exportPrivateKey(payPasswd: string): Promise<string> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPsswd: *");
 
@@ -501,7 +507,7 @@ export class MasterWallet {
       "Unsupport operation: read-only wallet do not contain xprv"
     );
 
-    const xprv: string = this._account.getxPrvKeyString(payPasswd);
+    const xprv: string = await this._account.getxPrvKeyString(payPasswd);
 
     // ArgInfo("r => *");
     return xprv;
@@ -572,7 +578,7 @@ export class MasterWallet {
     return null;
   }
 
-  getDataPath(): string {
+  getDataPath(): Promise<string> {
     return this._account.getDataPath();
   }
 

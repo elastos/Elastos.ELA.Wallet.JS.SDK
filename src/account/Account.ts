@@ -843,7 +843,7 @@ export class Account {
     return this._requestPubKey;
   }
 
-  public rootKey(payPasswd: string): HDKey {
+  public async rootKey(payPasswd: string): Promise<HDKey> {
     if (this._localstore.readonly()) {
       ErrorChecker.throwLogicException(
         Error.Code.Key,
@@ -852,7 +852,7 @@ export class Account {
     }
 
     if (this._localstore.getxPubKeyBitcoin().length === 0) {
-      this.regenerateKey(payPasswd);
+      await this.regenerateKey(payPasswd);
       this.init();
     }
 
@@ -861,7 +861,7 @@ export class Account {
     return key;
   }
 
-  requestPrivKey(payPassword: string): DeterministicKey {
+  async requestPrivKey(payPassword: string): Promise<DeterministicKey> {
     if (this._localstore.readonly()) {
       ErrorChecker.throwLogicException(
         Error.Code.Key,
@@ -870,7 +870,7 @@ export class Account {
     }
 
     if (!this._localstore.getxPubKeyBitcoin()) {
-      this.regenerateKey(payPassword);
+      await this.regenerateKey(payPassword);
       this.init();
     }
 
@@ -888,7 +888,7 @@ export class Account {
     return this._btcMasterPubKey;
   }
 
-  public getxPrvKeyString(payPasswd: string): string {
+  public async getxPrvKeyString(payPasswd: string): Promise<string> {
     if (this._localstore.readonly()) {
       ErrorChecker.throwLogicException(
         Error.Code.UnsupportOperation,
@@ -897,7 +897,7 @@ export class Account {
     }
 
     if (this._localstore.getxPubKeyBitcoin().length === 0) {
-      this.regenerateKey(payPasswd);
+      await this.regenerateKey(payPasswd);
       this.init();
     }
 
@@ -925,12 +925,12 @@ export class Account {
     return this._ownerPubKey;
   }
 
-  changePassword(oldPasswd: string, newPasswd: string) {
+  async changePassword(oldPasswd: string, newPasswd: string) {
     if (!this._localstore.readonly()) {
       ErrorChecker.checkPassword(newPasswd, "New");
 
       if (this._localstore.getxPubKeyBitcoin().length === 0) {
-        this.regenerateKey(oldPasswd);
+        await this.regenerateKey(oldPasswd);
         this.init();
       }
 
@@ -1410,7 +1410,7 @@ export class Account {
 #endif
 */
 
-  exportMnemonic(payPasswd: string): string {
+  async exportMnemonic(payPasswd: string): Promise<string> {
     if (this._localstore.readonly()) {
       ErrorChecker.throwLogicException(
         Error.Code.UnsupportOperation,
@@ -1419,7 +1419,7 @@ export class Account {
     }
 
     if (this._localstore.getxPubKeyBitcoin()) {
-      this.regenerateKey(payPasswd);
+      await this.regenerateKey(payPasswd);
       this.init();
     }
 
@@ -1434,7 +1434,7 @@ export class Account {
     return m;
   }
 
-  regenerateKey(payPasswd: string) {
+  async regenerateKey(payPasswd: string) {
     Log.info("Doing regenerate pubkey...");
     let pubkeyRing: PublicKeyRing[] = this._localstore.getPublicKeyRing();
 
@@ -1587,7 +1587,7 @@ export class Account {
       this._localstore.setPublicKeyRing(pubkeyRing);
     }
 
-    this._localstore.save();
+    await this._localstore.save();
   }
 
   getSeed(payPasswd: string): Buffer {
@@ -1631,10 +1631,13 @@ export class Account {
     return false;
   }
 
-  verifyPassPhrase(passphrase: string, payPasswd: string): boolean {
+  async verifyPassPhrase(
+    passphrase: string,
+    payPasswd: string
+  ): Promise<boolean> {
     if (!this._localstore.readonly() && this._xpub != null) {
       if (!this._localstore.getxPubKeyBitcoin()) {
-        this.regenerateKey(payPasswd);
+        await this.regenerateKey(payPasswd);
         this.init();
       }
       const mnemonic = this._localstore.getMnemonic();
@@ -1649,10 +1652,10 @@ export class Account {
     return false;
   }
 
-  verifyPayPassword(payPasswd: string): boolean {
+  async verifyPayPassword(payPasswd: string): Promise<boolean> {
     if (!this._localstore.readonly()) {
       if (!this._localstore.getxPubKeyBitcoin()) {
-        this.regenerateKey(payPasswd);
+        await this.regenerateKey(payPasswd);
         this.init();
       }
 
@@ -1674,15 +1677,15 @@ export class Account {
     return false;
   }
 
-  save(): void {
-    this._localstore.save();
+  save(): Promise<void> {
+    return this._localstore.save();
   }
 
   remove() {
     this._localstore.remove();
   }
 
-  getDataPath(): string {
+  getDataPath(): Promise<string> {
     return this._localstore.getDataPath();
   }
 }

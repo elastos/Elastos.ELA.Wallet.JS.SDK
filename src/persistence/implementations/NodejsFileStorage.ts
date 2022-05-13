@@ -1,10 +1,16 @@
-import { json, JSONObject } from "../../types";
+import { json } from "../../types";
 import { WalletStorage } from "../WalletStorage";
 
 export class NodejsFileStorage implements WalletStorage {
-  currentMasterWalletID: string;
+  setActiveMasterWalletID(id: string): Promise<void> {
+    return Promise.resolve();
+  }
 
-  public loadStore(): json {
+  getActiveMasterWalletID(): Promise<string> {
+    return Promise.resolve("");
+  }
+
+  loadStore(id?: string): Promise<json> {
     /* TODO fs::path filepath = _path;
   filepath /= LOCAL_STORE_FILE;
   if (!fs:: exists(filepath)) {
@@ -20,10 +26,10 @@ export class NodejsFileStorage implements WalletStorage {
   nlohmann::json j;
   is >> j;
 */
-    return {}; // TODO
+    return Promise.resolve({}); // TODO
   }
 
-  public saveStore(j: JSONObject) {
+  saveStore(j: json): Promise<void> {
     /* TODO nlohmann::json j = ToJson();
 
     if (!j.is_null() && !j.empty() && !_path.empty()) {
@@ -36,9 +42,10 @@ export class NodejsFileStorage implements WalletStorage {
       o << j;
       o.flush();
     } */
+    return Promise.resolve();
   }
 
-  getMasterWalletIDs(): string[] {
+  getMasterWalletIDs(): Promise<string[]> {
     return;
   }
 }

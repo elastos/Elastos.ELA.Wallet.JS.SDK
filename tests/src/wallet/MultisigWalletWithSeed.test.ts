@@ -28,7 +28,7 @@ import {
 describe("MasterWalletManager Tests", () => {
   let masterWalletManager: MasterWalletManager;
 
-  test("create a multisign wallet", () => {
+  test("create a multisign wallet", async () => {
     const netType = "TestNet";
 
     const browserStorage = new BrowserLocalStorage();
@@ -46,7 +46,7 @@ describe("MasterWalletManager Tests", () => {
 
     const masterWalletID = "master-wallet-id-8";
     const seed = `3c6f6c0a5aba9e1456a827587f36a45430812ef04aa8cac4774a7d533ecb486dca476c004ae65271305f8907128583d2112e1648a902d44e61d942b02121c2a4`;
-    const masterWallet = masterWalletManager.importWalletWithSeed(
+    const masterWallet = await masterWalletManager.importWalletWithSeed(
       masterWalletID,
       seed,
       payPassword,
@@ -55,16 +55,16 @@ describe("MasterWalletManager Tests", () => {
       passphrase
     );
 
-    const localStore = browserStorage.loadStore(masterWalletID);
+    const localStore = await browserStorage.loadStore(masterWalletID);
     console.log("localStore.xPubKeyHDPM....", localStore.xPubKeyHDPM);
 
-    const subWallet: any = masterWallet.createSubWallet("ELA");
+    const subWallet: any = await masterWallet.createSubWallet("ELA");
     const addresses = subWallet.getAddresses(0, 1, false);
     // [ 'EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L' ]
     console.log("addresses...", addresses);
 
     const seed1 = `9d6c79835481f5ce97a7396f7f474151b28f8183c9be2ddbcacbcc32e0480c5849d0bfe5ca8884277dc4f07c5eda3ec97298ebc1e8c7e67ce41f914fa47fee05`;
-    const masterWallet1 = masterWalletManager.importWalletWithSeed(
+    const masterWallet1 = await masterWalletManager.importWalletWithSeed(
       "master-wallet-id-9",
       seed1,
       payPassword,
@@ -73,19 +73,19 @@ describe("MasterWalletManager Tests", () => {
       passphrase
     );
 
-    const localStore1 = browserStorage.loadStore("master-wallet-id-9");
+    const localStore1 = await browserStorage.loadStore("master-wallet-id-9");
     console.log("localStore1.xPubKeyHDPM....", localStore1.xPubKeyHDPM);
 
-    const ids1 = browserStorage.getMasterWalletIDs();
+    const ids1 = await browserStorage.getMasterWalletIDs();
     console.log("ids1...", ids1);
 
-    const subWallet1: any = masterWallet1.createSubWallet("ELA");
+    const subWallet1: any = await masterWallet1.createSubWallet("ELA");
     const addresses1 = subWallet1.getAddresses(0, 1, false);
     // [ 'EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw' ]
     console.log("addresses1...", addresses1);
 
     const seed2 = `26acf44706d7d81ffac1cbe5ca2eea3df134bc9708f4938704bb2773b4fa49a76e2d9dd54989c5d6e9a2bedff72820be798b92ee83d4411dac535422387357e7`;
-    const masterWallet2 = masterWalletManager.importWalletWithSeed(
+    const masterWallet2 = await masterWalletManager.importWalletWithSeed(
       "master-wallet-id-10",
       seed2,
       payPassword,
@@ -94,11 +94,11 @@ describe("MasterWalletManager Tests", () => {
       passphrase
     );
 
-    const localStore2 = browserStorage.loadStore("master-wallet-id-10");
+    const localStore2 = await browserStorage.loadStore("master-wallet-id-10");
 
     console.log("localStore2.xPubKeyHDPM....", localStore2.xPubKeyHDPM);
 
-    const subWallet2: any = masterWallet2.createSubWallet("ELA");
+    const subWallet2: any = await masterWallet2.createSubWallet("ELA");
     const addresses2 = subWallet2.getAddresses(0, 1, false);
     // [ 'EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo' ]
     console.log("addresses2...", addresses2);
@@ -112,7 +112,7 @@ describe("MasterWalletManager Tests", () => {
     ];
     const m = 2;
     const masterWallet3 =
-      masterWalletManager.createMultiSignMasterWalletWithSeed(
+      await masterWalletManager.createMultiSignMasterWalletWithSeed(
         "master-wallet-id-11",
         seed3,
         payPassword,
@@ -121,10 +121,10 @@ describe("MasterWalletManager Tests", () => {
         singleAddress
       );
 
-    const localStore3 = browserStorage.loadStore("master-wallet-id-11");
+    const localStore3 = await browserStorage.loadStore("master-wallet-id-11");
     console.log("localStore3...", localStore3);
 
-    const subWallet3: any = masterWallet3.createSubWallet("ELA");
+    const subWallet3: any = await masterWallet3.createSubWallet("ELA");
     const addresses3 = subWallet3.getAddresses(0, 1, false);
     //['8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n']
     expect(addresses3[0]).toEqual("8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n");

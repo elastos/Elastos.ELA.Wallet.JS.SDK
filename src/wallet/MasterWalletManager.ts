@@ -85,8 +85,8 @@ export class MasterWalletManager {
 
   destory() {}
 
-  protected loadMasterWalletID(storage: WalletStorage) {
-    const masterWalletIDs = storage.getMasterWalletIDs();
+  protected async loadMasterWalletID(storage: WalletStorage) {
+    const masterWalletIDs = await storage.getMasterWalletIDs();
     for (let i = 0; i < masterWalletIDs.length; i++) {
       let masterWalletID = masterWalletIDs[i];
       this._masterWalletMap.set(masterWalletID, null);
@@ -131,13 +131,13 @@ export class MasterWalletManager {
    * @param singleAddress if true, the created wallet will only contain one address, otherwise wallet will manager a chain of addresses.
    * @return If success will return a pointer of master wallet interface.
    */
-  createMasterWallet(
+  async createMasterWallet(
     masterWalletID: string,
     mnemonic: string,
     passphrase: string,
     passwd: string,
     singleAddress: boolean
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("mnemonic: *");
@@ -165,9 +165,9 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    this._storage.currentMasterWalletID = masterWalletID;
+    await this._storage.setActiveMasterWalletID(masterWalletID);
 
-    const masterWallet = MasterWallet.newFromMnemonic(
+    const masterWallet = await MasterWallet.newFromMnemonic(
       masterWalletID,
       mnemonic,
       passphrase,
@@ -190,11 +190,11 @@ export class MasterWalletManager {
    * @singlePrivateKey uint256 hex string of private key
    * @passwd pay password
    */
-  createMasterWalletWithPrivateKey(
+  async createMasterWalletWithPrivateKey(
     masterWalletID: string,
     singlePrivateKey: string,
     passwd: string
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("singlePrivateKey: *");
@@ -206,8 +206,8 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromSinglePrivateKey(
+    await this._storage.setActiveMasterWalletID(masterWalletID);
+    const masterWallet = await MasterWallet.newFromSinglePrivateKey(
       masterWalletID,
       singlePrivateKey,
       passwd,
@@ -231,14 +231,14 @@ export class MasterWalletManager {
    * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
    * @return If success will return a pointer of master wallet interface.
    */
-  createMultiSignMasterWallet(
+  async createMultiSignMasterWallet(
     masterWalletID: string,
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
     compatible: boolean = false,
     timestamp: time_t = 0
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("cosigners: {}", cosigners.dump());
@@ -288,8 +288,8 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromPublicKeyRings(
+    this._storage.setActiveMasterWalletID(masterWalletID);
+    const masterWallet = await MasterWallet.newFromPublicKeyRings(
       masterWalletID,
       pubKeyRing,
       m,
@@ -318,7 +318,7 @@ export class MasterWalletManager {
    * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
    * @return If success will return a pointer of master wallet interface.
    */
-  createMultiSignMasterWalletWithPrivateKey(
+  async createMultiSignMasterWalletWithPrivateKey(
     masterWalletID: string,
     xprv: string,
     payPassword: string,
@@ -378,8 +378,8 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromXPrivateKey(
+    this._storage.setActiveMasterWalletID(masterWalletID);
+    const masterWallet = await MasterWallet.newFromXPrivateKey(
       masterWalletID,
       xprv,
       payPassword,
@@ -410,7 +410,7 @@ export class MasterWalletManager {
    * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
    * @return If success will return a pointer of master wallet interface.
    */
-  createMultiSignMasterWalletWithSeed(
+  async createMultiSignMasterWalletWithSeed(
     masterWalletID: string,
     seed: string,
     payPassword: string,
@@ -459,9 +459,9 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    this._storage.currentMasterWalletID = masterWalletID;
+    await this._storage.setActiveMasterWalletID(masterWalletID);
     let seedBytes = Buffer.from(seed, "hex");
-    const masterWallet = MasterWallet.newFromMultisignSeed(
+    const masterWallet = await MasterWallet.newFromMultisignSeed(
       masterWalletID,
       seedBytes,
       payPassword,
@@ -493,7 +493,7 @@ export class MasterWalletManager {
    * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
    * @return If success will return a pointer of master wallet interface.
    */
-  createMultiSignMasterWalletWithMnemonic(
+  async createMultiSignMasterWalletWithMnemonic(
     masterWalletID: string,
     mnemonic: string,
     passphrase: string,
@@ -503,7 +503,7 @@ export class MasterWalletManager {
     singleAddress: boolean,
     compatible: boolean = false,
     timestamp: time_t = 0
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("mnemonic: *");
@@ -554,8 +554,8 @@ export class MasterWalletManager {
       pubKeyRing.push(new PublicKeyRing("", xpub));
     }
 
-    this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromMnemonicAndPublicKeyRings(
+    await this._storage.setActiveMasterWalletID(masterWalletID);
+    const masterWallet = await MasterWallet.newFromMnemonicAndPublicKeyRings(
       masterWalletID,
       mnemonic,
       passphrase,
@@ -609,7 +609,7 @@ export class MasterWalletManager {
     // ArgInfo("r => {} done", GetFunName());
   }
 
-  importWalletWithKeystore(
+  async importWalletWithKeystore(
     masterWalletID: string,
     keystoreContent: JSONObject,
     backupPassword: string,
@@ -635,7 +635,7 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    this._storage.currentMasterWalletID = masterWalletID;
+    await this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
@@ -653,14 +653,14 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  importWalletWithMnemonic(
+  async importWalletWithMnemonic(
     masterWalletID: string,
     mnemonic: string,
     phrasePassword: string,
     payPassword: string,
     singleAddress: boolean,
     timestamp: time_t
-  ): MasterWallet {
+  ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
     // ArgInfo("mnemonic: *");
@@ -689,8 +689,8 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    this._storage.currentMasterWalletID = masterWalletID;
-    const masterWallet = MasterWallet.newFromMnemonic(
+    await this._storage.setActiveMasterWalletID(masterWalletID);
+    const masterWallet = await MasterWallet.newFromMnemonic(
       masterWalletID,
       mnemonic,
       phrasePassword,
@@ -746,7 +746,7 @@ export class MasterWalletManager {
     */
   }
 
-  importWalletWithSeed(
+  async importWalletWithSeed(
     masterWalletID: string,
     seed: string,
     payPassword: string,
@@ -789,9 +789,9 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    this._storage.currentMasterWalletID = masterWalletID;
+    await this._storage.setActiveMasterWalletID(masterWalletID);
 
-    let masterWallet = MasterWallet.newFromSeed(
+    let masterWallet = await MasterWallet.newFromSeed(
       masterWalletID,
       seedBytes,
       payPassword,

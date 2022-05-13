@@ -7,9 +7,6 @@ import { CoinInfo } from "../walletcore/CoinInfo";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { WalletStorage } from "./WalletStorage";
 
-const MASTER_WALLET_STORE_FILE = "MasterWalletStore.json";
-const LOCAL_STORE_FILE = "LocalStore.json";
-
 export class LocalStore {
   // encrypted
   private _xPrivKey: string;
@@ -271,8 +268,8 @@ export class LocalStore {
     this._singlePrivateKey = AESEncrypt(bytes, newPasswd);
   }
 
-  public load(id: string): boolean {
-    let j = this._walletStorage.loadStore(id);
+  public async load(id: string): Promise<boolean> {
+    let j = await this._walletStorage.loadStore(id);
 
     ErrorChecker.checkLogic(
       !j || j === {},
@@ -285,8 +282,8 @@ export class LocalStore {
     return true;
   }
 
-  public save() {
-    this._walletStorage.saveStore(this.toJson());
+  public save(): Promise<void> {
+    return this._walletStorage.saveStore(this.toJson());
   }
 
   remove() {
@@ -297,8 +294,8 @@ export class LocalStore {
     */
   }
 
-  getDataPath(): string {
-    return this._walletStorage.currentMasterWalletID;
+  getDataPath(): Promise<string> {
+    return this._walletStorage.getActiveMasterWalletID();
   }
 
   /*

@@ -28,7 +28,7 @@ import {
 describe("MasterWalletManager Tests", () => {
   let masterWalletManager: MasterWalletManager;
 
-  test("create a multisign wallet", () => {
+  test("create a multisign wallet", async () => {
     const netType = "TestNet";
 
     const browserStorage = new BrowserLocalStorage();
@@ -46,7 +46,7 @@ describe("MasterWalletManager Tests", () => {
 
     const masterWalletID = "master-wallet-id-4";
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
-    const masterWallet = masterWalletManager.createMasterWallet(
+    const masterWallet = await masterWalletManager.createMasterWallet(
       masterWalletID,
       mnemonic,
       passphrase,
@@ -54,19 +54,19 @@ describe("MasterWalletManager Tests", () => {
       singleAddress
     );
 
-    const localStore = browserStorage.loadStore(masterWalletID);
+    const localStore = await browserStorage.loadStore(masterWalletID);
     console.log("localStore.xPubKeyHDPM....", localStore.xPubKeyHDPM);
 
-    const subWallet: any = masterWallet.createSubWallet("ELA");
+    const subWallet: any = await masterWallet.createSubWallet("ELA");
     const addresses = subWallet.getAddresses(0, 1, false);
     // [ 'EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L' ]
     console.log("addresses...", addresses);
 
-    const ids = browserStorage.getMasterWalletIDs();
+    const ids = await browserStorage.getMasterWalletIDs();
     console.log("ids...", ids);
 
     const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
-    const masterWallet1 = masterWalletManager.createMasterWallet(
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
       "master-wallet-id-5",
       mnemonic1,
       passphrase,
@@ -74,19 +74,19 @@ describe("MasterWalletManager Tests", () => {
       singleAddress
     );
 
-    const localStore1 = browserStorage.loadStore("master-wallet-id-5");
+    const localStore1 = await browserStorage.loadStore("master-wallet-id-5");
     console.log("localStore1.xPubKeyHDPM....", localStore1.xPubKeyHDPM);
 
-    const ids1 = browserStorage.getMasterWalletIDs();
+    const ids1 = await browserStorage.getMasterWalletIDs();
     console.log("ids1...", ids1);
 
-    const subWallet1: any = masterWallet1.createSubWallet("ELA");
+    const subWallet1: any = await masterWallet1.createSubWallet("ELA");
     const addresses1 = subWallet1.getAddresses(0, 1, false);
     // [ 'EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw' ]
     console.log("addresses1...", addresses1);
 
     const mnemonic2 = `cheap exotic web cabbage discover camera vanish damage version allow merge scheme`;
-    const masterWallet2 = masterWalletManager.createMasterWallet(
+    const masterWallet2 = await masterWalletManager.createMasterWallet(
       "master-wallet-id-6",
       mnemonic2,
       passphrase,
@@ -94,14 +94,14 @@ describe("MasterWalletManager Tests", () => {
       singleAddress
     );
 
-    const localStore2 = browserStorage.loadStore("master-wallet-id-6");
+    const localStore2 = await browserStorage.loadStore("master-wallet-id-6");
 
     console.log("localStore2.xPubKeyHDPM....", localStore2.xPubKeyHDPM);
 
-    const ids2 = browserStorage.getMasterWalletIDs();
+    const ids2 = await browserStorage.getMasterWalletIDs();
     console.log("ids2...", ids2);
 
-    const subWallet2: any = masterWallet2.createSubWallet("ELA");
+    const subWallet2: any = await masterWallet2.createSubWallet("ELA");
     const addresses2 = subWallet2.getAddresses(0, 1, false);
     // [ 'EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo' ]
     console.log("addresses2...", addresses2);
@@ -114,7 +114,7 @@ describe("MasterWalletManager Tests", () => {
     ];
     const m = 2;
     const masterWallet3 =
-      masterWalletManager.createMultiSignMasterWalletWithMnemonic(
+      await masterWalletManager.createMultiSignMasterWalletWithMnemonic(
         "master-wallet-id-7",
         mnemonic3,
         passphrase,
@@ -124,13 +124,13 @@ describe("MasterWalletManager Tests", () => {
         singleAddress
       );
 
-    const localStore3 = browserStorage.loadStore("master-wallet-id-7");
+    const localStore3 = await browserStorage.loadStore("master-wallet-id-7");
     console.log("localStore3...", localStore3);
 
-    const ids3 = browserStorage.getMasterWalletIDs();
+    const ids3 = await browserStorage.getMasterWalletIDs();
     console.log("ids3...", ids3);
 
-    const subWallet3: any = masterWallet3.createSubWallet("ELA");
+    const subWallet3: any = await masterWallet3.createSubWallet("ELA");
     const addresses3 = subWallet3.getAddresses(0, 1, false);
     //['8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n']
     console.log("addresses3...", addresses3);

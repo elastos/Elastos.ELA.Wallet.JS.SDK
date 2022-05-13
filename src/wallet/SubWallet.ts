@@ -157,9 +157,13 @@ export abstract class SubWallet {
    * @passwd pay password.
    * @return If success, signature will be returned.
    */
-  public signDigest(address: string, digest: string, passwd: string): string {
+  public signDigest(
+    address: string,
+    digest: string,
+    passwd: string
+  ): Promise<string> {
     warnLog();
-    return "";
+    return Promise.resolve("");
   }
 
   /**

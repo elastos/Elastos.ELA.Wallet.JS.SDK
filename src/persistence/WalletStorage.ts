@@ -1,19 +1,21 @@
 import { json } from "../types";
 
 /**
+/**
  * Base interface to store persitant wallet data.
  */
 export interface WalletStorage {
-  // The unique identification of a wallet
-  currentMasterWalletID: string | null;
+  setActiveMasterWalletID(masterWalletID?: string): Promise<void>;
+
+  getActiveMasterWalletID(): Promise<string>;
   /**
    * Loads a saved store and returns it as json.
    */
-  loadStore(masterWalletID?: string): json;
+  loadStore(masterWalletID?: string): Promise<json>;
   /**
    * Saves the given local store JSON representation to persistent storage.
    */
-  saveStore(j: json): void;
+  saveStore(j: json): Promise<void>;
 
-  getMasterWalletIDs(): string[];
+  getMasterWalletIDs(): Promise<string[]>;
 }

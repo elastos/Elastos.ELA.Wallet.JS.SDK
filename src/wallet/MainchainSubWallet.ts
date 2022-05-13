@@ -255,7 +255,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return depositAddress.string();
   }
 
-  generateProducerPayload(
+  async generateProducerPayload(
     ownerPublicKey: string,
     nodePublicKey: string,
     nickName: string,
@@ -294,7 +294,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     pr.serializeUnsigned(ostream, 0);
     let prUnsigned = ostream.getBytes();
 
-    pr.setSignature(this.getWallet().signWithOwnerKey(prUnsigned, payPasswd));
+    const signature = await this.getWallet().signWithOwnerKey(
+      prUnsigned,
+      payPasswd
+    );
+    pr.setSignature(signature);
 
     let payloadJson = pr.toJson(0);
 
@@ -302,10 +306,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return payloadJson;
   }
 
-  generateCancelProducerPayload(
+  async generateCancelProducerPayload(
     ownerPublicKey: string,
     payPasswd: string
-  ): json {
+  ): Promise<json> {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("ownerPubKey: {}", ownerPublicKey);
     // ArgInfo("payPasswd: *");
@@ -325,7 +329,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     pc.serializeUnsigned(ostream, 0);
     let pcUnsigned: bytes_t = ostream.getBytes();
 
-    pc.setSignature(this.getWallet().signWithOwnerKey(pcUnsigned, payPasswd));
+    const signature = await this.getWallet().signWithOwnerKey(
+      pcUnsigned,
+      payPasswd
+    );
+    pc.setSignature(signature);
 
     let payloadJson: json = pc.toJson(0);
     // ArgInfo("r => {}", payloadJson.dump());

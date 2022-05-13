@@ -279,7 +279,7 @@ export class EthSidechainSubWallet
     return j;
   }
 
-  signDigest(address: string, digest: string, passwd: string): string {
+  signDigest(address: string, digest: string, passwd: string): Promise<string> {
     const addr: string = this._wallet.getPrimaryAddress();
     ErrorChecker.checkParam(
       addr != address,
@@ -290,7 +290,7 @@ export class EthSidechainSubWallet
     const k = this.getPrivateKey(passwd);
     const curve = new Secp256(Secp256.CURVE_K1);
     const sig = curve.sign(Buffer.from(digest), k.getPrivateKeyBytes());
-    return sig.signature.toString("hex");
+    return Promise.resolve(sig.signature.toString("hex"));
   }
 
   verifyDigest(pubkey: string, digest: string, signature: string): boolean {

@@ -278,13 +278,13 @@ export class SubAccount {
       .getPublicKeyBytes();
   }
 
-  private findPrivateKey(
+  private async findPrivateKey(
     type: SignType,
     pubkeys: bytes_t[],
     payPasswd: string
-  ): { found: boolean; key?: HDKey } {
+  ): Promise<{ found: boolean; key?: HDKey }> {
     let key: HDKey;
-    let root = this._parent.rootKey(payPasswd);
+    let root = await this._parent.rootKey(payPasswd);
 
     // for special path
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
@@ -326,7 +326,7 @@ export class SubAccount {
     return { found: false };
   }
 
-  public signTransaction(tx: Transaction, payPasswd: string) {
+  public async signTransaction(tx: Transaction, payPasswd: string) {
     ErrorChecker.checkParam(
       this._parent.readonly(),
       Error.Code.Sign,
@@ -354,7 +354,7 @@ export class SubAccount {
         "Invalid redeem script"
       );
 
-      let rs: { found: boolean; key?: HDKey } = this.findPrivateKey(
+      let rs: { found: boolean; key?: HDKey } = await this.findPrivateKey(
         type,
         publicKeys,
         payPasswd
@@ -398,7 +398,11 @@ export class SubAccount {
     }
   }
 
-  getKeyWithAddress(addr: Address, payPasswd: string): bytes_t | null {
+  async getKeyWithAddress(
+    addr: Address,
+    payPasswd: string
+  ): Promise<bytes_t | null> {
+    const rootKey = await this._parent.rootKey(payPasswd);
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let [key, value] of this._chainAddressCached) {
         let chain: uint32_t = key;
@@ -410,8 +414,7 @@ export class SubAccount {
           let did = Address.newFromAddress(cid);
           did.convertToDID();
           if (addr.equals(address) || addr.equals(cid) || addr.equals(did)) {
-            const privateKey = this._parent
-              .rootKey(payPasswd)
+            const privateKey = rootKey
               .deriveWithPath("m/44'/0'/0'")
               .deriveWithIndex(chain)
               .deriveWithIndex(i)
@@ -429,17 +432,18 @@ export class SubAccount {
     return null;
   }
 
-  deriveOwnerKey(payPasswd: string): DeterministicKey {
+  async deriveOwnerKey(payPasswd: string): Promise<DeterministicKey> {
     // 44'/coinIndex'/account'/change/index
-    const privateKey = this._parent
-      .rootKey(payPasswd)
+    const rootKey = await this._parent.rootKey(payPasswd);
+    const privateKey = rootKey
       .deriveWithPath("m/44'/0'/1'/0/0")
       .getPrivateKeyBase58();
     return DeterministicKey.fromExtendedKey(privateKey);
   }
 
-  deriveDIDKey(payPasswd: string): HDKey {
-    return this._parent.rootKey(payPasswd).deriveWithPath("m/44'/0'/0'/0/0");
+  async deriveDIDKey(payPasswd: string): Promise<HDKey> {
+    const rootKey = await this._parent.rootKey(payPasswd);
+    return rootKey.deriveWithPath("m/44'/0'/0'/0/0");
   }
 
   getCode(addr: Address): Buffer | null {

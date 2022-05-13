@@ -40,7 +40,7 @@ describe("MasterWalletManager Tests", () => {
     expect(t).toThrow(JSON.stringify(error));
   });
 
-  test("create and sign a tx", () => {
+  test("create and sign a tx", async () => {
     const netType = "TestNet";
     const masterWalletID = "master-wallet-id-3";
     const browserStorage = new BrowserLocalStorage(masterWalletID);
@@ -57,7 +57,7 @@ describe("MasterWalletManager Tests", () => {
     const passphrase = "";
     const passwd = "11111111";
     const singleAddress = true;
-    const masterWallet = masterWalletManager.createMasterWallet(
+    const masterWallet = await masterWalletManager.createMasterWallet(
       masterWalletID,
       mnemonic,
       passphrase,
@@ -66,9 +66,9 @@ describe("MasterWalletManager Tests", () => {
     );
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
-    const subWallet: any = masterWallet.createSubWallet("ELA");
+    const subWallet: any = await masterWallet.createSubWallet("ELA");
 
-    const localStore = browserStorage.loadStore(masterWalletID);
+    const localStore = await browserStorage.loadStore(masterWalletID);
     // console.log("localStore....", localStore);
 
     const address = "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz";
