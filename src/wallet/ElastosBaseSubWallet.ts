@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
+import { Buffer } from "buffer";
 import { SubAccount } from "../account/SubAccount";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
@@ -41,7 +41,14 @@ import {
 } from "../types";
 import { Address, AddressArray } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
-import { IElastosBaseSubWallet, EncodedTx } from "./IElastosBaseSubWallet";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
+import {
+  HDKey,
+  KeySpec,
+  SEQUENCE_EXTERNAL_CHAIN,
+  SEQUENCE_INTERNAL_CHAIN
+} from "../walletcore/hdkey";
+import { EncodedTx, IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
 import { UTXO, UTXOSet } from "./UTXO";
@@ -51,20 +58,12 @@ import {
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
 } from "./WalletCommon";
-import { EcdsaSigner } from "../walletcore/ecdsasigner";
-import {
-  HDKey,
-  KeySpec,
-  SEQUENCE_EXTERNAL_CHAIN,
-  SEQUENCE_INTERNAL_CHAIN
-} from "../walletcore/hdkey";
 
 //type WalletManagerPtr = SpvService;
 
 export class ElastosBaseSubWallet
   extends SubWallet
-  implements IElastosBaseSubWallet
-{
+  implements IElastosBaseSubWallet {
   // protected _walletManager: WalletManagerPtr;
   private _wallet: Wallet; // WAS: _walletManager: WalletManagerPtr - removed the SPVService, directly call the wallet object insteead
 
@@ -113,7 +112,7 @@ export class ElastosBaseSubWallet
         _walletManager->DatabaseFlush();
     }*/
 
-  destroy() {}
+  destroy() { }
 
   //default implement ISubWallet
   public getBasicInfo(): json {
@@ -345,7 +344,7 @@ export class ElastosBaseSubWallet
     result["Fee"] = tx.getFee().toNumber();
   }
 
-  protected decodeTx(encodedTx: EncodedTx): Transaction {
+  public decodeTx(encodedTx: EncodedTx): Transaction {
     if (
       !("Algorithm" in encodedTx) ||
       !("Data" in encodedTx) ||
