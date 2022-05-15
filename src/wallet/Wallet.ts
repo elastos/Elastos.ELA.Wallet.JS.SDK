@@ -232,8 +232,8 @@ export class Wallet extends Lockable {
     return this._walletID;
   }
 
-  signTransaction(tx: Transaction, payPassword: string) {
-    this._subAccount.signTransaction(tx, payPassword);
+  async signTransaction(tx: Transaction, payPassword: string) {
+    await this._subAccount.signTransaction(tx, payPassword);
   }
 
   async signWithAddress(

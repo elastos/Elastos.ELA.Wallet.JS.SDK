@@ -179,10 +179,10 @@ export class Account {
 	}
 	*/
 
-  public static newFromAccount(id: string, storage: WalletStorage) {
+  public static async newFromAccount(id: string, storage: WalletStorage) {
     let account = new Account();
     account._localstore = new LocalStore(storage);
-    account._localstore.load(id);
+    await account._localstore.load(id);
     account.init();
     return account;
   }

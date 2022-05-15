@@ -52,7 +52,7 @@ export class MasterWallet {
 
   private constructor() {}
 
-  public static newFromStorage(
+  public static async newFromStorage(
     id: string,
     config: Config,
     storage: WalletStorage
@@ -60,7 +60,7 @@ export class MasterWallet {
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
-    masterWallet._account = Account.newFromAccount(id, storage);
+    masterWallet._account = await Account.newFromAccount(id, storage);
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }

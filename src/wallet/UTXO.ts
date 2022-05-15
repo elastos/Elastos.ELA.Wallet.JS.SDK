@@ -73,12 +73,12 @@ export class UTXO {
 
   public equalsInput(input: TransactionInput): boolean {
     // WAS Equal(InputPtr)
-    return this._hash == input.txHash() && this._n == input.index();
+    return this._hash.eq(input.txHash()) && this._n == input.index();
   }
 
   public equals(hash: uint256, index: uint16_t): boolean {
     // WAS Equals
-    return this._hash == hash && index == this._n;
+    return this._hash.eq(hash) && index == this._n;
   }
 
   public equalsUTXO(utxo: UTXO): boolean {
@@ -92,7 +92,7 @@ export class UTXO {
 export class UTXOSet extends Array<UTXO> {
   public sortUTXOs() {
     this.sort((x, y) => {
-      if (x.hash() === y.hash()) {
+      if (x.hash().eq(y.hash())) {
         return x.index() - y.index();
       } else {
         return x.hash().minus(y.hash()).toNumber();

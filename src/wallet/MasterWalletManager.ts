@@ -87,18 +87,22 @@ export class MasterWalletManager {
 
   protected async loadMasterWalletID(storage: WalletStorage) {
     const masterWalletIDs = await storage.getMasterWalletIDs();
+    if (!masterWalletIDs) return;
+
     for (let i = 0; i < masterWalletIDs.length; i++) {
       let masterWalletID = masterWalletIDs[i];
       this._masterWalletMap.set(masterWalletID, null);
     }
   }
 
-  protected loadMasterWallet(masterWalletID: string): MasterWallet {
+  protected async loadMasterWallet(
+    masterWalletID: string
+  ): Promise<MasterWallet> {
     Log.info("loading wallet: {} ...", masterWalletID);
 
     let masterWallet: MasterWallet;
     try {
-      masterWallet = MasterWallet.newFromStorage(
+      masterWallet = await MasterWallet.newFromStorage(
         masterWalletID,
         this._config,
         this._storage
@@ -218,7 +222,7 @@ export class MasterWalletManager {
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create master wallet done");
-    return masterWallet;
+    return Promise.resolve(masterWallet);
   }
 
   /**
@@ -572,21 +576,21 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  getAllMasterWallets(): MasterWallet[] {
+  getAllMasterWallets(): Promise<MasterWallet[]> {
     // ArgInfo("{}", GetFunName());
     // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
     let result: MasterWallet[] = [];
-    this._masterWalletMap.forEach((value, key) => {
+    this._masterWalletMap.forEach(async (value, key) => {
       if (value) {
         result.push(value);
       } else {
-        result.push(this.loadMasterWallet(key));
+        result.push(await this.loadMasterWallet(key));
       }
     });
 
     // ArgInfo("r => all master wallet count: {}", result.length);
-    return result;
+    return Promise.resolve(result);
   }
 
   destroyWallet(masterWalletID: string) {
@@ -880,7 +884,7 @@ export class MasterWalletManager {
     return this._masterWalletMap.get(masterWalletID) != null;
   }
 
-  public getMasterWallet(masterWalletID: string): MasterWallet {
+  getMasterWallet(masterWalletID: string): Promise<MasterWallet> {
     //ArgInfo("{}", GetFunName());
     //ArgInfo("masterWalletID: {}", masterWalletID);
 
@@ -888,7 +892,7 @@ export class MasterWalletManager {
       this._masterWalletMap.has(masterWalletID) &&
       this._masterWalletMap.get(masterWalletID) != null
     ) {
-      return this._masterWalletMap.get(masterWalletID);
+      return Promise.resolve(this._masterWalletMap.get(masterWalletID));
     }
 
     return this.loadMasterWallet(masterWalletID);

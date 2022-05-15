@@ -63,7 +63,8 @@ import {
 
 export class ElastosBaseSubWallet
   extends SubWallet
-  implements IElastosBaseSubWallet {
+  implements IElastosBaseSubWallet
+{
   // protected _walletManager: WalletManagerPtr;
   private _wallet: Wallet; // WAS: _walletManager: WalletManagerPtr - removed the SPVService, directly call the wallet object insteead
 
@@ -112,7 +113,7 @@ export class ElastosBaseSubWallet
         _walletManager->DatabaseFlush();
     }*/
 
-  destroy() { }
+  destroy() {}
 
   //default implement ISubWallet
   public getBasicInfo(): json {
@@ -218,13 +219,13 @@ export class ElastosBaseSubWallet
     return result;
   }
 
-  signTransaction(tx: EncodedTx, payPassword: string): json {
+  async signTransaction(tx: EncodedTx, payPassword: string): Promise<json> {
     /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
 
     let txn = this.decodeTx(tx);
-    this.getWallet().signTransaction(txn, payPassword);
+    await this.getWallet().signTransaction(txn, payPassword);
 
     let result: json = {};
     this.encodeTx(result, txn);

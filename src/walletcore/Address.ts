@@ -55,8 +55,8 @@ export class Address {
     if (!address) {
       addr._isValid = false;
     } else {
-      let payload: bytes_t;
-      if ((payload = Base58Check.decode(address))) {
+      let payload: bytes_t = Base58Check.decode(address);
+      if (payload) {
         addr._programHash = uint168.newFrom21BytesBuffer(payload);
         addr.checkValid();
       } else {

@@ -155,9 +155,9 @@ describe("MasterWalletManager Tests", () => {
 
     const tx = subWallet3.createTransaction(inputsJson, outputsJson, fee, memo);
     console.log("multisig tx", tx);
-    const signedTx = subWallet1.signTransaction(tx, payPassword);
+    const signedTx = await subWallet1.signTransaction(tx, payPassword);
     console.log("multisig signedTx...", signedTx);
-    const signedTx1 = subWallet2.signTransaction(signedTx, payPassword);
+    const signedTx1 = await subWallet2.signTransaction(signedTx, payPassword);
     console.log("multisig signedTx1...", signedTx1);
 
     const signedInfo = subWallet.getTransactionSignedInfo(signedTx1);

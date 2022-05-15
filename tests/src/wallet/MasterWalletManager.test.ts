@@ -80,7 +80,7 @@ describe("MasterWalletManager Tests", () => {
 
     const sigHex = `50cdc759396d1c229852f373d985abb06283c72153032e4b9716dfe426c94cfb45ca4807f6aa6930ef404d631afaaef5c0be48acfddb624a3990e19958aef646`;
 
-    const signature = subWallet.signDigest(addresses[0], digest, passwd);
+    const signature = await subWallet.signDigest(addresses[0], digest, passwd);
     expect(signature).toBe(sigHex);
 
     const pubKeyData = [
@@ -114,7 +114,7 @@ describe("MasterWalletManager Tests", () => {
     const memo = "test creating a transaction";
 
     const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
-    const signedTx = subWallet.signTransaction(tx, passwd);
+    const signedTx = await subWallet.signTransaction(tx, passwd);
 
     const signedInfo = subWallet.getTransactionSignedInfo(signedTx);
     const rawTx = subWallet.convertToRawTransaction(signedTx);

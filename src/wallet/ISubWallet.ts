@@ -105,7 +105,7 @@ export interface ISubWallet {
    * @param passwd use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
    * @return If success return the content of transaction in json format.
    */
-  signTransaction(tx: json, passwd: string): json;
+  signTransaction(tx: json, passwd: string): Promise<json>;
 
   /**
    * Sign message with private key of did.
