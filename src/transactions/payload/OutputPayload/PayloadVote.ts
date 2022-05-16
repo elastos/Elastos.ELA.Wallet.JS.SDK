@@ -1,19 +1,17 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-import {
-  bytes_t,
-  size_t,
-  uint64_t,
-  uint8_t,
-  json,
-  JSONArray
-} from "../../../types";
-import { OutputPayload } from "../OutputPayload/OutputPayload";
-import { Log } from "../../../common/Log";
-import { ByteStream } from "../../../common/bytestream";
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
+import { ByteStream } from "../../../common/bytestream";
+import { Log } from "../../../common/Log";
+import {
+  bytes_t, json,
+  JSONArray, size_t,
+  uint64_t,
+  uint8_t
+} from "../../../types";
+import { OutputPayload } from "../OutputPayload/OutputPayload";
 
 export const VOTE_PRODUCER_CR_VERSION = 0x01;
 export type VoteContentArray = VoteContent[];
@@ -340,7 +338,7 @@ export class PayloadVote extends OutputPayload {
   }
 
   toJson(): json {
-    let j: {};
+    let j = {};
     j["Version"] = this._version;
 
     let voteContent;

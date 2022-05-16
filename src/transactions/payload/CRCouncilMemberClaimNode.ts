@@ -19,13 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
-import { Payload } from "./Payload";
+import { bytes_t, json, size_t, uint256, uint8_t } from "../../types";
 import { Address } from "../../walletcore/Address";
-import { bytes_t, size_t, uint8_t, json, uint256 } from "../../types";
 import { SHA256 } from "../../walletcore/sha256";
-import BigNumber from "bignumber.js";
+import { Payload } from "./Payload";
 
 export const JsonKeyNodePublicKey = "NodePublicKey";
 export const JsonKeyCRCouncilMemberDID = "CRCouncilMemberDID";
@@ -119,7 +119,7 @@ export class CRCouncilMemberClaimNode extends Payload {
   }
 
   equals(payload: Payload, version: uint8_t): boolean {
-    let equal: boolean = false;
+    let equal = false;
 
     try {
       const realPayload = payload as CRCouncilMemberClaimNode;

@@ -19,27 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
+import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
+import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import {
-  uint8_t,
-  json,
-  uint64_t,
-  uint32_t,
-  uint256,
-  bytes_t,
-  sizeof_uint16_t,
-  size_t,
-  sizeof_uint256_t,
-  uint16_t,
-  JSONArray
+  bytes_t, json, JSONArray, sizeof_uint16_t, sizeof_uint256_t, size_t, uint16_t, uint256, uint32_t, uint64_t, uint8_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
-import { SHA256 } from "../../walletcore/sha256";
-import { EcdsaSigner } from "../../walletcore/ecdsasigner";
-import { ErrorChecker, Error } from "../../common/ErrorChecker";
 import { BASE64 as Base64 } from "../../walletcore/base64";
+import { EcdsaSigner } from "../../walletcore/ecdsasigner";
+import { SHA256 } from "../../walletcore/sha256";
 import { Payload } from "./Payload";
 
 export const CRCProposalDefaultVersion = 0;
@@ -2901,7 +2891,7 @@ export class CRCProposal extends Payload {
     }
     this._type = type as CRCProposalType;
 
-    let r: boolean = false;
+    let r = false;
     switch (this._type) {
       case CRCProposalType.changeProposalOwner:
         r = this.deserializeChangeOwner(stream, version);
@@ -3150,7 +3140,7 @@ export class CRCProposal extends Payload {
   }
 
   isValid(version: uint8_t): boolean {
-    let isValid: boolean = false;
+    let isValid = false;
     switch (this._type) {
       case CRCProposalType.normal:
       case CRCProposalType.elip:
@@ -3216,7 +3206,7 @@ export class CRCProposal extends Payload {
   }
 
   equals(payload: Payload, version: uint8_t): boolean {
-    let equal: boolean = false;
+    let equal = false;
     let p = payload as CRCProposal;
 
     try {
@@ -3233,7 +3223,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.secretaryGeneralElection:
           equal =
@@ -3242,14 +3232,14 @@ export class CRCProposal extends Payload {
             this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
             this._draftHash.eq(p._draftHash) &&
             this._secretaryPublicKey.toString() ==
-              p._secretaryPublicKey.toString() &&
+            p._secretaryPublicKey.toString() &&
             this._secretaryDID.equals(p._secretaryDID) &&
             this._signature.toString() == p._signature.toString() &&
             this._secretarySignature.toString() ==
-              p._secretarySignature.toString() &&
+            p._secretarySignature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.changeProposalOwner:
           equal =
@@ -3260,13 +3250,13 @@ export class CRCProposal extends Payload {
             this._targetProposalHash.eq(p._targetProposalHash) &&
             this._newRecipient.equals(p._newRecipient) &&
             this._newOwnerPublicKey.toString() ==
-              p._newOwnerPublicKey.toString() &&
+            p._newOwnerPublicKey.toString() &&
             this._signature.toString() == p._signature.toString() &&
             this._newOwnerSignature.toString() ==
-              p._newOwnerSignature.toString() &&
+            p._newOwnerSignature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.terminateProposal:
           equal =
@@ -3278,7 +3268,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.reserveCustomID:
           equal =
@@ -3290,7 +3280,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.receiveCustomID:
           equal =
@@ -3303,7 +3293,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.changeCustomIDFee:
           equal =
@@ -3315,7 +3305,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.registerSideChain:
           equal =
@@ -3327,7 +3317,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-              p._crCouncilMemberSignature.toString();
+            p._crCouncilMemberSignature.toString();
           break;
         default:
           equal = false;
@@ -3354,7 +3344,7 @@ export class CRCProposal extends Payload {
 
   // should ask how to deal with '#define'
   // #define DraftData_Hexstring
-  private encodeDraftData(draftData: bytes_t, hexStr: boolean = true): string {
+  private encodeDraftData(draftData: bytes_t, hexStr = true): string {
     if (hexStr) {
       return draftData.toString("hex");
     } else {
@@ -3365,7 +3355,7 @@ export class CRCProposal extends Payload {
   private checkAndDecodeDraftData(
     draftData: string,
     draftHash: uint256,
-    hexStr: boolean = true
+    hexStr = true
   ): bytes_t {
     let draftDataDecoded: bytes_t;
     if (hexStr) {
