@@ -619,7 +619,7 @@ export class MasterWalletManager {
     // ArgInfo("r => {} done", GetFunName());
   }
 
-  async importWalletWithKeystore(
+  importWalletWithKeystore(
     masterWalletID: string,
     keystoreContent: JSONObject,
     backupPassword: string,

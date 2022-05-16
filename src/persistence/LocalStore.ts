@@ -299,9 +299,9 @@ export class LocalStore {
     return Promise.resolve(this._masterWalletID);
   }
 
-  saveTo(masterWalletID: string) {
+  async saveTo(masterWalletID: string) {
     this._masterWalletID = masterWalletID;
-    this.save();
+    await this.save();
   }
 
   public singleAddress(): boolean {
