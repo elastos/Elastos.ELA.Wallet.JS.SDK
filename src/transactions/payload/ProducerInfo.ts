@@ -1,19 +1,17 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
+import { ByteStream } from "../../common/bytestream";
+import { Log } from "../../common/Log";
 import {
-  bytes_t,
-  size_t,
+  bytes_t, json,
+  sizeof_uint64_t, size_t,
   uint64_t,
-  uint8_t,
-  json,
-  sizeof_uint64_t
+  uint8_t
 } from "../../types";
 import { Payload } from "./Payload";
-import { Log } from "../../common/Log";
-import { ByteStream } from "../../common/bytestream";
-import BigNumber from "bignumber.js";
 
 export class ProducerInfo extends Payload {
   private _ownerPublicKey: bytes_t;
@@ -46,7 +44,7 @@ export class ProducerInfo extends Payload {
     this.copyProducerInfo(payload);
   }
 
-  destory() {}
+  destroy() { }
 
   getPublicKey(): bytes_t {
     return this._ownerPublicKey;

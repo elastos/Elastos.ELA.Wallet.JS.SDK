@@ -44,7 +44,7 @@ export class MasterWalletManager {
   protected _masterWalletMap: Map<string, MasterWallet> = new Map();
   private _storage: WalletStorage;
 
-  constructor(
+  private constructor(
     storage: WalletStorage,
     /* const std::string &rootPath; */
     netType: string,
@@ -80,10 +80,23 @@ export class MasterWalletManager {
     }
 
     this._config = Config.newFromParams(netType, config);
-    this.loadMasterWalletID(storage);
   }
 
-  destory() {}
+  private async init(): Promise<void> {
+    await this.loadMasterWalletID(this._storage);
+  }
+
+  public static async create(
+    storage: WalletStorage,
+    netType: string,
+    config: json
+  ): Promise<MasterWalletManager> {
+    let manager = new MasterWalletManager(storage, netType, config);
+    await manager.init();
+    return manager;
+  }
+
+  destroy() {}
 
   protected async loadMasterWalletID(storage: WalletStorage) {
     const masterWalletIDs = await storage.getMasterWalletIDs();
@@ -238,7 +251,7 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean = false,
+    compatible = false,
     timestamp: time_t = 0
   ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
@@ -289,7 +302,6 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-
     const masterWallet = await MasterWallet.newFromPublicKeyRings(
       masterWalletID,
       pubKeyRing,
@@ -326,7 +338,7 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean = false,
+    compatible = false,
     timestamp: time_t = 0
   ) {
     // ArgInfo("{}", GetFunName());
@@ -417,7 +429,7 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean = false,
+    compatible = false,
     timestamp: time_t = 0
   ) {
     ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
@@ -500,7 +512,7 @@ export class MasterWalletManager {
     cosigners: string[],
     m: uint32_t,
     singleAddress: boolean,
-    compatible: boolean = false,
+    compatible = false,
     timestamp: time_t = 0
   ): Promise<MasterWallet> {
     // ArgInfo("{}", GetFunName());
@@ -570,18 +582,18 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  getAllMasterWallets(): Promise<MasterWallet[]> {
+  async getAllMasterWallets(): Promise<MasterWallet[]> {
     // ArgInfo("{}", GetFunName());
     // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
 
     let result: MasterWallet[] = [];
-    this._masterWalletMap.forEach(async (value, key) => {
+    for (let [key, value] of this._masterWalletMap.entries()) {
       if (value) {
         result.push(value);
       } else {
         result.push(await this.loadMasterWallet(key));
       }
-    });
+    }
 
     // ArgInfo("r => all master wallet count: {}", result.length);
     return Promise.resolve(result);
@@ -891,7 +903,7 @@ export class MasterWalletManager {
 
   protected checkRedundant(wallet: MasterWallet) {
     let masterWallet: MasterWallet = wallet;
-    let hasRedundant: boolean = false;
+    let hasRedundant = false;
     this._masterWalletMap.forEach((value, key) => {
       if (value !== null && !hasRedundant) {
         hasRedundant = masterWallet.isEqual(value);

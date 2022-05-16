@@ -19,30 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Buffer } from "buffer";
-import { BigNumber, ethers } from "ethers";
-import { MasterWallet } from "./MasterWallet";
-import { CoinInfo } from "../walletcore/CoinInfo";
-import {
-  IEthSidechainSubWallet,
-  EthereumAmountUnit
-} from "./IEthSidechainSubWallet";
-import { SubWallet } from "./SubWallet";
-import { uint64_t, json, uint32_t, JSONArray, JSONObject } from "../types";
-import { ErrorChecker, Error } from "../common/ErrorChecker";
-import { HDKey, KeySpec } from "../walletcore/hdkey";
-import { ChainConfig } from "../Config";
-import { Account } from "../account/Account";
-import { EthereumNetworks, EthereumNetworkRecord } from "./EthereumNetwork";
-import { EthereumWallet } from "./EthereumWallet";
 import { Provider } from "@ethersproject/abstract-provider";
 import { UnsignedTransaction } from "@ethersproject/transactions";
+import { Buffer } from "buffer";
+import { BigNumber, ethers } from "ethers";
+import { Account } from "../account/Account";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { ChainConfig } from "../config";
+import { json, JSONArray, uint32_t, uint64_t } from "../types";
+import { CoinInfo } from "../walletcore/CoinInfo";
+import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { Secp256 } from "../walletcore/secp256";
+import { EthereumNetworkRecord, EthereumNetworks } from "./EthereumNetwork";
+import { EthereumWallet } from "./EthereumWallet";
+import {
+  EthereumAmountUnit, IEthSidechainSubWallet
+} from "./IEthSidechainSubWallet";
+import { MasterWallet } from "./MasterWallet";
+import { SubWallet } from "./SubWallet";
 
 export class EthSidechainSubWallet
   extends SubWallet
-  implements IEthSidechainSubWallet
-{
+  implements IEthSidechainSubWallet {
   private _wallet: EthereumWallet;
   private _provider: Provider;
 
@@ -87,7 +85,7 @@ export class EthSidechainSubWallet
     this._provider = new ethers.providers.JsonRpcProvider(jsonRPC);
   }
 
-  destroy() {}
+  destroy() { }
 
   private async getRawTx(transaction) {
     const wallet = ethers.Wallet.createRandom();

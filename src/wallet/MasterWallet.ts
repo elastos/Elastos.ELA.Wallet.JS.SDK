@@ -20,25 +20,22 @@
  * SOFTWARE.
  */
 import { Account } from "../account/Account";
-import { Config, ChainConfig, ConfigMap } from "../config";
-import { WalletStorage } from "../persistence/WalletStorage";
-import { CoinInfo } from "../walletcore/CoinInfo";
-import { SubWallet } from "./SubWallet";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
-import { Mnemonic } from "../walletcore/mnemonic";
+import { ChainConfig, Config, ConfigMap, CONFIG_MAINNET } from "../config";
+import { WalletStorage } from "../persistence/WalletStorage";
 import { JSONObject, uint32_t } from "../types";
-import { PublicKeyRing } from "../walletcore/publickeyring";
-import { Address } from "../walletcore/Address";
 import {
-  CHAINID_MAINCHAIN,
-  CHAINID_IDCHAIN,
-  CHAINID_TOKENCHAIN
+  CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN
 } from "../wallet/WalletCommon";
-import { CONFIG_MAINNET } from "../config";
-import { MainchainSubWallet } from "./MainchainSubWallet";
+import { Address } from "../walletcore/Address";
+import { CoinInfo } from "../walletcore/CoinInfo";
+import { Mnemonic } from "../walletcore/mnemonic";
+import { PublicKeyRing } from "../walletcore/publickeyring";
 // import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
 import { EthereumNetworks } from "./EthereumNetwork";
+import { MainchainSubWallet } from "./MainchainSubWallet";
+import { SubWallet } from "./SubWallet";
 
 type WalletMap = {
   [id: string]: SubWallet;
@@ -50,7 +47,7 @@ export class MasterWallet {
   protected _id: string;
   protected _config: Config;
 
-  private constructor() {}
+  private constructor() { }
 
   public static async newFromStorage(
     id: string,
@@ -302,7 +299,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  destroy() {}
+  destroy() { }
 
   public static generateMnemonic(language: string, wordCount?: any): string {
     const mnemonicObj = Mnemonic.getInstance(language);
@@ -437,14 +434,14 @@ export class MasterWallet {
     }
   }
 
-  destroyWallet(chainID: string) {
+  async destroyWallet(chainID: string): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("chainID: {}", chainID);
     const keys = Object.keys(this._createdWallets);
     if (chainID in keys) {
       const subWallet = this._createdWallets[chainID];
       this._account.removeSubWalletInfo(subWallet.getChainID());
-      this._account.save();
+      await this._account.save();
       this._createdWallets[chainID] = null;
       // ArgInfo("r => {} {} done", this._id, GetFunName());
     } else {
@@ -465,18 +462,18 @@ export class MasterWallet {
 
   /*
 #if 0
-	nlohmann::json MasterWallet::ExportReadonlyWallet() const {
-		ArgInfo("{} {}", _id, GetFunName());
+  nlohmann::json MasterWallet::ExportReadonlyWallet() const {
+    ArgInfo("{} {}", _id, GetFunName());
 
-		nlohmann::json j = _account->ExportReadonlyWallet();
+    nlohmann::json j = _account->ExportReadonlyWallet();
 
-		ArgInfo("r => {}", j.dump());
-		return j;
-	}
+    ArgInfo("r => {}", j.dump());
+    return j;
+  }
 #endif
 */
 
-  exportKeystore(backupPassword: string, payPassword: string): JSONObject {
+  async exportKeystore(backupPassword: string, payPassword: string): Promise<JSONObject> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("backupPassword: *");
     // ArgInfo("payPassword: *");
@@ -484,7 +481,7 @@ export class MasterWallet {
 
     const coinInfo: CoinInfo[] = this._account.subWalletInfoList();
     this._account.setSubWalletInfoList(coinInfo);
-    this._account.save();
+    await this._account.save();
 
     let j: JSONObject = {};
     // TODO
@@ -612,7 +609,7 @@ export class MasterWallet {
     // ArgInfo("chainID: {}", chainID);
     // ArgInfo("address: {}", address);
 
-    let valid: boolean = false;
+    let valid = false;
     if (
       chainID === CHAINID_MAINCHAIN ||
       chainID === CHAINID_IDCHAIN ||
@@ -650,21 +647,21 @@ export class MasterWallet {
     return chainIDs;
   }
 
-  changePassword(oldPassword: string, newPassword: string) {
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("old: *");
     // ArgInfo("new: *");
 
-    this._account.changePassword(oldPassword, newPassword);
+    await this._account.changePassword(oldPassword, newPassword);
   }
 
-  resetPassword(mnemonic: string, passphrase: string, newPassword: string) {
+  async resetPassword(mnemonic: string, passphrase: string, newPassword: string): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("m: *");
     // ArgInfo("passphrase: *");
     // ArgInfo("passwd: *");
 
-    this._account.resetPassword(mnemonic, passphrase, newPassword);
+    await this._account.resetPassword(mnemonic, passphrase, newPassword);
 
     // ArgInfo("r => ");
   }

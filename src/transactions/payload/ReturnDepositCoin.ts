@@ -1,23 +1,23 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-import { uint8_t, json, size_t } from "../../types";
-import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { json, size_t, uint8_t } from "../../types";
+import { Payload } from "./Payload";
 
 export class ReturnDepositCoin extends Payload {
   newFromPayload(payload: ReturnDepositCoin) {
     this.copyReturnDepositCoin(payload);
   }
 
-  destory() {}
+  destroy() { }
 
   estimateSize(version: uint8_t): size_t {
     return 0;
   }
 
-  serialize(ostream: ByteStream, version: uint8_t) {}
+  serialize(ostream: ByteStream, version: uint8_t) { }
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
     return true;
@@ -27,7 +27,7 @@ export class ReturnDepositCoin extends Payload {
     return {};
   }
 
-  fromJson(j: json, version: uint8_t) {}
+  fromJson(j: json, version: uint8_t) { }
 
   copyPayload(payload: Payload) {
     try {

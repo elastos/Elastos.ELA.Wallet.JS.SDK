@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import { Buffer } from "buffer";
-import { bytes_t, uint8_t, json, size_t } from "../../types";
-import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { bytes_t, json, size_t, uint8_t } from "../../types";
+import { Payload } from "./Payload";
 
 export class CancelProducer extends Payload {
   private _publicKey: bytes_t;
@@ -20,7 +20,7 @@ export class CancelProducer extends Payload {
     this.copyCancelProducer(payload);
   }
 
-  destory() {}
+  destroy() { }
 
   getPublicKey(): bytes_t {
     return this._publicKey;

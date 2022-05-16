@@ -25,8 +25,8 @@ import { InvalidArgumentException } from "./exceptions/invalidargument.exception
 import { LogicErrorException } from "./exceptions/logic.exception";
 import { Log } from "./Log";
 
-const MIN_PASSWORD_LENGTH: number = 8;
-const MAX_PASSWORD_LENGTH: number = 128;
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 128;
 
 export namespace Error {
   export enum Code {
@@ -215,11 +215,11 @@ export class ErrorChecker {
   }
 
   /*
-		void ErrorChecker::CheckPathExists(const boost::filesystem::path &path, bool enableLog) {
-			CheckCondition(!boost::filesystem::exists(path), Error::PathNotExist,
-										 "Path '" + path.string() + "' do not exist", Exception::LogicError, enableLog);
-		}
-	*/
+    void ErrorChecker::CheckPathExists(const boost::filesystem::path &path, bool enableLog) {
+      CheckCondition(!boost::filesystem::exists(path), Error::PathNotExist,
+                     "Path '" + path.string() + "' do not exist", Exception::LogicError, enableLog);
+    }
+  */
 
   public static checkPrivateKey(key: string) {
     // TODO fix here later
