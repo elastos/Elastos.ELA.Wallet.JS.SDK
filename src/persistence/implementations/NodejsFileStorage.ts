@@ -2,15 +2,7 @@ import { json } from "../../types";
 import { WalletStorage } from "../WalletStorage";
 
 export class NodejsFileStorage implements WalletStorage {
-  setActiveMasterWalletID(id: string): Promise<void> {
-    return Promise.resolve();
-  }
-
-  getActiveMasterWalletID(): Promise<string> {
-    return Promise.resolve("");
-  }
-
-  loadStore(id?: string): Promise<json> {
+  loadStore(masterWalletID: string): Promise<json> {
     /* TODO fs::path filepath = _path;
   filepath /= LOCAL_STORE_FILE;
   if (!fs:: exists(filepath)) {
@@ -29,7 +21,7 @@ export class NodejsFileStorage implements WalletStorage {
     return Promise.resolve({}); // TODO
   }
 
-  saveStore(j: json): Promise<void> {
+  saveStore(masterWalletID: string, j: json): Promise<void> {
     /* TODO nlohmann::json j = ToJson();
 
     if (!j.is_null() && !j.empty() && !_path.empty()) {

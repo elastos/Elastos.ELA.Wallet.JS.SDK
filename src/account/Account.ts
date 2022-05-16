@@ -181,13 +181,14 @@ export class Account {
 
   public static async newFromAccount(id: string, storage: WalletStorage) {
     let account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     await account._localstore.load(id);
     account.init();
     return account;
   }
 
   public static newFromPublicKeyRings(
+    id: string,
     storage: WalletStorage,
     cosigners: PublicKeyRing[],
     m: number,
@@ -201,7 +202,7 @@ export class Account {
     );
 
     let account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length);
     account._localstore.setSingleAddress(singleAddress);
@@ -232,6 +233,7 @@ export class Account {
   }
 
   public static newFromXPrivateKey(
+    id: string,
     storage: WalletStorage,
     xprv: string,
     payPasswd: string,
@@ -269,7 +271,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length + 1);
     account._localstore.setSingleAddress(singleAddress);
@@ -309,6 +311,7 @@ export class Account {
 
   // multi-sign seed
   public static newFromMultisignSeed(
+    id: string,
     storage: WalletStorage,
     seed: Buffer,
     payPasswd: string,
@@ -370,7 +373,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length + 1);
     account._localstore.setSingleAddress(singleAddress);
@@ -410,6 +413,7 @@ export class Account {
 
   // multi-sign mnemonic + passphrase
   public static newFromMultiSignMnemonic(
+    id: string,
     storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
@@ -473,7 +477,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setM(m);
     account._localstore.setN(cosigners.length + 1);
     account._localstore.setSingleAddress(singleAddress);
@@ -513,6 +517,7 @@ export class Account {
 
   // HD standard with mnemonic + passphrase
   public static newFromMnemonicAndPassphrase(
+    id: string,
     storage: WalletStorage,
     mnemonic: string,
     passphrase: string,
@@ -589,7 +594,7 @@ export class Account {
       .getPublicKeyBytes()
       .toString("hex");
 
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setDerivationStrategy("BIP44");
     account._localstore.setM(1);
     account._localstore.setN(1);
@@ -618,6 +623,7 @@ export class Account {
 
   // HD standard with seed + [mnemonic:passphrase]
   public static newFromSeed(
+    id: string,
     storage: WalletStorage,
     seed: Buffer,
     payPasswd: string,
@@ -687,7 +693,7 @@ export class Account {
       .getPublicKeyBytes()
       .toString("hex");
 
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setDerivationStrategy("BIP44");
     account._localstore.setM(1);
     account._localstore.setN(1);
@@ -716,6 +722,7 @@ export class Account {
 
   // only eth subwallet with single private key
   public static newFromSinglePrivateKey(
+    id: string,
     storage: WalletStorage,
     singlePrivateKey: string,
     passwd: string
@@ -738,7 +745,7 @@ export class Account {
       .toString("hex");
 
     const account = new Account();
-    account._localstore = new LocalStore(storage);
+    account._localstore = new LocalStore(storage, id);
     account._localstore.setDerivationStrategy("BIP44");
     account._localstore.setM(1);
     account._localstore.setN(1);

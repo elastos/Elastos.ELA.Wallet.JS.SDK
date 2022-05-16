@@ -48,7 +48,7 @@ export class LocalStore {
   private _xPubKeyBitcoin: string;
 
   private _subWalletsInfoList: CoinInfo[] = [];
-  //private _path: string; // rootPath + masterWalletID
+  private _masterWalletID: string;
   private _walletStorage: WalletStorage;
 
   private toJson(): json {
@@ -245,10 +245,11 @@ export class LocalStore {
 		_account(0) {
 	} */
 
-  constructor(walletStorage: WalletStorage) {
+  constructor(walletStorage: WalletStorage, masterWalletID: string) {
     this._walletStorage = walletStorage;
     this._account = 0;
-    //_path(path),
+    // _path(path),
+    this._masterWalletID = masterWalletID;
   }
 
   changePasswd(oldPasswd: string, newPasswd: string) {
@@ -283,7 +284,7 @@ export class LocalStore {
   }
 
   public save(): Promise<void> {
-    return this._walletStorage.saveStore(this.toJson());
+    return this._walletStorage.saveStore(this._masterWalletID, this.toJson());
   }
 
   remove() {
@@ -295,14 +296,13 @@ export class LocalStore {
   }
 
   getDataPath(): Promise<string> {
-    return this._walletStorage.getActiveMasterWalletID();
+    return Promise.resolve(this._masterWalletID);
   }
 
-  /*
-	void LocalStore:: SaveTo(const std:: string & path) {
-		_path = path;
-		Save();
-	}*/
+  saveTo(masterWalletID: string) {
+    this._masterWalletID = masterWalletID;
+    this.save();
+  }
 
   public singleAddress(): boolean {
     return this._singleAddress;

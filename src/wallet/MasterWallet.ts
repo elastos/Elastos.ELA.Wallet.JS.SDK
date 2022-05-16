@@ -79,7 +79,8 @@ export class MasterWallet {
     masterWallet._config = config;
 
     masterWallet._account = Account.newFromMnemonicAndPassphrase(
-      storage, // original code: `${dataPath}/${this._id}`
+      id,
+      storage,
       mnemonic,
       passphrase,
       passwd,
@@ -105,6 +106,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromSeed(
+      id,
       storage,
       seed,
       payPasswd,
@@ -128,6 +130,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromSinglePrivateKey(
+      id,
       storage,
       singlePrivateKey,
       passwd
@@ -155,6 +158,7 @@ export class MasterWallet {
 
     // TODO
     // masterWallet._account = Account.newFromKeyStore(
+    //   id,
     //   storage,
     //   keystore,
     //   payPasswd
@@ -182,6 +186,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromPublicKeyRings(
+      id,
       storage,
       pubKeyRings,
       m,
@@ -213,6 +218,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromXPrivateKey(
+      id,
       storage,
       xprv,
       payPassword,
@@ -246,6 +252,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromMultisignSeed(
+      id,
       storage,
       seed,
       payPassword,
@@ -280,6 +287,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
     masterWallet._account = Account.newFromMultiSignMnemonic(
+      id,
       storage,
       mnemonic,
       passphrase,

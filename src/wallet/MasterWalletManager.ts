@@ -169,8 +169,6 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    await this._storage.setActiveMasterWalletID(masterWalletID);
-
     const masterWallet = await MasterWallet.newFromMnemonic(
       masterWalletID,
       mnemonic,
@@ -210,7 +208,7 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    await this._storage.setActiveMasterWalletID(masterWalletID);
+
     const masterWallet = await MasterWallet.newFromSinglePrivateKey(
       masterWalletID,
       singlePrivateKey,
@@ -292,7 +290,6 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = await MasterWallet.newFromPublicKeyRings(
       masterWalletID,
       pubKeyRing,
@@ -382,7 +379,6 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = await MasterWallet.newFromXPrivateKey(
       masterWalletID,
       xprv,
@@ -463,7 +459,6 @@ export class MasterWalletManager {
       return this._masterWalletMap.get(masterWalletID);
     }
 
-    await this._storage.setActiveMasterWalletID(masterWalletID);
     let seedBytes = Buffer.from(seed, "hex");
     const masterWallet = await MasterWallet.newFromMultisignSeed(
       masterWalletID,
@@ -558,7 +553,6 @@ export class MasterWalletManager {
       pubKeyRing.push(new PublicKeyRing("", xpub));
     }
 
-    await this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = await MasterWallet.newFromMnemonicAndPublicKeyRings(
       masterWalletID,
       mnemonic,
@@ -639,7 +633,6 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    await this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
@@ -693,7 +686,6 @@ export class MasterWalletManager {
       "Invalid mnemonic"
     );
 
-    await this._storage.setActiveMasterWalletID(masterWalletID);
     const masterWallet = await MasterWallet.newFromMnemonic(
       masterWalletID,
       mnemonic,
@@ -793,7 +785,6 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    await this._storage.setActiveMasterWalletID(masterWalletID);
 
     let masterWallet = await MasterWallet.newFromSeed(
       masterWalletID,
