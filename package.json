@@ -4,7 +4,8 @@
   "description": "Elastos Wallet Javascript SDK",
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "npm run build:release",
+    "lint": "./node_modules/.bin/eslint -c ./.eslintrc.js './src/**/*.ts'",
+    "build": "npm run build:release && npm run lint",
     "build:debug": "npm run clean && npm run types && rollup -c",
     "build:release": "npm run clean && npm run types && rollup -c --environment prodbuild",
     "dev": "rollup -c -w",
