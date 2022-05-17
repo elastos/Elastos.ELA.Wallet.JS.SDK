@@ -235,9 +235,19 @@ export class Transaction {
       this._txHash = new BigNumber(
         SHA256.hashTwice(stream.getBytes()).toString("hex"),
         16
-      ); // WAS this._txHash = sha256_2(stream.getBytes());
+      );
     }
     return this._txHash;
+  }
+
+  // returns the transaction hash in the same byte order representation as chain transaction ids
+  public getHashString(): string {
+    const hash = this.getHash().toString(16);
+    // match every two hex digits, reverse the returned array, then join the array back into a String:
+    return hash
+      .match(/[a-fA-F0-9]{2}/g)
+      .reverse()
+      .join("");
   }
 
   public setHash(hash: uint256) {
@@ -819,7 +829,7 @@ export class Transaction {
   }
 
   public isEqual(tx: Transaction): boolean {
-    return this.getHash() == tx.getHash();
+    return this.getHash().eq(tx.getHash());
   }
 
   public getConfirms(walletBlockHeight: uint32_t): uint32_t {
