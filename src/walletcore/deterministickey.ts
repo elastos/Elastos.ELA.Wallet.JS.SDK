@@ -125,7 +125,7 @@ export class DeterministicKey {
   _privateKey: Buffer | null;
   _publicKey: Buffer | null;
   _identifier: Buffer;
-  chainCode: any;
+  chainCode: Buffer | null;
   _fingerprint: number;
   parentFingerprint: number;
   curve: Secp256;

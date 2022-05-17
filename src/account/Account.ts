@@ -124,8 +124,8 @@ export class Account {
       if (this._localstore.derivationStrategy() == "BIP44") {
         this._curMultiSigner = this._xpub;
         for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i) {
-          let xPubKey: string = this._localstore
-            .getPublicKeyRing()[i].getxPubKey();
+          let publicKeyRing = this._localstore.getPublicKeyRing()[i];
+          let xPubKey: string = publicKeyRing.getxPubKey();
           ErrorChecker.checkParam(
             !Base58Check.decode(xPubKey),
             Error.Code.PubKeyFormat,
@@ -154,11 +154,13 @@ export class Account {
             .toString("hex")
             .localeCompare(b.getPublicKeyBytes().toString("hex"));
         });
+
         for (let i = 0; i < sortedSigners.length; ++i) {
           let tmp = sortedSigners[i].deriveWithIndex(i);
           if (
             this._curMultiSigner &&
             this._cosignerIndex == -1 &&
+            // compare two hdkeys
             this._curMultiSigner.equals(sortedSigners[i])
           ) {
             this._curMultiSigner = tmp;
@@ -170,7 +172,7 @@ export class Account {
     }
   }
 
-  private constructor() { }
+  private constructor() {}
 
   /*Account::Account(const LocalStorePtr &store) :
     _localstore(store) {
@@ -946,7 +948,11 @@ export class Account {
     }
   }
 
-  async resetPassword(mnemonic: string, passphrase: string, newPassword: string): Promise<void> {
+  async resetPassword(
+    mnemonic: string,
+    passphrase: string,
+    newPassword: string
+  ): Promise<void> {
     if (!this._localstore.readonly()) {
       ErrorChecker.checkPassword(newPassword, "New");
       const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);

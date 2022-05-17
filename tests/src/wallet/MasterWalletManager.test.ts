@@ -29,24 +29,13 @@ import {
 describe("MasterWalletManager Tests", () => {
   let masterWalletManager: MasterWalletManager;
 
-  test("instantiating with constructor should throw error", () => {
-    const netType = "mainnet";
-    const browserStorage = new BrowserLocalStorage("master-wallet-id-3");
-    const netConfig = { NetType: netType, ELA: {} };
-    const t = () => {
-      new MasterWalletManager(browserStorage, netType, netConfig);
-    };
-    const error = { Code: 20001, Message: "invalid NetType" };
-    expect(t).toThrow(JSON.stringify(error));
-  });
-
   test("create and sign a tx", async () => {
     const netType = "TestNet";
     const masterWalletID = "master-wallet-id-3";
-    const browserStorage = new BrowserLocalStorage(masterWalletID);
+    const browserStorage = new BrowserLocalStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
-    masterWalletManager = new MasterWalletManager(
+    masterWalletManager = await MasterWalletManager.create(
       browserStorage,
       netType,
       netConfig
@@ -121,8 +110,8 @@ describe("MasterWalletManager Tests", () => {
     // then call rpc`sendrawtransaction` to send the rawTx to the ela testnet
   });
 
-  test("get master wallet IDs", () => {
-    const masterWallets = masterWalletManager.getAllMasterWallets();
+  test("get master wallet IDs", async () => {
+    const masterWallets = await masterWalletManager.getAllMasterWallets();
     expect(masterWallets.length).toBe(1);
   });
 });

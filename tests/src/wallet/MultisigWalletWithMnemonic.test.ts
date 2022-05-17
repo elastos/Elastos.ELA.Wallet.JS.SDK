@@ -34,7 +34,7 @@ describe("MasterWalletManager Tests", () => {
     const browserStorage = new BrowserLocalStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
-    masterWalletManager = new MasterWalletManager(
+    masterWalletManager = await MasterWalletManager.create(
       browserStorage,
       netType,
       netConfig

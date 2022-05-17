@@ -264,6 +264,7 @@ export class ByteStream {
     const bn = this.readVarUInt();
     if (!bn.isNaN()) {
       let length = bn.toNumber(); // length is never a large number
+      if (this.buffer.length < this.position + length) return null;
       return this.readBytes(bytes, length);
     }
     return null;
@@ -313,7 +314,6 @@ export class ByteStream {
 
   public readVarUInt(): BigNumber {
     let h = this.readUInt8();
-
     switch (h) {
       case VAR_INT16_HEADER:
         return new BigNumber(this.readUInt16());

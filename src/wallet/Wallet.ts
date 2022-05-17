@@ -82,6 +82,7 @@ export class Wallet extends Lockable {
     // TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
     for (let u of utxo) {
       tx.addInput(TransactionInput.newFromParams(u.hash(), u.index()));
+      // The code of a transaction consists of public keys.
       let code = this._subAccount.getCode(u.getAddress());
       if (code === null) {
         //GetLock().unlock();
