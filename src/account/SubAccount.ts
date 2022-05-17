@@ -34,18 +34,18 @@ import {
   uint32_t
 } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
+import { DeterministicKey } from "../walletcore/deterministickey";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import {
   HDKey,
   SEQUENCE_EXTERNAL_CHAIN,
   SEQUENCE_INTERNAL_CHAIN
 } from "../walletcore/hdkey";
-import { DeterministicKey } from "../walletcore/deterministickey";
 import {
   Account,
   MAX_MULTISIGN_COSIGNERS,
   SignType as AccountSignType
 } from "./Account";
-import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export class SubAccount {
   private _chainAddressCached: Map<uint32_t, Address[]> = new Map();

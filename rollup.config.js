@@ -18,6 +18,7 @@ import size from "rollup-plugin-size";
 import { visualizer } from "rollup-plugin-visualizer";
 // import replaceFiles from 'rollup-plugin-file-content-replace';
 import eslint from "@rollup/plugin-eslint";
+import sourcemaps from 'rollup-plugin-sourcemaps';
 
 import { writeFileSync } from "fs";
 
@@ -59,6 +60,8 @@ const commitHash = (function () {
     return "unknown";
   }
 })();
+
+process.env.prodbuild = false //TMP
 
 const prodBuild = process.env.prodbuild || false;
 console.log("Prod build: ", prodBuild);
@@ -106,8 +109,8 @@ const onwarn = (warning) => {
     warning.code &&
     warning.code === "PLUGIN_WARNING" &&
     warning.plugin &&
-    warning.plugin === "typescript" &&
-    warning.message.indexOf("Rollup 'sourcemap' option") > -1
+    warning.plugin === "typescript" /* &&
+    warning.message.indexOf("Rollup 'sourcemap' option") > -1 */
   )
     return;
 
@@ -354,8 +357,12 @@ export default (command) => {
       }),
       globals({}), // Defines process, Buffer, etc
       typescript({
-        exclude: "*.node.ts"
+        exclude: "*.node.ts",
+        //useTsconfigDeclarationDir: true
+        sourceMap: true,
+        inlineSourceMap: false
       }),
+      sourcemaps(),
       /* nodePolyfills({
                 stream: true
                 // crypto:true // Broken, the polyfill just doesn't work. We have to use crypto-browserify directly in our TS code instead.
