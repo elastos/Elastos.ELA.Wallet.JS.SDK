@@ -108,9 +108,9 @@ export class Secp256 {
     return bn.isZero()
       ? Buffer.alloc(32)
       : this.ecparams.n
-        .sub(bn)
-        .umod(this.ecparams.n)
-        .toArrayLike(Buffer, "be", 32);
+          .sub(bn)
+          .umod(this.ecparams.n)
+          .toArrayLike(Buffer, "be", 32);
   }
 
   public privateKeyModInverse(privateKey: Buffer) {
