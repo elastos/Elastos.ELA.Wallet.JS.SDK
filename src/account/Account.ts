@@ -46,8 +46,8 @@ export type AccountBasicInfo = {
   Type: "MultiSign" | "Standard";
   Readonly: boolean;
   SingleAddress: boolean;
-  M: number;
-  N: number;
+  M: number; // number of required signers
+  N: number; // number of total co-signers
   HasPassPhrase: boolean;
 };
 
@@ -1108,7 +1108,12 @@ export class Account {
 
     j["m"] = this._localstore.getM();
     j["n"] = this._localstore.getN();
-    j["derivationStrategy"] = this._localstore.derivationStrategy();
+
+    if (this._localstore.derivationStrategy() === "BIP44") {
+      j["derivationStrategy"] = "BIP44";
+    } else {
+      j["derivationStrategy"] = "BIP45";
+    }
 
     if (this._localstore.getN() > 1 && this._localstore.readonly()) {
       j["xPubKey"] = null;
