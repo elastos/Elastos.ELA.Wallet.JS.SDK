@@ -284,7 +284,7 @@ export class ElastosBaseSubWallet
   }
 
   // only support single address wallet
-  public getPublicKeysFromxPubKeys(
+  public matchSigningPublicKeys(
     encodedTx: EncodedTx,
     xPubKeys: string[],
     internal: boolean
