@@ -5,7 +5,7 @@ import { Buffer } from "buffer";
 import { json, size_t, uint8_t, uint64_t, bytes_t } from "../../types";
 import { Payload } from "./Payload";
 import { Log } from "../../common/Log";
-import { Asset, MaxPrecision } from "../Asset";
+import { Asset, AssetInfo, MaxPrecision } from "../Asset";
 import { uint168 } from "../../common/uint168";
 import { ByteStream } from "../../common/bytestream";
 import BigNumber from "bignumber.js";
@@ -82,7 +82,7 @@ export class RegisterAsset extends Payload {
   }
 
   fromJson(j: json, version: uint8_t) {
-    this._asset.fromJson(j["Asset"] as json);
+    this._asset.fromJson(j["Asset"] as AssetInfo);
     this._amount = new BigNumber(j["Amount"] as string);
     let buffer = Buffer.from(j["Controller"] as string, "hex");
     this._controller = uint168.newFrom21BytesBuffer(buffer);

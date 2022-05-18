@@ -24,15 +24,7 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
-import {
-  bytes_t,
-  json,
-  JSONArray,
-  JSONValue,
-  size_t,
-  uint256,
-  uint32_t
-} from "../types";
+import { bytes_t, size_t, uint256, uint32_t } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
@@ -44,8 +36,15 @@ import {
 import {
   Account,
   MAX_MULTISIGN_COSIGNERS,
-  SignType as AccountSignType
+  SignType as AccountSignType,
+  AccountBasicInfo
 } from "./Account";
+
+export type PublickeyItem = { me: string; all: string[] };
+export type PublickeysInfo = {
+  m: number;
+  pubkeys: PublickeyItem[];
+};
 
 export class SubAccount {
   private _chainAddressCached: Map<uint32_t, Address[]> = new Map();
@@ -81,7 +80,7 @@ export class SubAccount {
     }
   }
 
-  public getBasicInfo(): json {
+  public getBasicInfo(): { Account: AccountBasicInfo } {
     return {
       Account: this._parent.getBasicInfo()
     };
@@ -131,7 +130,7 @@ export class SubAccount {
     index: uint32_t,
     count: size_t,
     internal: boolean
-  ): JSONValue {
+  ): PublickeysInfo | string[] {
     if (this._parent.singleAddress()) {
       index = 0;
       count = 1;
@@ -157,12 +156,12 @@ export class SubAccount {
         count = 0;
         Log.error("keychains is empty when derivate address");
       }
-      let jout: json;
+      let jout: PublickeysInfo;
       jout["m"] = this._parent.getM();
-      let jpubkeys: JSONArray;
+      let jpubkeys: PublickeyItem[];
       while (count--) {
         let pubkeys: string[];
-        let j: json;
+        let j: PublickeyItem;
         for (let signer of allKeychains) {
           pubkeys.push(
             signer.deriveWithIndex(index).getPublicKeyBytes().toString("hex")
@@ -181,7 +180,7 @@ export class SubAccount {
       return jout;
     } else {
       let keychain: HDKey = this._parent.masterPubKey().deriveWithIndex(chain);
-      let jout: JSONArray = [];
+      let jout: string[];
       while (count--) {
         jout.push(
           keychain

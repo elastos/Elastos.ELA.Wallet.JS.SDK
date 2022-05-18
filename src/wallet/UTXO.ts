@@ -7,6 +7,12 @@ import { INT32_MAX, uint16_t, uint256 } from "../types";
 import { Address } from "../walletcore/Address";
 
 export type UTXOArray = UTXO[];
+export type UTXOItem = {
+  TxHash: string;
+  Index: number;
+  Address: string;
+  Amount: string;
+};
 
 const TX_UNCONFIRMED = INT32_MAX;
 

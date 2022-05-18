@@ -25,7 +25,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
 import { WalletStorage } from "../persistence/WalletStorage";
-import { bytes_t, json } from "../types";
+import { bytes_t } from "../types";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
 import { Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
@@ -41,6 +41,24 @@ export enum SignType {
   Standard,
   MultiSign
 }
+
+export type AccountBasicInfo = {
+  Type: "MultiSign" | "Standard";
+  Readonly: boolean;
+  SingleAddress: boolean;
+  M: number;
+  N: number;
+  HasPassPhrase: boolean;
+};
+
+export type AccountPubKeyInfo = {
+  m: number;
+  n: number;
+  derivationStrategy: string;
+  xPubKey: string;
+  xPubKeyHDPM: string;
+  publicKeyRing: string[];
+};
 
 export class Account {
   private _localstore: LocalStore;
@@ -174,11 +192,12 @@ export class Account {
 
   private constructor() {}
 
-  /*Account::Account(const LocalStorePtr &store) :
-    _localstore(store) {
-    Init();
+  public static newFromLocalStore(store: LocalStore) {
+    let account = new Account();
+    account._localstore = store;
+    account.init();
+    return account;
   }
-  */
 
   public static async newFromAccount(id: string, storage: WalletStorage) {
     let account = new Account();
@@ -773,7 +792,7 @@ export class Account {
 
   /*
 #if 0
-  Account::Account(const std::string &path, const nlohmann::json &walletJSON) {
+  Account::Account(const std::string &path, const nlohmann &walletJSON) {
     _localstore = LocalStorePtr(new LocalStore(path));
     ErrorChecker::CheckParam(!ImportReadonlyWallet(walletJSON), Error::InvalidArgument,
                  "Invalid readonly wallet json");
@@ -866,7 +885,7 @@ export class Account {
 
     let extkey: string = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
     let key = HDKey.deserializeBase58(extkey, KeySpec.Elastos);
-    return key;
+    return Promise.resolve(key);
   }
 
   async requestPrivKey(payPassword: string): Promise<DeterministicKey> {
@@ -885,7 +904,7 @@ export class Account {
     const bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPassword);
     let key = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
     key.privateKey = bytes;
-    return key;
+    return Promise.resolve(key);
   }
 
   public masterPubKey(): HDKey {
@@ -909,7 +928,9 @@ export class Account {
       this.init();
     }
 
-    return AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+    return Promise.resolve(
+      AESDecrypt(this._localstore.getxPrivKey(), payPasswd)
+    );
   }
 
   public masterPubKeyString(): string {
@@ -1004,11 +1025,14 @@ export class Account {
     }
   }
 
-  public getBasicInfo(): json {
-    let j = {};
+  public getBasicInfo(): AccountBasicInfo {
+    let j: AccountBasicInfo;
 
-    if (this.getSignType() == SignType.MultiSign) j["Type"] = "MultiSign";
-    else j["Type"] = "Standard";
+    if (this.getSignType() == SignType.MultiSign) {
+      j["Type"] = "MultiSign";
+    } else {
+      j["Type"] = "Standard";
+    }
 
     j["Readonly"] = this._localstore.readonly();
     j["SingleAddress"] = this._localstore.singleAddress();
@@ -1046,7 +1070,9 @@ export class Account {
     }
 
     if (this._xpub == null && account.masterPubKey() == null) {
-      return this.getETHSCPubKey() == account.getETHSCPubKey();
+      return (
+        this.getETHSCPubKey().toString() == account.getETHSCPubKey().toString()
+      );
     }
 
     if (this.getSignType() == SignType.MultiSign) {
@@ -1054,14 +1080,14 @@ export class Account {
         return false;
 
       for (let i = 0; i < this._allMultiSigners.length; ++i) {
-        if (this._allMultiSigners[i] != account.multiSignCosigner()[i])
+        if (!this._allMultiSigners[i].equals(account.multiSignCosigner()[i]))
           return false;
       }
 
       return true;
     }
 
-    return this._xpub == account.masterPubKey();
+    return this._xpub.toString() == account.masterPubKey().toString();
   }
 
   getM(): number {
@@ -1076,8 +1102,8 @@ export class Account {
     return this._localstore.derivationStrategy();
   }
 
-  getPubKeyInfo(): json {
-    const j: json = {};
+  getPubKeyInfo(): AccountPubKeyInfo {
+    let j: AccountPubKeyInfo;
     const jCosigners: string[] = [];
 
     j["m"] = this._localstore.getM();
@@ -1092,8 +1118,9 @@ export class Account {
       j["xPubKeyHDPM"] = this._localstore.getxPubKeyHDPM();
     }
 
-    for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i)
+    for (let i = 0; i < this._localstore.getPublicKeyRing().length; ++i) {
       jCosigners.push(this._localstore.getPublicKeyRing()[i].getxPubKey());
+    }
 
     j["publicKeyRing"] = jCosigners;
 
@@ -1443,7 +1470,7 @@ export class Account {
       m = bytes.toString();
     }
 
-    return m;
+    return Promise.resolve(m);
   }
 
   async regenerateKey(payPasswd: string) {
@@ -1551,14 +1578,12 @@ export class Account {
     }
 
     // ripple primary public key
-    /*
     if (!this._localstore.getRipplePrimaryPubKey() && havestdrootkey) {
       const ripplekey: HDKey = stdrootkey.deriveWithPath("44'/144'/0'/0/0");
       this._localstore.setRipplePrimaryPubKey(
         ripplekey.getPublicKeyBytes().toString("hex")
       );
     }
-    */
 
     if (!this._localstore.getxPubKeyHDPM() && haveRootkey) {
       const xpubHDPM: HDKey = rootkey.deriveWithPath("m/45'");
@@ -1612,12 +1637,10 @@ export class Account {
     return pubkey;
   }
 
-  /*
   getRipplePubKey(): Buffer {
     const pubkey = Buffer.from(this._localstore.getRipplePrimaryPubKey());
     return pubkey;
   }
-  */
 
   getSinglePrivateKey(passwd: string) {
     return AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
@@ -1656,12 +1679,12 @@ export class Account {
       const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
       const xpub: HDKey = rootkey.deriveWithPath("m/44'/0'/0'");
       if (xpub.getPublicKeyBase58() != this._xpub.getPublicKeyBase58())
-        return false;
+        return Promise.resolve(false);
 
-      return true;
+      return Promise.resolve(true);
     }
 
-    return false;
+    return Promise.resolve(false);
   }
 
   async verifyPayPassword(payPasswd: string): Promise<boolean> {
@@ -1683,21 +1706,21 @@ export class Account {
         AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
       }
 
-      return true;
+      return Promise.resolve(true);
     }
 
-    return false;
+    return Promise.resolve(false);
   }
 
-  save(): Promise<void> {
-    return this._localstore.save();
+  async save(): Promise<void> {
+    return await this._localstore.save();
   }
 
   remove() {
     this._localstore.remove();
   }
 
-  getDataPath(): Promise<string> {
-    return this._localstore.getDataPath();
+  async getDataPath(): Promise<string> {
+    return await this._localstore.getDataPath();
   }
 }

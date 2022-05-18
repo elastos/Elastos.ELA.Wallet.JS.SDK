@@ -2,30 +2,30 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { json } from "../types";
-
+export type ChainInfo = {
+  ChainID: string;
+};
 export class CoinInfo {
-	private _chainID = "";
+  private _chainID = "";
 
-	public getChainID(): string {
-		return this._chainID;
-	}
+  public getChainID(): string {
+    return this._chainID;
+  }
 
-	public setChainID(id: string) {
-		this._chainID = id;
-	}
+  public setChainID(id: string) {
+    this._chainID = id;
+  }
 
-	public toJson(): json {
-		return {
-			ChainID: this._chainID
-		}
-	}
+  public toJson(): ChainInfo {
+    return {
+      ChainID: this._chainID
+    };
+  }
 
-	public fromJson(j: json): CoinInfo {
-		this._chainID = j["ChainID"] as string;
-		if (this._chainID === "IdChain")
-			this._chainID = "IDChain";
+  public fromJson(j: ChainInfo): CoinInfo {
+    this._chainID = j["ChainID"] as string;
+    if (this._chainID === "IdChain") this._chainID = "IDChain";
 
-		return this;
-	}
+    return this;
+  }
 }

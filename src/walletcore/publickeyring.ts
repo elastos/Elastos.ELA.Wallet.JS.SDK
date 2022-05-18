@@ -1,4 +1,7 @@
-import { json } from "../types";
+export type PublicKeyRingInfo = {
+  xPubKey: string;
+  requestPubKey: string;
+};
 
 export class PublicKeyRing {
   private _xPubKey: string;
@@ -9,14 +12,14 @@ export class PublicKeyRing {
     this._requestPubKey = pubkey;
   }
 
-  public toJson(): json {
+  public toJson(): PublicKeyRingInfo {
     return {
       xPubKey: this._xPubKey,
       requestPubKey: this._requestPubKey
     };
   }
 
-  public fromJson(j: json): PublicKeyRing {
+  public fromJson(j: PublicKeyRingInfo): PublicKeyRing {
     this._xPubKey = j["xPubKey"] as string;
     this._requestPubKey = j["requestPubKey"] as string;
     return this;

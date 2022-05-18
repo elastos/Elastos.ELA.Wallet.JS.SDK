@@ -1,8 +1,8 @@
-import { json } from "../../types";
 import { WalletStorage } from "../WalletStorage";
+import { LocalStoreInfo } from "../LocalStore";
 
 export class NodejsFileStorage implements WalletStorage {
-  loadStore(masterWalletID: string): Promise<json> {
+  loadStore(masterWalletID: string): Promise<LocalStoreInfo> {
     /* TODO fs::path filepath = _path;
   filepath /= LOCAL_STORE_FILE;
   if (!fs:: exists(filepath)) {
@@ -18,10 +18,10 @@ export class NodejsFileStorage implements WalletStorage {
   nlohmann::json j;
   is >> j;
 */
-    return Promise.resolve({}); // TODO
+    return Promise.resolve({} as LocalStoreInfo);
   }
 
-  saveStore(masterWalletID: string, j: json): Promise<void> {
+  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void> {
     /* TODO nlohmann::json j = ToJson();
 
     if (!j.is_null() && !j.empty() && !_path.empty()) {

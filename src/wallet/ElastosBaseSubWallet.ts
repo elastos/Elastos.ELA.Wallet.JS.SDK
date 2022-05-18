@@ -22,23 +22,15 @@
 
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
-import { SubAccount } from "../account/SubAccount";
+import { AccountBasicInfo } from "../account/Account";
+import { PublickeysInfo, SubAccount } from "../account/SubAccount";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { ChainConfig } from "../config";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import { TransactionOutput } from "../transactions/TransactionOutput";
-import {
-  bytes_t,
-  json,
-  JSONArray,
-  JSONValue,
-  uint16_t,
-  uint256,
-  uint32_t,
-  uint64_t
-} from "../types";
+import { bytes_t, uint16_t, uint256, uint32_t, uint64_t } from "../types";
 import { Address, AddressArray } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
@@ -51,7 +43,7 @@ import {
 import { EncodedTx, IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
-import { UTXO, UTXOSet } from "./UTXO";
+import { UTXO, UTXOItem, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
   CHAINID_IDCHAIN,
@@ -60,6 +52,8 @@ import {
 } from "./WalletCommon";
 
 //type WalletManagerPtr = SpvService;
+
+export type OutputItem = { Amount: string; Address: string };
 
 export class ElastosBaseSubWallet
   extends SubWallet
@@ -72,7 +66,7 @@ export class ElastosBaseSubWallet
     info: CoinInfo,
     config: ChainConfig,
     parent: MasterWallet,
-    netType: string
+    netType?: string
   ) {
     super(info, config, parent);
 
@@ -116,7 +110,10 @@ export class ElastosBaseSubWallet
   destroy() {}
 
   //default implement ISubWallet
-  public getBasicInfo(): json {
+  public getBasicInfo(): {
+    Info: { Account: AccountBasicInfo };
+    ChainID: string;
+  } {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
 
     return {
@@ -165,7 +162,7 @@ export class ElastosBaseSubWallet
     index: uint32_t,
     count: uint32_t,
     internal: boolean
-  ): JSONValue {
+  ): string[] | PublickeysInfo {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("index: {}", index);
     //ArgInfo("count: {}", count);
@@ -177,18 +174,22 @@ export class ElastosBaseSubWallet
       "index & count overflow"
     );
 
-    let j: JSONValue = this.getWallet().getPublickeys(index, count, internal);
+    let j: string[] | PublickeysInfo = this.getWallet().getPublickeys(
+      index,
+      count,
+      internal
+    );
 
     //ArgInfo("r => {}", j.dump());
     return j;
   }
 
   public createTransaction(
-    inputsJson: JSONArray,
-    outputsJson: JSONArray,
+    inputsJson: UTXOItem[],
+    outputsJson: OutputItem[],
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("inputs: {}", inputsJson.dump());
     //ArgInfo("outputs: {}", outputsJson.dump());
@@ -213,13 +214,16 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
     return result;
   }
 
-  async signTransaction(tx: EncodedTx, payPassword: string): Promise<json> {
+  async signTransaction(
+    tx: EncodedTx,
+    payPassword: string
+  ): Promise<EncodedTx> {
     /* ArgInfo("{} {}", GetSubWalletID(), GetFunName());
         ArgInfo("tx: {}", tx.dump());
         ArgInfo("passwd: *"); */
@@ -227,11 +231,11 @@ export class ElastosBaseSubWallet
     let txn = this.decodeTx(tx);
     await this.getWallet().signTransaction(txn, payPassword);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, txn);
 
     //ArgInfo("r => {}", result.dump());
-    return result;
+    return Promise.resolve(result);
   }
 
   async signDigest(
@@ -337,7 +341,7 @@ export class ElastosBaseSubWallet
     return rawtx;
   }
 
-  protected encodeTx(result: json, tx: Transaction) {
+  protected encodeTx(result: EncodedTx, tx: Transaction) {
     let stream = new ByteStream();
     tx.serialize(stream);
     const hex = stream.getBytes();
@@ -346,7 +350,7 @@ export class ElastosBaseSubWallet
     result["ID"] = tx.getHash().toString(16).slice(0, 8);
     result["Data"] = hex.toString("base64");
     result["ChainID"] = this.getChainID();
-    result["Fee"] = tx.getFee().toNumber();
+    result["Fee"] = tx.getFee().toString();
   }
 
   public decodeTx(encodedTx: EncodedTx): Transaction {
@@ -368,7 +372,7 @@ export class ElastosBaseSubWallet
       algorithm = encodedTx["Algorithm"] as string;
       data = encodedTx["Data"] as string;
       chainID = encodedTx["ChainID"] as string;
-      if ("Fee" in encodedTx) fee = new BigNumber(encodedTx["Fee"] as string); // WAS encodedTx["Fee"].get<uint64_t>();
+      if ("Fee" in encodedTx) fee = new BigNumber(encodedTx["Fee"] as string);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.InvalidArgument,
@@ -416,9 +420,9 @@ export class ElastosBaseSubWallet
     return tx;
   }
 
-  protected UTXOFromJson(utxo: UTXOSet, j: JSONArray): boolean {
+  protected UTXOFromJson(utxo: UTXOSet, j: UTXOItem[]): boolean {
     for (let item of j) {
-      let utxoJson = item as json;
+      let utxoJson = item as UTXOItem;
       if (
         !("TxHash" in utxoJson) ||
         !("Index" in utxoJson) ||
@@ -456,7 +460,7 @@ export class ElastosBaseSubWallet
 
   private outputsFromJson(
     outputs: TransactionOutput[],
-    outputsJson: JSONArray
+    outputsJson: OutputItem[]
   ): boolean {
     for (let outputJson of outputsJson) {
       let amount = new BigNumber(outputJson["Amount"] as string);

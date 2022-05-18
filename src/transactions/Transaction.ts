@@ -18,12 +18,12 @@ import {
   uint8_t
 } from "../types";
 import { SHA256 } from "../walletcore/sha256";
-import { Attribute } from "./Attribute";
+import { Attribute, AttributeInfo } from "./Attribute";
 import { CoinBase } from "./payload/CoinBase";
 import { TransferAsset } from "./payload/TransferAsset";
 import { RegisterAsset } from "./payload/RegisterAsset";
 import { Payload } from "./payload/Payload";
-import { Program } from "./Program";
+import { Program, ProgramInfo } from "./Program";
 import { TransactionInput } from "./TransactionInput";
 import { TransactionOutput } from "./TransactionOutput";
 
@@ -717,10 +717,10 @@ export class Transaction {
       }
 
       this._attributes = (j["Attributes"] as JSONArray).map((a) =>
-        new Attribute().fromJson(a as json)
+        new Attribute().fromJson(a as AttributeInfo)
       );
       this._programs = (j["Programs"] as JSONArray).map((p) =>
-        new Program().fromJson(p as json)
+        new Program().fromJson(p as ProgramInfo)
       );
       this._outputs = (j["Outputs"] as JSONArray).map((o) =>
         new TransactionOutput().fromJson(o as json)

@@ -27,10 +27,11 @@ import {
   CONFIG_MAINNET,
   CONFIG_PRVNET,
   CONFIG_REGTEST,
-  CONFIG_TESTNET
+  CONFIG_TESTNET,
+  ConfigInfo
 } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
-import { json, JSONObject, time_t, uint32_t } from "../types";
+import { JSONObject, time_t, uint32_t } from "../types";
 import { Base58Check } from "../walletcore/base58";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
@@ -39,26 +40,15 @@ import { MasterWallet } from "./MasterWallet";
 export class MasterWalletManager {
   protected _lock: Lockable;
   protected _config: Config;
-  // protected _rootPath: string;
-  // protected _dataPath: string;
   protected _masterWalletMap: Map<string, MasterWallet> = new Map();
   private _storage: WalletStorage;
 
   private constructor(
     storage: WalletStorage,
-    /* const std::string &rootPath; */
     netType: string,
-    config: json /* , dataPath: string */
+    config: ConfigInfo
   ) {
-    // TODO _rootPath(rootPath),
-    // TODO _dataPath(dataPath),
     this._lock = new Lockable();
-
-    // TODO if (_dataPath.empty())
-    // TODO 	_dataPath = _rootPath;
-
-    // TODO ErrorChecker.CheckPathExists(_rootPath, false);
-    // TODO ErrorChecker::CheckPathExists(_dataPath, false);
 
     // TODO Log.registerMultiLogger(_dataPath);
 
@@ -89,7 +79,7 @@ export class MasterWalletManager {
   public static async create(
     storage: WalletStorage,
     netType: string,
-    config: json
+    config: ConfigInfo
   ): Promise<MasterWalletManager> {
     let manager = new MasterWalletManager(storage, netType, config);
     await manager.init();

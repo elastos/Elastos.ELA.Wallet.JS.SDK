@@ -2,7 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import { Log } from "./common/Log";
-import { json } from "./types";
+
+export type ConfigInfo = {
+  [chainID: string]: { chainID?: string; NetworkID?: string } | string;
+};
 
 export const CONFIG_MAINNET = "MainNet";
 export const CONFIG_TESTNET = "TestNet";
@@ -54,7 +57,7 @@ export class Config {
 
   private constructor() {}
 
-  public static newFromParams(netType: string, config: json) {
+  public static newFromParams(netType: string, config: ConfigInfo) {
     let cfg = new Config();
 
     cfg._netType = netType;
@@ -83,7 +86,7 @@ export class Config {
     return this._chains[id];
   }
 
-  fromJSON(j: json): boolean {
+  fromJSON(j: ConfigInfo): boolean {
     try {
       for (let key of Object.keys(j)) {
         if (key == "NetType") continue;
@@ -92,7 +95,7 @@ export class Config {
 
         let chainConfig = new ChainConfig();
         if (chainID.indexOf("ETH") !== -1) {
-          let chainConfigJson: json = j[key] as json;
+          let chainConfigJson = j[key];
           chainConfig.setName(chainID + "-" + this._netType);
 
           chainConfig.setChainId(chainConfigJson["ChainID"] as number);
@@ -111,13 +114,6 @@ export class Config {
   }
 
   getAllChainIDs(): string[] {
-    /* WAS std:: for_each(_chains.begin(), _chains.end(),
-            [& result](const std:: map<std:: string, ChainConfigPtr >:: value_type & item) {
-            result.push_back(item.first);
-        });
-        return result;
-        */
-
     return Object.keys(this._chains);
   }
 

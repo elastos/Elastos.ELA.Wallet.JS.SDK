@@ -19,14 +19,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { Account } from "../account/Account";
+import {
+  Account,
+  AccountBasicInfo,
+  AccountPubKeyInfo
+} from "../account/Account";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { ChainConfig, Config, ConfigMap, CONFIG_MAINNET } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { JSONObject, uint32_t } from "../types";
 import {
-  CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN
+  CHAINID_IDCHAIN,
+  CHAINID_MAINCHAIN,
+  CHAINID_TOKENCHAIN
 } from "../wallet/WalletCommon";
 import { Address } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
@@ -47,7 +53,7 @@ export class MasterWallet {
   protected _id: string;
   protected _config: Config;
 
-  private constructor() { }
+  private constructor() {}
 
   public static async newFromStorage(
     id: string,
@@ -299,7 +305,7 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  destroy() { }
+  destroy() {}
 
   public static generateMnemonic(language: string, wordCount?: any): string {
     const mnemonicObj = Mnemonic.getInstance(language);
@@ -452,7 +458,7 @@ export class MasterWallet {
     }
   }
 
-  getPubKeyInfo(): JSONObject {
+  getPubKeyInfo(): AccountPubKeyInfo {
     // ArgInfo("{} {}",this._id, GetFunName());
     const j = this._account.getPubKeyInfo();
 
@@ -473,7 +479,10 @@ export class MasterWallet {
 #endif
 */
 
-  async exportKeystore(backupPassword: string, payPassword: string): Promise<JSONObject> {
+  async exportKeystore(
+    backupPassword: string,
+    payPassword: string
+  ): Promise<JSONObject> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("backupPassword: *");
     // ArgInfo("payPassword: *");
@@ -647,7 +656,10 @@ export class MasterWallet {
     return chainIDs;
   }
 
-  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("old: *");
     // ArgInfo("new: *");
@@ -655,7 +667,11 @@ export class MasterWallet {
     await this._account.changePassword(oldPassword, newPassword);
   }
 
-  async resetPassword(mnemonic: string, passphrase: string, newPassword: string): Promise<void> {
+  async resetPassword(
+    mnemonic: string,
+    passphrase: string,
+    newPassword: string
+  ): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("m: *");
     // ArgInfo("passphrase: *");
@@ -666,10 +682,10 @@ export class MasterWallet {
     // ArgInfo("r => ");
   }
 
-  getBasicInfo(): JSONObject {
+  getBasicInfo(): AccountBasicInfo {
     // ArgInfo("{} {}", _id, GetFunName());
 
-    const info: JSONObject = this._account.getBasicInfo();
+    const info: AccountBasicInfo = this._account.getBasicInfo();
 
     // ArgInfo("r => {}", info.dump());
     return info;

@@ -6,7 +6,12 @@ import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
-import { bytes_t, json, size_t } from "../types";
+import { bytes_t, size_t } from "../types";
+
+export type AttributeInfo = {
+  Usage: Usage;
+  Data: string;
+};
 
 export enum Usage {
   Nonce = 0x00,
@@ -38,13 +43,13 @@ export class Attribute extends ELAMessage implements JsonSerializer {
     return this;
   }
 
-  /*Attribute::Usage Attribute::GetUsage() const {
-		return _usage;
-	}
+  getUsage(): Usage {
+    return this._usage;
+  }
 
-	const bytes_t &Attribute::GetData() const {
-		return _data;
-	}*/
+  getData(): Buffer {
+    return this._data;
+  }
 
   isValid(): boolean {
     return (
@@ -97,14 +102,14 @@ export class Attribute extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public toJson(): json {
+  public toJson(): AttributeInfo {
     return {
       Usage: this._usage,
       Data: this._data.toString("hex")
     };
   }
 
-  public fromJson(j: json): Attribute {
+  public fromJson(j: AttributeInfo): Attribute {
     this._usage = j["Usage"] as Usage;
     this._data = Buffer.from(j["Data"] as string, "hex");
     return this;
@@ -113,8 +118,4 @@ export class Attribute extends ELAMessage implements JsonSerializer {
   public equals(a: Attribute): boolean {
     return this._usage == a._usage && this._data == a._data;
   }
-
-  /*bool Attribute::operator!=(const Attribute &a) const {
-		return !operator==(a);
-	} */
 }

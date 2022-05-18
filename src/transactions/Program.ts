@@ -5,12 +5,19 @@ import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
-import { bytes_t, json, size_t, uint256, uint8_t } from "../types";
+import { bytes_t, size_t, uint256, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export type ProgramPtr = Program;
 export type ProgramArray = ProgramPtr[];
+export type SignedInfo = {
+  SignType: string;
+  M?: number;
+  N?: number;
+  Signers: string[];
+};
+export type ProgramInfo = { Parameter: string; Code: string };
 
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 export class Program extends ELAMessage implements JsonSerializer {
@@ -97,8 +104,8 @@ export class Program extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public getSignedInfo(md: uint256): json {
-    let info = {};
+  public getSignedInfo(md: uint256): SignedInfo {
+    let info: SignedInfo;
     let publicKeys: bytes_t[] = [];
 
     let type: SignType = this.decodePublicKey(publicKeys);
@@ -246,14 +253,14 @@ export class Program extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public toJson(): json {
+  public toJson(): ProgramInfo {
     return {
       Parameter: this._parameter.toString("hex"),
       Code: this._code.toString("hex")
     };
   }
 
-  public fromJson(j: json): Program {
+  public fromJson(j: ProgramInfo): Program {
     this._parameter = Buffer.from(j["Parameter"] as string, "hex");
     this._code = Buffer.from(j["Code"] as string, "hex");
     return this;
@@ -262,8 +269,4 @@ export class Program extends ELAMessage implements JsonSerializer {
   public equals(p: Program): boolean {
     return this._code == p._code && this._parameter == p._parameter;
   }
-
-  /*bool Program::operator!=(const Program &p) const {
-		return !operator==(p);
-	} */
 }

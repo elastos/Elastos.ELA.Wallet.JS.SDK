@@ -6,8 +6,16 @@ import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
-import { json, size_t, uint256, uint8_t } from "../types";
+import { size_t, uint256, uint8_t } from "../types";
 import { SHA256 } from "../walletcore/sha256";
+
+export type AssetInfo = {
+  Name: string;
+  Description: string;
+  Precision: number;
+  AssetType: AssetType;
+  RecordType: AssetRecordType;
+};
 
 export const TOKEN_ASSET_PRECISION = "1000000000000000000";
 
@@ -136,7 +144,7 @@ export class Asset extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public toJson(): json {
+  public toJson(): AssetInfo {
     return {
       Name: this._name,
       Description: this._description,
@@ -146,7 +154,7 @@ export class Asset extends ELAMessage implements JsonSerializer {
     };
   }
 
-  public fromJson(j: json) {
+  public fromJson(j: AssetInfo) {
     this._name = j["Name"] as string;
     this._description = j["Description"] as string;
     this._precision = j["Precision"] as number;

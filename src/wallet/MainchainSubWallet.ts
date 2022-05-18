@@ -31,7 +31,10 @@ import {
   CRCouncilMemberClaimNodeVersion
 } from "../transactions/payload/CRCouncilMemberClaimNode";
 import {
-  CRCProposal, CRCProposalDefaultVersion, CRCProposalType, CRCProposalVersion01
+  CRCProposal,
+  CRCProposalDefaultVersion,
+  CRCProposalType,
+  CRCProposalVersion01
 } from "../transactions/payload/CRCProposal";
 import {
   CRCProposalReview,
@@ -45,20 +48,24 @@ import {
 } from "../transactions/payload/CRCProposalTracking";
 import { CRInfo, CRInfoDIDVersion } from "../transactions/payload/CRInfo";
 import {
-  CrossChainOutputVersion, PayloadCrossChain
+  CrossChainOutputVersion,
+  PayloadCrossChain
 } from "../transactions/payload/OutputPayload/PayloadCrossChain";
 import {
   CandidateVotes,
-  PayloadVote, VoteContent,
+  PayloadVote,
+  VoteContent,
   VoteContentArray,
-  VoteContentType, VOTE_PRODUCER_CR_VERSION
+  VoteContentType,
+  VOTE_PRODUCER_CR_VERSION
 } from "../transactions/payload/OutputPayload/PayloadVote";
 import { Payload } from "../transactions/payload/Payload";
 import { ProducerInfo } from "../transactions/payload/ProducerInfo";
 import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import {
-  TransferCrossChainAsset, TransferCrossChainVersion,
+  TransferCrossChainAsset,
+  TransferCrossChainVersion,
   TransferCrossChainVersionV1,
   TransferInfo
 } from "../transactions/payload/TransferCrossChainAsset";
@@ -70,20 +77,28 @@ import {
   Type
 } from "../transactions/TransactionOutput";
 import {
-  bytes_t, json,
-  JSONArray, JSONObject, size_t, uint64_t, uint8_t
+  bytes_t,
+  json,
+  JSONArray,
+  JSONObject,
+  size_t,
+  uint64_t,
+  uint8_t
 } from "../types";
 import { Address, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { SHA256 } from "../walletcore/sha256";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
+import { EncodedTx } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { DEPOSIT_OR_WITHDRAW_FEE, SELA_PER_ELA } from "./SubWallet";
-import { UTXOSet } from "./UTXO";
+import { UTXOItem, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
-  CHAINID_IDCHAIN, CHAINID_MAINCHAIN, CHAINID_TOKENCHAIN
+  CHAINID_IDCHAIN,
+  CHAINID_MAINCHAIN,
+  CHAINID_TOKENCHAIN
 } from "./WalletCommon";
 
 export const DEPOSIT_MIN_ELA = 5000;
@@ -125,7 +140,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
   createDepositTransaction(
     version: uint8_t,
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     sideChainID: string,
     amount: string,
     sideChainAddress: string,
@@ -227,7 +242,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result: json;
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -326,7 +341,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRegisterProducerTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJson: json,
     amount: string,
     fee: string,
@@ -382,7 +397,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -390,7 +405,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUpdateProducerTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJson: json,
     fee: string,
     memo: string
@@ -423,14 +438,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       memo,
       feeAmount
     );
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
     return result;
   }
 
   createCancelProducerTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJson: json,
     fee: string,
     memo: string
@@ -466,7 +481,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -474,7 +489,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRetrieveDepositTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     amount: string,
     fee: string,
     memo: string
@@ -508,7 +523,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -669,7 +684,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createVoteTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     voteContentsJson: json,
     fee: string,
     memo: string
@@ -716,7 +731,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -809,7 +824,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRegisterCRTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJSON: json,
     amount: string,
     fee: string,
@@ -879,7 +894,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -887,7 +902,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUpdateCRTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -925,7 +940,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -933,7 +948,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUnregisterCRTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -975,7 +990,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -983,7 +998,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRetrieveCRDepositTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     amount: string,
     fee: string,
     memo: string
@@ -1018,7 +1033,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
     return result;
@@ -1051,7 +1066,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createCRCouncilMemberClaimNodeTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payloadJson: JSONObject,
     fee: string,
     memo: string
@@ -1092,7 +1107,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
 
@@ -1203,7 +1218,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1252,7 +1267,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result);
@@ -1293,7 +1308,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalReviewTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1339,7 +1354,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result);
@@ -1446,7 +1461,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalTrackingTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1496,7 +1511,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1567,7 +1582,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createSecretaryGeneralElectionTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1612,7 +1627,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1688,7 +1703,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalChangeOwnerTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1734,7 +1749,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1810,7 +1825,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createTerminateProposalTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1855,7 +1870,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1931,7 +1946,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createReserveCustomIDTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -1976,7 +1991,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -2052,7 +2067,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createReceiveCustomIDTransaction(
-    inputsJson: JSONArray,
+    inputsJson: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -2097,7 +2112,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
 
@@ -2173,7 +2188,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createChangeCustomIDFeeTransaction(
-    inputs: JSONArray,
+    inputs: UTXOItem[],
     payload: json,
     fee: string,
     memo: string
@@ -2218,7 +2233,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: json = {};
+    let result: EncodedTx;
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 

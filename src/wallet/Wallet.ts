@@ -4,7 +4,7 @@
 import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import randomInteger from "random-int";
-import { SubAccount } from "../account/SubAccount";
+import { PublickeysInfo, SubAccount } from "../account/SubAccount";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
 import { Attribute, Usage } from "../transactions/Attribute";
@@ -29,7 +29,10 @@ import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
 import { DeterministicKey } from "../walletcore/deterministickey";
-import { SignType as AccountSignType } from "../account/Account";
+import {
+  AccountBasicInfo,
+  SignType as AccountSignType
+} from "../account/Account";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
 export class Wallet extends Lockable {
@@ -141,7 +144,7 @@ export class Wallet extends Lockable {
   }
 
   public getPublickeys(index: uint32_t, count: size_t, internal: boolean) {
-    const pubkeys: JSONValue = this._subAccount.getPublickeys(
+    const pubkeys: string[] | PublickeysInfo = this._subAccount.getPublickeys(
       index,
       count,
       internal
@@ -225,7 +228,7 @@ export class Wallet extends Lockable {
     return this._subAccount.isCRDepositAddress(addr);
   }
 
-  public getBasicInfo(): json {
+  public getBasicInfo(): { Account: AccountBasicInfo } {
     return this._subAccount.getBasicInfo();
   }
 

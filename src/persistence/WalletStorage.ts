@@ -1,4 +1,4 @@
-import { json } from "../types";
+import { LocalStoreInfo } from "./LocalStore";
 
 /**
 /**
@@ -8,11 +8,11 @@ export interface WalletStorage {
   /**
    * Loads a saved store and returns it as json.
    */
-  loadStore(masterWalletID: string): Promise<json>;
+  loadStore(masterWalletID: string): Promise<LocalStoreInfo>;
   /**
    * Saves the given local store JSON representation to persistent storage.
    */
-  saveStore(masterWalletID: string, j: json): Promise<void>;
+  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void>;
 
   getMasterWalletIDs(): Promise<string[]>;
 }

@@ -1,13 +1,13 @@
-import { json } from "../../types";
 import { WalletStorage } from "../WalletStorage";
+import { LocalStoreInfo } from "../LocalStore";
 
 export class BrowserLocalStorage implements WalletStorage {
-  loadStore(masterWalletID: string): Promise<json> {
+  loadStore(masterWalletID: string): Promise<LocalStoreInfo> {
     let data = localStorage.getItem(masterWalletID);
     return Promise.resolve(data && JSON.parse(data));
   }
 
-  saveStore(masterWalletID: string, j: json): Promise<void> {
+  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void> {
     const data = localStorage.getItem("masterWalletIDs");
     if (data) {
       try {

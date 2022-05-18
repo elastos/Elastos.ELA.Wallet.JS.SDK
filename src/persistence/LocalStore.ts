@@ -1,11 +1,35 @@
 // Copyright (c) 2012-2018 The Elastos Open Source Project
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
-import { json, JSONArray } from "../types";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
-import { CoinInfo } from "../walletcore/CoinInfo";
-import { PublicKeyRing } from "../walletcore/publickeyring";
+import { CoinInfo, ChainInfo } from "../walletcore/CoinInfo";
+import { PublicKeyRing, PublicKeyRingInfo } from "../walletcore/publickeyring";
 import { WalletStorage } from "./WalletStorage";
+
+export type LocalStoreInfo = {
+  xPrivKey: string;
+  xPubKey: string;
+  xPubKeyHDPM?: string;
+  requestPrivKey: string;
+  requestPubKey: string;
+  publicKeyRing: PublicKeyRingInfo[];
+  m: number;
+  n: number;
+  mnemonicHasPassphrase: boolean;
+  derivationStrategy: string;
+  account: number;
+  mnemonic: string;
+  passphrase: string;
+  ownerPubKey: string;
+  singleAddress: boolean;
+  readonly: boolean;
+  coinInfo?: ChainInfo[];
+  seed?: string;
+  ethscPrimaryPubKey?: string;
+  ripplePrimaryPubKey?: string;
+  xPubKeyBitcoin?: string;
+  SinglePrivateKey?: string;
+};
 
 export class LocalStore {
   // encrypted
@@ -51,8 +75,8 @@ export class LocalStore {
   private _masterWalletID: string;
   private _walletStorage: WalletStorage;
 
-  private toJson(): json {
-    let j: json = {};
+  private toJson(): LocalStoreInfo {
+    let j: LocalStoreInfo;
 
     j["xPrivKey"] = this._xPrivKey;
     j["xPubKey"] = this._xPubKey;
@@ -86,7 +110,7 @@ export class LocalStore {
     return j;
   }
 
-  private fromJson(j: json) {
+  private fromJson(j: LocalStoreInfo) {
     try {
       //if (j.find("publicKeyRing") != j.end()) {
       // new version of localstore
@@ -95,8 +119,8 @@ export class LocalStore {
       this._xPubKey = j["xPubKey"] as string;
       this._requestPrivKey = j["requestPrivKey"] as string;
       this._requestPubKey = j["requestPubKey"] as string;
-      this._publicKeyRing = (j["publicKeyRing"] as JSONArray).map((pkr) =>
-        new PublicKeyRing().fromJson(pkr as json)
+      this._publicKeyRing = (j["publicKeyRing"] as PublicKeyRingInfo[]).map(
+        (pkr) => new PublicKeyRing().fromJson(pkr as PublicKeyRingInfo)
       );
       this._m = j["m"] as number;
       this._n = j["n"] as number;
@@ -158,8 +182,8 @@ export class LocalStore {
         this._xPubKeyBitcoin = null;
       }
 
-      this._subWalletsInfoList = (j["coinInfo"] as JSONArray).map((j) =>
-        new CoinInfo().fromJson(j as json)
+      this._subWalletsInfoList = (j["coinInfo"] as ChainInfo[]).map((j) =>
+        new CoinInfo().fromJson(j as ChainInfo)
       );
       /* } else {
 					// old version of localstore
@@ -248,7 +272,6 @@ export class LocalStore {
   constructor(walletStorage: WalletStorage, masterWalletID: string) {
     this._walletStorage = walletStorage;
     this._account = 0;
-    // _path(path),
     this._masterWalletID = masterWalletID;
   }
 
@@ -273,7 +296,7 @@ export class LocalStore {
     let j = await this._walletStorage.loadStore(id);
 
     ErrorChecker.checkLogic(
-      !j || j === {},
+      !j,
       Error.Code.InvalidLocalStore,
       "local store file is empty"
     );
