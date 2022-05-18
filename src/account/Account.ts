@@ -52,12 +52,12 @@ export type AccountBasicInfo = {
 };
 
 export type AccountPubKeyInfo = {
-  m: number;
-  n: number;
-  derivationStrategy: string;
-  xPubKey: string;
-  xPubKeyHDPM: string;
-  publicKeyRing: string[];
+  derivationStrategy: "BIP44" | "BIP45";
+  n: number; // number of total co-signers
+  m: number; // number of required signers
+  publicKeyRing: string[]; // Array of xPubKeyHDPM
+  xPubKey: string; // eg: "xpub6D7Q8"
+  xPubKeyHDPM: string; // eg: "xpub68VWD" (extended key)
 };
 
 export class Account {
