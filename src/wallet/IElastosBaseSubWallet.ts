@@ -19,8 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { json, JSONArray } from "../types";
+import { SignedInfo } from "../transactions/Program";
+import { OutputItem } from "./ElastosBaseSubWallet";
 import { ISubWallet } from "./ISubWallet";
+import { UTXOItem } from "./UTXO";
 
 export type EncodedTx = {
   Algorithm: string;
@@ -56,11 +58,11 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * @return If success return the content of transaction in json format.
    */
   createTransaction(
-    inputs: JSONArray,
-    outputs: JSONArray,
+    inputs: UTXOItem[],
+    outputs: OutputItem[],
     fee: string,
     memo: string
-  ): json;
+  ): EncodedTx;
 
   /**
    * Get signers already signed specified transaction.
@@ -72,7 +74,7 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * [{"SignType":"Standard","Signers":["0207d8bc14c4bdd79ea4a30818455f705bcc9e17a4b843a5f8f4a95aa21fb03d77"]},{"SignType":"Standard","Signers":["02a58d1c4e4993572caf0133ece4486533261e0e44fb9054b1ea7a19842c35300e"]}]
    *
    */
-  getTransactionSignedInfo(tx: json): JSONArray;
+  getTransactionSignedInfo(tx: EncodedTx): SignedInfo[];
 
   /**
    * Convert tx to raw transaction.

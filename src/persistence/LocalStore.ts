@@ -76,7 +76,7 @@ export class LocalStore {
   private _walletStorage: WalletStorage;
 
   private toJson(): LocalStoreInfo {
-    let j: LocalStoreInfo;
+    let j = <LocalStoreInfo>{};
 
     j["xPrivKey"] = this._xPrivKey;
     j["xPubKey"] = this._xPubKey;
@@ -306,8 +306,8 @@ export class LocalStore {
     return true;
   }
 
-  public save(): Promise<void> {
-    return this._walletStorage.saveStore(this._masterWalletID, this.toJson());
+  async save(): Promise<void> {
+    await this._walletStorage.saveStore(this._masterWalletID, this.toJson());
   }
 
   remove() {

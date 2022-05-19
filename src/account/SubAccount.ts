@@ -180,7 +180,7 @@ export class SubAccount {
       return jout;
     } else {
       let keychain: HDKey = this._parent.masterPubKey().deriveWithIndex(chain);
-      let jout: string[];
+      let jout = [];
       while (count--) {
         jout.push(
           keychain

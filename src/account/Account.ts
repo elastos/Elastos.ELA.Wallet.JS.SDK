@@ -1026,7 +1026,7 @@ export class Account {
   }
 
   public getBasicInfo(): AccountBasicInfo {
-    let j: AccountBasicInfo;
+    let j = <AccountBasicInfo>{};
 
     if (this.getSignType() == SignType.MultiSign) {
       j["Type"] = "MultiSign";
@@ -1087,7 +1087,7 @@ export class Account {
       return true;
     }
 
-    return this._xpub.toString() == account.masterPubKey().toString();
+    return this._xpub.equals(account.masterPubKey());
   }
 
   getM(): number {
@@ -1103,7 +1103,7 @@ export class Account {
   }
 
   getPubKeyInfo(): AccountPubKeyInfo {
-    let j: AccountPubKeyInfo;
+    let j = <AccountPubKeyInfo>{};
     const jCosigners: string[] = [];
 
     j["m"] = this._localstore.getM();

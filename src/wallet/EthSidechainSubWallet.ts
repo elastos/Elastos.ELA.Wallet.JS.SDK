@@ -33,14 +33,16 @@ import { Secp256 } from "../walletcore/secp256";
 import { EthereumNetworkRecord, EthereumNetworks } from "./EthereumNetwork";
 import { EthereumWallet } from "./EthereumWallet";
 import {
-  EthereumAmountUnit, IEthSidechainSubWallet
+  EthereumAmountUnit,
+  IEthSidechainSubWallet
 } from "./IEthSidechainSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
 
 export class EthSidechainSubWallet
   extends SubWallet
-  implements IEthSidechainSubWallet {
+  implements IEthSidechainSubWallet
+{
   private _wallet: EthereumWallet;
   private _provider: Provider;
 
@@ -85,7 +87,7 @@ export class EthSidechainSubWallet
     this._provider = new ethers.providers.JsonRpcProvider(jsonRPC);
   }
 
-  destroy() { }
+  destroy() {}
 
   private async getRawTx(transaction) {
     const wallet = ethers.Wallet.createRandom();
@@ -132,7 +134,7 @@ export class EthSidechainSubWallet
 
     let amtUnit: string = this.getUnit(amountUnit);
     let gasUnit: string = this.getUnit(gasPriceUnit);
-    let j: json;
+    let j: json = {};
 
     let transaction = {
       to: targetAddress,
@@ -176,7 +178,7 @@ export class EthSidechainSubWallet
 
     let unit: string = this.getUnit(amountUnit);
     let gasUnit: string = this.getUnit(gasPriceUnit);
-    let j: json;
+    let j: json = {};
 
     let transaction = {
       to: targetAddress,
@@ -207,8 +209,8 @@ export class EthSidechainSubWallet
   }
 
   getBasicInfo(): json {
-    let j: json;
-    let jinfo: json;
+    let j: json = {};
+    let jinfo: json = {};
 
     jinfo["Symbol"] = this._wallet.getSymbol();
     jinfo["GasLimit"] = this._wallet.getDefaultGasLimit().toString();
@@ -235,7 +237,7 @@ export class EthSidechainSubWallet
     internal: boolean
   ): JSONArray {
     let pubkey: string = this._wallet.getPrimaryAddressPublicKey();
-    let j: JSONArray;
+    let j: JSONArray = [];
     j.push(pubkey);
     return j;
   }
@@ -264,7 +266,7 @@ export class EthSidechainSubWallet
     const wallet = new ethers.Wallet(privateKey);
     const rawtx = await wallet.signTransaction(transaction);
 
-    let j: json;
+    let j: json = {};
     j["Hash"] = rlptx;
     const gasAmount = BigNumber.from(transaction.gasLimit)
       .mul(transaction.gasPrice)

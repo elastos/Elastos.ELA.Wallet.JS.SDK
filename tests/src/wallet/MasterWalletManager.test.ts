@@ -56,14 +56,8 @@ describe("MasterWalletManager Tests", () => {
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
     const subWallet: any = await masterWallet.createSubWallet("ELA");
-
-    const localStore = await browserStorage.loadStore(masterWalletID);
-    // console.log("localStore....", localStore);
-
-    const address = "EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz";
     const addresses = subWallet.getAddresses(0, 1, false);
-    // the value of addresses is ['EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz']
-    expect(addresses[0]).toBe(address);
+    expect(addresses[0]).toBe("EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz");
 
     const digest = `88486f91981d11adf53c327e7ab2556b00c8f89b18f56eab8ff72f940c6d8889`;
 
@@ -80,7 +74,6 @@ describe("MasterWalletManager Tests", () => {
     expect(pubKeys[0]).toBe(pubKeyData[0]);
 
     const pubKey = pubKeys[0];
-    // const rs = subWallet.verifyDigest(pubKey, digest, signature);
     const rs = subWallet.verifyDigest(pubKey, digest, sigHex);
     expect(rs).toBe(true);
 

@@ -214,7 +214,7 @@ export class ElastosBaseSubWallet
       memo,
       feeAmount
     );
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     //ArgInfo("r => {}", result.dump());
     return result;
@@ -231,7 +231,7 @@ export class ElastosBaseSubWallet
     let txn = this.decodeTx(tx);
     await this.getWallet().signTransaction(txn, payPassword);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, txn);
 
     //ArgInfo("r => {}", result.dump());

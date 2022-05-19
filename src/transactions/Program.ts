@@ -105,7 +105,7 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public getSignedInfo(md: uint256): SignedInfo {
-    let info: SignedInfo;
+    let info = <SignedInfo>{};
     let publicKeys: bytes_t[] = [];
 
     let type: SignType = this.decodePublicKey(publicKeys);

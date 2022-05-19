@@ -242,7 +242,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -397,7 +397,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -438,7 +438,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       memo,
       feeAmount
     );
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
     return result;
@@ -481,7 +481,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -523,7 +523,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -731,7 +731,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -894,7 +894,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -940,7 +940,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(payloadVersion);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -990,7 +990,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result.dump());
@@ -1033,7 +1033,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
     return result;
@@ -1107,7 +1107,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
 
@@ -1267,7 +1267,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result);
@@ -1354,7 +1354,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
     // ArgInfo("r => {}", result);
@@ -1511,7 +1511,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1627,7 +1627,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1749,7 +1749,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1870,7 +1870,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -1991,7 +1991,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 
@@ -2112,7 +2112,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
 
@@ -2233,7 +2233,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     tx.setPayloadVersion(version);
 
-    let result: EncodedTx;
+    let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result);
 

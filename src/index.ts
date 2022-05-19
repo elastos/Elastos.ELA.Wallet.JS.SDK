@@ -7,18 +7,18 @@ import { SubWallet } from "./wallet/SubWallet";
 import { HDKey, KeySpec } from "./walletcore/hdkey";
 import { Mnemonic } from "./walletcore/mnemonic";
 import { WalletErrorException } from "./common/exceptions/walleterror.exception";
+import type { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
+import type { SignedInfo } from "./transactions/Program";
 
 export {
   BrowserLocalStorage,
-  // Crypto
   Mnemonic,
   KeySpec,
   HDKey,
-  // Wallets
   MasterWallet,
   MasterWalletManager,
   SubWallet,
   MainchainSubWallet,
   WalletErrorException
 };
-export type { WalletStorage };
+export type { WalletStorage, AccountBasicInfo, AccountPubKeyInfo, SignedInfo };

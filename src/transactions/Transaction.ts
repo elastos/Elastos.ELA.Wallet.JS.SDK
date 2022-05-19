@@ -23,9 +23,10 @@ import { CoinBase } from "./payload/CoinBase";
 import { TransferAsset } from "./payload/TransferAsset";
 import { RegisterAsset } from "./payload/RegisterAsset";
 import { Payload } from "./payload/Payload";
-import { Program, ProgramInfo } from "./Program";
+import { Program, ProgramInfo, SignedInfo } from "./Program";
 import { TransactionInput } from "./TransactionInput";
 import { TransactionOutput } from "./TransactionOutput";
+import { Signer } from "ethers";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -399,7 +400,7 @@ export class Transaction {
     return txSize;
   }
 
-  public getSignedInfo(): JSONArray {
+  public getSignedInfo(): SignedInfo[] {
     let info = [];
     let md: uint256 = this.getShaData();
 
