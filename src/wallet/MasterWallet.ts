@@ -330,11 +330,11 @@ export class MasterWallet {
 
     let subWallets: SubWallet[] = Object.values(this._createdWallets);
 
-    let result;
+    let result = "";
     for (let i = 0; i < subWallets.length; ++i)
       result += subWallets[i].getChainID() + ",";
 
-    //ArgInfo("r => {}", result);
+    Log.info("getting all subwallet chainIDs...", result);
     return subWallets;
   }
 
