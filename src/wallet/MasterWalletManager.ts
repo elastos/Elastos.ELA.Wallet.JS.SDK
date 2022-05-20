@@ -113,11 +113,14 @@ export class MasterWalletManager {
       masterWallet.initSubWallets();
       this._masterWalletMap.set(masterWalletID, masterWallet);
     } catch (error) {
-      Log.error("load master wallet '{}' failed: {}", masterWalletID, error);
+      Log.error(
+        `load master wallet ${masterWalletID} failed: {}`,
+        error.message
+      );
       masterWallet = null;
     }
 
-    return masterWallet;
+    return Promise.resolve(masterWallet);
   }
 
   generateMnemonic(language: string, wordCount?: any): string {

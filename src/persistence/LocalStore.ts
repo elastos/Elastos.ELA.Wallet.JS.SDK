@@ -298,7 +298,7 @@ export class LocalStore {
     ErrorChecker.checkLogic(
       !j,
       Error.Code.InvalidLocalStore,
-      "local store file is empty"
+      "local store content is empty"
     );
 
     this.fromJson(j);
