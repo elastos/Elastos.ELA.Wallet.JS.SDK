@@ -36,8 +36,6 @@ export class LocalStore {
   private _xPrivKey: string;
   private _requestPrivKey: string;
   private _mnemonic: string;
-  // only old version keystore and localstore of spvsdk contain this. will remove later
-  // std::string _passphrase __attribute__((deprecated));
   private _passphrase: string;
   private _singlePrivateKey: string;
   private _seed: string;
@@ -112,7 +110,6 @@ export class LocalStore {
 
   private fromJson(j: LocalStoreInfo) {
     try {
-      //if (j.find("publicKeyRing") != j.end()) {
       // new version of localstore
       this._xPrivKey = j["xPrivKey"] as string;
       this._mnemonic = j["mnemonic"] as string;
@@ -185,73 +182,6 @@ export class LocalStore {
       this._subWalletsInfoList = (j["coinInfo"] as ChainInfo[]).map((j) =>
         new CoinInfo().fromJson(j as ChainInfo)
       );
-      /* } else {
-					// old version of localstore
-					bytes_t bytes;
-				nlohmann::json mpk = j["MasterPubKey"];
-
-				_derivationStrategy = "BIP44";
-				_account = 0;
-				_xPrivKey.clear();
-				_requestPubKey.clear();
-				_requestPrivKey.clear();
-				_ownerPubKey.clear();
-				_xPubKey.clear();
-				_xPubKeyHDPM.clear();
-				_seed.clear();
-				_ethscPrimaryPubKey.clear();
-				_ripplePrimaryPubKey.clear();
-
-				if (mpk.is_object()) {
-					bytes.setHex(mpk["ELA"]);
-					if (!bytes.isZero()) {
-							ByteStream stream(bytes);
-						stream.Skip(4);
-							bytes_t pubKey, chainCode;
-						stream.ReadBytes(chainCode, 32);
-						stream.ReadBytes(pubKey, 33);
-
-						bytes = HDKeychain(CTElastos, pubKey, chainCode).extkey();
-						_xPubKey = Base58:: CheckEncode(bytes);
-					}
-				}
-
-				nlohmann::json jaccount = j["Account"];
-
-				if (j.find("SubWallets") != j.end()) {
-					_subWalletsInfoList = j["SubWallets"].get < std:: vector < CoinInfoPtr >> ();
-				}
-
-
-				if (jaccount.find("CoSigners") != jaccount.end()) {
-					// 1. multi sign
-					ErrorChecker:: ThrowLogicException(Error:: InvalidLocalStore, "Localstore too old, re-import please");
-				} else {
-					// 2. standard hd
-					_readonly = false;
-					_mnemonic = jaccount["Mnemonic"].get < std:: string > ();
-					_passphrase = jaccount["PhrasePassword"].get < std:: string > ();
-
-					bytes.setBase64(_passphrase);
-					if (bytes.size() <= 8) {
-						_mnemonicHasPassphrase = false;
-						_passphrase.clear();
-					} else {
-						_mnemonicHasPassphrase = true;
-					}
-
-					_m = _n = 1;
-					_requestPubKey = jaccount["PublicKey"].get < std:: string > ();
-					if (!_xPubKey.empty())
-						_publicKeyRing.emplace_back(_requestPubKey, _xPubKey);
-
-					nlohmann::json votePubkey = j["VotePublicKey"];
-					if (votePubkey.is_object() && votePubkey["ELA"].get < std:: string > () != "") {
-						_ownerPubKey = votePubkey["ELA"].get < std:: string > ();
-					}
-					_singleAddress = j["IsSingleAddress"].get<bool>();
-				}
-			} */
     } catch (e) {
       ErrorChecker.throwLogicException(
         Error.Code.InvalidLocalStore,
