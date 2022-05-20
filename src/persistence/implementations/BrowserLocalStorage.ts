@@ -1,5 +1,6 @@
 import { WalletStorage } from "../WalletStorage";
 import { LocalStoreInfo } from "../LocalStore";
+import { ErrorChecker, Error } from "../../common/ErrorChecker";
 
 export class BrowserLocalStorage implements WalletStorage {
   loadStore(masterWalletID: string): Promise<LocalStoreInfo> {
@@ -10,17 +11,13 @@ export class BrowserLocalStorage implements WalletStorage {
   saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void> {
     const data = localStorage.getItem("masterWalletIDs");
     if (data) {
-      try {
-        const masterWalletIDs = JSON.parse(data);
-        if (!masterWalletIDs.includes(masterWalletID)) {
-          masterWalletIDs.push(masterWalletID);
-        }
+      const masterWalletIDs = JSON.parse(data);
+      if (!masterWalletIDs.includes(masterWalletID)) {
+        masterWalletIDs.push(masterWalletID);
         localStorage.setItem(
           "masterWalletIDs",
           JSON.stringify(masterWalletIDs)
         );
-      } catch (err) {
-        return Promise.reject(err);
       }
     } else {
       localStorage.setItem("masterWalletIDs", JSON.stringify([masterWalletID]));
