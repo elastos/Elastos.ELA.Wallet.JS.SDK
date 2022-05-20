@@ -589,6 +589,10 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Get manager existing master wallets.
+   * @return existing master wallet array.
+   */
   async getAllMasterWallets(): Promise<MasterWallet[]> {
     // ArgInfo("{}", GetFunName());
     // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
@@ -606,6 +610,10 @@ export class MasterWalletManager {
     return Promise.resolve(result);
   }
 
+  /**
+   * Destroy a master wallet.
+   * @param masterWalletID A pointer of master wallet interface create or imported by wallet factory object.
+   */
   destroyWallet(masterWalletID: string) {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
@@ -626,6 +634,15 @@ export class MasterWalletManager {
     // ArgInfo("r => {} done", GetFunName());
   }
 
+  /**
+   * Import master wallet by key store file.
+   * @param masterWalletId is the unique identification of a master wallet object.
+   * @param keystoreContent specify key store content in json format.
+   * @param backupPassword use to encrypt key store file. Backup password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success will return a pointer of master wallet interface.
+   */
   importWalletWithKeystore(
     masterWalletID: string,
     keystoreContent: JSONObject,
@@ -652,6 +669,7 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
+    // TODO
     const masterWallet = MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
@@ -669,6 +687,16 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Import master wallet by mnemonic.
+   * @param masterWalletID is the unique identification of a master wallet object.
+   * @param mnemonic for importing the master wallet.
+   * @param phrasePassword combine with mnemonic to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
+   * @return If success will return a pointer of master wallet interface.
+   */
   async importWalletWithMnemonic(
     masterWalletID: string,
     mnemonic: string,
@@ -723,6 +751,18 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
+  /**
+   * Import master wallet by seed
+   * Node: If the mnemonic is not empty, verify that the seed matches mnemonic + passphrase.
+   *  If the mnemonic is empty, IMasterWallet::ExportMnemonic() will return empty.
+   * @param masterWalletID is the unique identification of a master wallet object
+   * @param seed hex-string of uint512
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception
+   * @param singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security
+   * @param mnemonic mnemonic words string separated by spaces
+   * @param passphrase combine with mnemonic to generate seed
+   * @return If success will return a pointer of master wallet interface
+   */
   async importWalletWithSeed(
     masterWalletID: string,
     seed: string,
@@ -785,20 +825,22 @@ export class MasterWalletManager {
     return masterWallet;
   }
 
-  /*
-    std::string MasterWalletManager::GetVersion() const {
-      ArgInfo("{}", GetFunName());
-      ArgInfo("r => {}", SPVSDK_VERSION_MESSAGE);
-      return SPVSDK_VERSION_MESSAGE;
-    }
-*/
+  /* TODO
+  getVersion(): string {
+    ArgInfo("{}", GetFunName());
+    ArgInfo("r => {}", SPVSDK_VERSION_MESSAGE);
+    return SPVSDK_VERSION_MESSAGE;
+  }
+  */
 
+  /**
+   * Flush data into disk before destructions
+   */
   flushData() {
     // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-
     this._masterWalletMap.forEach((value) => {
       if (value !== null) {
-        value.flushData();
+        value.flushData(); // TODO
       }
     });
   }
@@ -826,6 +868,10 @@ export class MasterWalletManager {
     // Log.setLevel(spdlog::level::from_str(level));
   }
 
+  /**
+   * Get manager available master wallet ID
+   * @return available id array
+   */
   getAllMasterWalletID(): string[] {
     // ArgInfo("{}", GetFunName());
     // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
@@ -842,6 +888,10 @@ export class MasterWalletManager {
     return result;
   }
 
+  /**
+   * Get status indicating whether wallet loaded
+   * @return return true or false
+   */
   walletLoaded(masterWalletID: string): boolean {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
@@ -856,6 +906,11 @@ export class MasterWalletManager {
     return this._masterWalletMap.get(masterWalletID) != null;
   }
 
+  /**
+   * Get a master wallet object by id.
+   * @param masterWalletID master wallet id.
+   * @return master wallet object.
+   */
   getMasterWallet(masterWalletID: string): Promise<MasterWallet> {
     //ArgInfo("{}", GetFunName());
     //ArgInfo("masterWalletID: {}", masterWalletID);
