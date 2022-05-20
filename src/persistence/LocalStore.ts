@@ -255,7 +255,7 @@ export class LocalStore {
     } catch (e) {
       ErrorChecker.throwLogicException(
         Error.Code.InvalidLocalStore,
-        "Invalid localstore: " + e
+        "Invalid localstore: can't read data from this localstore"
       );
     }
   }
