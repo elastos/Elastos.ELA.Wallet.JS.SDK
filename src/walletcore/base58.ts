@@ -24,8 +24,7 @@
 // Buf haven't found a way to make this work for typescript files at the rollup build level.
 import * as bs58 from "bs58";
 import * as bs58check from "bs58check";
-import { LogicErrorException } from "../common/exceptions/logic.exception";
-import { Error } from "../common/ErrorChecker";
+import { Error, ErrorChecker } from "../common/ErrorChecker";
 
 /**
  * @Internal (tag for docs)
@@ -45,7 +44,7 @@ export class Base58Check {
     try {
       return bs58check.decode(base58);
     } catch (err) {
-      throw new LogicErrorException(
+      ErrorChecker.throwParamException(
         Error.Code.InvalidArgument,
         "Invalid base58 string when decode"
       );
