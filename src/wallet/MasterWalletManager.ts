@@ -123,7 +123,21 @@ export class MasterWalletManager {
     return Promise.resolve(masterWallet);
   }
 
-  generateMnemonic(language: string, wordCount?: any): string {
+  /**
+   * Generate a mnemonic by random entropy.
+   * @param language specify mnemonic language. We support language below
+   *   chinese_simplified,
+   *   chinese_traditional",
+   *   czech,
+   *   english,
+   *   french,
+   *   italian,
+   *   japanese,
+   *   korean,
+   *   spanish
+   * @return a random mnemonic.
+   */
+  generateMnemonic(language: string): string {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("language: {}", language);
     // ArgInfo("wordCount: {}", wordCount);
@@ -707,44 +721,6 @@ export class MasterWalletManager {
     // ArgInfo("r => import with mnemonic");
 
     return masterWallet;
-  }
-
-  importReadonlyWallet(
-    masterWalletID: string,
-    walletJson: JSONObject
-  ): MasterWallet {
-    // ArgInfo("{}", GetFunName());
-    // ArgInfo("masterWalletID: {}", masterWalletID);
-    // ArgInfo("walletJson: {}", walletJson.dump());
-
-    // boost::mutex::scoped_lock scoped_lock(_lock->GetLock());
-
-    ErrorChecker.checkParam(
-      !(walletJson !== null && typeof walletJson === "object"),
-      Error.Code.KeyStore,
-      "wallet json should be json object"
-    );
-
-    if (this._masterWalletMap.has(masterWalletID)) {
-      // ArgInfo("r => already exist");
-      return this._masterWalletMap.get(masterWalletID);
-    }
-
-    /* This method is not supported by the C++ repo
-    const masterWallet = new MasterWallet(
-      masterWalletID,
-      walletJson,
-      this._config,
-      _dataPath
-    );
-
-    this.checkRedundant(masterWallet);
-    this._masterWalletMap.set(masterWalletID, masterWallet);
-    masterWallet.initSubWallets();
-    // ArgInfo("r => import read-only");
-
-    return masterWallet;
-    */
   }
 
   async importWalletWithSeed(

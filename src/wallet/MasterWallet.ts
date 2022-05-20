@@ -307,7 +307,7 @@ export class MasterWallet {
 
   destroy() {}
 
-  public static generateMnemonic(language: string, wordCount?: any): string {
+  public static generateMnemonic(language: string): string {
     const mnemonicObj = Mnemonic.getInstance(language);
     const mnemonic = mnemonicObj.generate();
     return mnemonic;
