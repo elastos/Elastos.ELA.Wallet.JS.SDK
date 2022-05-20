@@ -313,8 +313,8 @@ export class MasterWallet {
     return mnemonic;
   }
 
-  removeLocalStore() {
-    this._account.remove();
+  async removeLocalStore() {
+    await this._account.remove();
   }
 
   public getID(): string {

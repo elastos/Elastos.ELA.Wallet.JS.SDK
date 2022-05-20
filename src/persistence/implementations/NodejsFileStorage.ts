@@ -37,6 +37,10 @@ export class NodejsFileStorage implements WalletStorage {
     return Promise.resolve();
   }
 
+  removeStore(masterWalletID: string): Promise<void> {
+    return Promise.resolve();
+  }
+
   getMasterWalletIDs(): Promise<string[]> {
     return;
   }

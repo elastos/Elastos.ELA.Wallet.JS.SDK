@@ -240,19 +240,15 @@ export class LocalStore {
     await this._walletStorage.saveStore(this._masterWalletID, this.toJson());
   }
 
-  remove() {
-    /*
-		boost:: filesystem::path path(_path);
-		if (boost:: filesystem:: exists(path))
-      boost:: filesystem:: remove_all(path);
-    */
+  async remove(): Promise<void> {
+    await this._walletStorage.removeStore(this._masterWalletID);
   }
 
   getDataPath(): Promise<string> {
     return Promise.resolve(this._masterWalletID);
   }
 
-  async saveTo(masterWalletID: string) {
+  async saveTo(masterWalletID: string): Promise<void> {
     this._masterWalletID = masterWalletID;
     await this.save();
   }

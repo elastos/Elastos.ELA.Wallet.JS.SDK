@@ -30,6 +30,10 @@ export class BrowserLocalStorage implements WalletStorage {
     );
   }
 
+  removeStore(masterWalletID: string): Promise<void> {
+    return Promise.resolve(localStorage.removeItem(masterWalletID));
+  }
+
   getMasterWalletIDs(): Promise<string[]> {
     const data = localStorage.getItem("masterWalletIDs");
     return Promise.resolve(data && JSON.parse(data));

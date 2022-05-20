@@ -614,7 +614,7 @@ export class MasterWalletManager {
    * Destroy a master wallet.
    * @param masterWalletID A pointer of master wallet interface create or imported by wallet factory object.
    */
-  destroyWallet(masterWalletID: string) {
+  async destroyWallet(masterWalletID: string) {
     // ArgInfo("{}", GetFunName());
     // ArgInfo("masterWalletID: {}", masterWalletID);
 
@@ -623,7 +623,7 @@ export class MasterWalletManager {
     if (this._masterWalletMap.has(masterWalletID)) {
       const masterWallet = this._masterWalletMap.get(masterWalletID);
       if (masterWallet !== null) {
-        masterWallet.removeLocalStore();
+        await masterWallet.removeLocalStore();
         masterWallet.closeAllSubWallets();
         this._masterWalletMap.delete(masterWallet.getWalletID());
       }

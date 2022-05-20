@@ -1721,8 +1721,8 @@ export class Account {
     return await this._localstore.save();
   }
 
-  remove() {
-    this._localstore.remove();
+  async remove() {
+    await this._localstore.remove();
   }
 
   async getDataPath(): Promise<string> {
