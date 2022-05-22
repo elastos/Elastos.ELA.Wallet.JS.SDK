@@ -231,13 +231,9 @@ export class EthSidechainSubWallet
     return j;
   }
 
-  getPublicKeys(
-    index: uint32_t,
-    count: uint32_t,
-    internal: boolean
-  ): JSONArray {
+  getPublicKeys(index: uint32_t, count: uint32_t, internal: boolean): string[] {
     let pubkey: string = this._wallet.getPrimaryAddressPublicKey();
-    let j: JSONArray = [];
+    let j = [];
     j.push(pubkey);
     return j;
   }

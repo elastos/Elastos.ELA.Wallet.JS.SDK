@@ -81,8 +81,6 @@ export class Wallet extends Lockable {
 
     if (outputs) tx.setOutputs(outputs);
 
-    //await this.GetLock().runExclusive(() => {
-    // TODO: make sure UTXOs are sorted are creation. Call sortUTXOs().
     for (let u of utxo) {
       tx.addInput(TransactionInput.newFromParams(u.hash(), u.index()));
       // The code of a transaction consists of public keys.
@@ -98,7 +96,6 @@ export class Wallet extends Lockable {
 
       totalInputAmount = totalInputAmount.plus(u.getAmount());
     }
-    //});
 
     if (totalInputAmount.lt(totalOutputAmount.plus(fee))) {
       ErrorChecker.throwLogicException(
@@ -137,7 +134,7 @@ export class Wallet extends Lockable {
       "outputs empty or input amount not enough"
     );
 
-    tx.setFee(fee); // WAS tx.SetFee(fee.getUint64());
+    tx.setFee(fee);
     if (this._chainID == CHAINID_MAINCHAIN) tx.setVersion(TxVersion.V09);
 
     return tx;

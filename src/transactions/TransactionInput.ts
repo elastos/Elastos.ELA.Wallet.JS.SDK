@@ -73,16 +73,12 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 
   public equals(ti: TransactionInput): boolean {
     let equal =
-      this._txHash == ti._txHash &&
+      this._txHash.eq(ti._txHash) &&
       this._index == ti._index &&
       this._sequence == ti._sequence;
 
     return equal;
   }
-
-  /*bool TransactionInput::operator!=(const TransactionInput &in) const {
-		return !operator==(in);
-	} */
 
   public estimateSize(): size_t {
     let size: size_t = 0;

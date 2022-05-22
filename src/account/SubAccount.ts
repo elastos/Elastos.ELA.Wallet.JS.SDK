@@ -42,7 +42,7 @@ import {
 
 export type PublickeyItem = { me: string; all: string[] };
 export type PublickeysInfo = {
-  m: number;
+  m: number; // Multisign - number of requested signatures
   pubkeys: PublickeyItem[];
 };
 
@@ -74,7 +74,6 @@ export class SubAccount {
       let mpk: HDKey = this._parent.masterPubKey();
       this._crDepositAddress = Address.newWithPubKey(
         Prefix.PrefixDeposit,
-        // mpk.getChild(0).getChild(0).pubkey()
         mpk.deriveWithIndex(0).deriveWithIndex(0).getPublicKeyBytes()
       );
     }
@@ -470,13 +469,13 @@ export class SubAccount {
         if (this._parent.getSignType() != AccountSignType.MultiSign) {
           let cid = Address.newFromAddress(chainAddr[index - 1]);
           cid.changePrefix(Prefix.PrefixIDChain);
-          if (addr == cid) {
+          if (addr.equals(cid)) {
             return (code = cid.redeemScript());
           }
 
           let did = Address.newFromAddress(cid);
           did.convertToDID();
-          if (addr == did) {
+          if (addr.equals(did)) {
             return (code = did.redeemScript());
           }
         }

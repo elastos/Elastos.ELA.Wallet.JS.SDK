@@ -345,7 +345,6 @@ export class ElastosBaseSubWallet
     let stream = new ByteStream();
     tx.serialize(stream);
     const hex = stream.getBytes();
-    // console.log("hex....", hex.toString("hex"));
     result["Algorithm"] = "base64";
     result["ID"] = tx.getHash().toString(16).slice(0, 8);
     result["Data"] = hex.toString("base64");

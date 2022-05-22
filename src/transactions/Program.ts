@@ -81,7 +81,6 @@ export class Program extends ELAMessage implements JsonSerializer {
     }
 
     if (this._code[this._code.length - 1] == SignType.SignTypeMultiSign) {
-      // WAS (SignType(_code.back()) == SignTypeMultiSign) {
       let m: uint8_t = this._code[0] - OP_1 + 1;
       let n: uint8_t = this._code[this._code.length - 2] - OP_1 + 1;
 
@@ -95,7 +94,6 @@ export class Program extends ELAMessage implements JsonSerializer {
         return false;
       }
     } else if (this._code[this._code.length - 1] == SignType.SignTypeStandard) {
-      // WAS (SignType(_code.back()) == SignTypeStandard) {
       if (publicKeys.length != signatureCount) {
         return false;
       }
@@ -206,7 +204,6 @@ export class Program extends ELAMessage implements JsonSerializer {
 
     if (!this._parameter) {
       if (this._code[this._code.length - 1] == SignType.SignTypeMultiSign) {
-        // WAS SignType(this._code.back())
         let m = this._code[0] - OP_1 + 1;
         let signLen = m * 64; // WAS uint64_t signLen = m * 64ul;
         size += stream.writeVarUInt(signLen);
@@ -214,7 +211,6 @@ export class Program extends ELAMessage implements JsonSerializer {
       } else if (
         this._code[this._code.length - 1] == SignType.SignTypeStandard
       ) {
-        // WAS SignType(this._code.back())
         size += 65;
       }
     } else {

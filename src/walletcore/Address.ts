@@ -86,7 +86,7 @@ export class Address {
   public static newWithPubKeys(
     prefix: Prefix,
     pubkeys: bytes_t[],
-    m: uint8_t,
+    m: uint8_t, // number of requested signatures
     did = false
   ) {
     let address = new Address();
@@ -184,8 +184,7 @@ export class Address {
       this._code.length !== 0 &&
       this._programHash.prefix() == Prefix.PrefixIDChain
     ) {
-      // TODO
-      // _code.back() = SignType.SignTypeDID;
+      this._code[this._code.length - 1] = SignType.SignTypeDID;
       this.generateProgramHash(Prefix.PrefixIDChain);
     }
   }
