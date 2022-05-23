@@ -26,7 +26,6 @@ import { Payload } from "./payload/Payload";
 import { Program, ProgramInfo, SignedInfo } from "./Program";
 import { TransactionInput } from "./TransactionInput";
 import { TransactionOutput } from "./TransactionOutput";
-import { Signer } from "ethers";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -498,7 +497,9 @@ export class Transaction {
 
   public addUniqueProgram(program: Program): boolean {
     for (let i = 0; i < this._programs.length; ++i) {
-      if (this._programs[i].getCode().equals(program.getCode())) {
+      if (
+        this._programs[i].getCode().toString() == program.getCode().toString()
+      ) {
         return false;
       }
     }

@@ -199,7 +199,7 @@ export class MasterWalletManager {
       this._storage
     );
 
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create master wallet done");
@@ -236,7 +236,7 @@ export class MasterWalletManager {
       this._config,
       this._storage
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create master wallet done");
@@ -318,7 +318,7 @@ export class MasterWalletManager {
       singleAddress,
       compatible
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create multi sign wallet");
@@ -409,7 +409,7 @@ export class MasterWalletManager {
       singleAddress,
       compatible
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create multi sign wallet");
@@ -490,7 +490,7 @@ export class MasterWalletManager {
       singleAddress,
       compatible
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => create multi sign wallet");
@@ -584,7 +584,7 @@ export class MasterWalletManager {
       singleAddress,
       compatible
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
     return masterWallet;
   }
@@ -643,7 +643,7 @@ export class MasterWalletManager {
    * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
    * @return If success will return a pointer of master wallet interface.
    */
-  importWalletWithKeystore(
+  async importWalletWithKeystore(
     masterWalletID: string,
     keystoreContent: JSONObject,
     backupPassword: string,
@@ -678,7 +678,7 @@ export class MasterWalletManager {
       this._config,
       this._storage
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
     masterWallet.initSubWallets();
 
@@ -743,7 +743,7 @@ export class MasterWalletManager {
       this._storage
     );
 
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => import with mnemonic");
@@ -817,7 +817,7 @@ export class MasterWalletManager {
       this._config,
       this._storage
     );
-    this.checkRedundant(masterWallet);
+    await this.checkRedundant(masterWallet);
     this._masterWalletMap.set(masterWalletID, masterWallet);
 
     // ArgInfo("r => import with seed + [mnemonic:passphrase]");
@@ -925,7 +925,7 @@ export class MasterWalletManager {
     return this.loadMasterWallet(masterWalletID);
   }
 
-  protected checkRedundant(wallet: MasterWallet) {
+  protected async checkRedundant(wallet: MasterWallet) {
     let masterWallet: MasterWallet = wallet;
     let hasRedundant = false;
     this._masterWalletMap.forEach((value, key) => {
@@ -940,7 +940,7 @@ export class MasterWalletManager {
 
       masterWallet.closeAllSubWallets();
       Log.info("Clearing local", masterWallet.getID());
-      masterWallet.removeLocalStore();
+      await masterWallet.removeLocalStore();
       masterWallet = null;
     }
 

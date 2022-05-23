@@ -263,6 +263,9 @@ export class Program extends ELAMessage implements JsonSerializer {
   }
 
   public equals(p: Program): boolean {
-    return this._code == p._code && this._parameter == p._parameter;
+    return (
+      this._code.toString() == p._code.toString() &&
+      this._parameter.toString() == p._parameter.toString()
+    );
   }
 }
