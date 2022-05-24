@@ -60,7 +60,7 @@ export class Wallet extends Lockable {
     outputs: OutputArray,
     memo: string,
     fee: BigNumber,
-    changeBack2FirstInput?: boolean
+    changeBack2FirstInput = false
   ): Transaction {
     let memoFixed: string;
     let totalOutputAmount: BigNumber = new BigNumber(0);

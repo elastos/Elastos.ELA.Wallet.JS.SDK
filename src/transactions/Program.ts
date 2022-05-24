@@ -31,15 +31,15 @@ export class Program extends ELAMessage implements JsonSerializer {
 */
   public static newFromParams(code: bytes_t, parameter: bytes_t): Program {
     let program = new Program();
-    program._parameter = parameter;
-    program._code = code;
+    program._parameter = Buffer.from(parameter);
+    program._code = Buffer.from(code);
     return program;
   }
 
   public static newFromProgram(p: Program): Program {
     let program = new Program();
-    program._code = p._code;
-    program._parameter = p._parameter;
+    program._code = Buffer.from(p._code);
+    program._parameter = Buffer.from(p._parameter);
     return program;
   }
 

@@ -69,8 +69,11 @@ export class Address {
 
   public static newFromAddress(address: Address): Address {
     let addr = new Address();
-    addr._programHash = address._programHash;
-    addr._code = address._code;
+    addr._programHash = uint168.newFrom21BytesBuffer(
+      address._programHash.bytes()
+    );
+    addr._code = Buffer.alloc(address._code.length);
+    address._code.copy(addr._code);
     addr._isValid = address._isValid;
     return addr;
   }
@@ -149,7 +152,7 @@ export class Address {
   }
 
   public setRedeemScript(prefix: Prefix, code: bytes_t) {
-    this._code = code;
+    this._code = Buffer.from(code);
     this.generateProgramHash(prefix);
     this.checkValid();
     ErrorChecker.checkCondition(
@@ -200,7 +203,8 @@ export class Address {
   }
 
   public isLessThan(address: Address): boolean {
-    return this._programHash < address._programHash;
+    const rs = this._programHash.bytes().compare(address._programHash.bytes());
+    return rs == -1;
   }
 
   public equals(address: Address | string): boolean {
@@ -209,8 +213,7 @@ export class Address {
     else
       return (
         this._isValid == address._isValid &&
-        this._programHash.bytes().toString() ==
-          address._programHash.bytes().toString()
+        this._programHash.bytes().compare(address._programHash.bytes()) == 0
       );
   }
 

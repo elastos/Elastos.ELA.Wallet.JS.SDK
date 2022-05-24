@@ -9,6 +9,7 @@ import { Mnemonic } from "./walletcore/mnemonic";
 import { WalletErrorException } from "./common/exceptions/walleterror.exception";
 import type { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
 import type { SignedInfo } from "./transactions/Program";
+import type { EncodedTx } from "./wallet/IElastosBaseSubWallet";
 
 export {
   BrowserLocalStorage,
@@ -21,4 +22,10 @@ export {
   MainchainSubWallet,
   WalletErrorException
 };
-export type { WalletStorage, AccountBasicInfo, AccountPubKeyInfo, SignedInfo };
+export type {
+  WalletStorage,
+  AccountBasicInfo,
+  AccountPubKeyInfo,
+  EncodedTx,
+  SignedInfo
+};
