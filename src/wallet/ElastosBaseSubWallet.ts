@@ -43,7 +43,7 @@ import {
 import { EncodedTx, IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { SubWallet } from "./SubWallet";
-import { UTXO, UTXOItem, UTXOSet } from "./UTXO";
+import { UTXO, UTXOInput, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
   CHAINID_IDCHAIN,
@@ -185,7 +185,7 @@ export class ElastosBaseSubWallet
   }
 
   public createTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     outputsJson: OutputItem[],
     fee: string,
     memo: string
@@ -419,9 +419,9 @@ export class ElastosBaseSubWallet
     return tx;
   }
 
-  protected UTXOFromJson(utxo: UTXOSet, j: UTXOItem[]): boolean {
+  protected UTXOFromJson(utxo: UTXOSet, j: UTXOInput[]): boolean {
     for (let item of j) {
-      let utxoJson = item as UTXOItem;
+      let utxoJson = item as UTXOInput;
       if (
         !("TxHash" in utxoJson) ||
         !("Index" in utxoJson) ||

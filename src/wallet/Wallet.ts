@@ -83,10 +83,9 @@ export class Wallet extends Lockable {
 
     for (let u of utxo) {
       tx.addInput(TransactionInput.newFromParams(u.hash(), u.index()));
-      // The code of a transaction consists of public keys.
+      // For standard wallets, a code consists of the length of a public key, the public key itself and the standard sign type.
       let code = this._subAccount.getCode(u.getAddress());
       if (code === null) {
-        //GetLock().unlock();
         ErrorChecker.throwParamException(
           Error.Code.Address,
           "Can't found code and path for input"
@@ -149,7 +148,11 @@ export class Wallet extends Lockable {
     return pubkeys;
   }
 
-  public getAddresses(index: uint32_t, count: uint32_t, internal: boolean) {
+  public getAddresses(
+    index: uint32_t,
+    count: uint32_t,
+    internal: boolean
+  ): AddressArray {
     return this._subAccount.getAddresses(index, count, internal);
   }
 

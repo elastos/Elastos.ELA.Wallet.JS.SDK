@@ -7,7 +7,7 @@ import { INT32_MAX, uint16_t, uint256 } from "../types";
 import { Address } from "../walletcore/Address";
 
 export type UTXOArray = UTXO[];
-export type UTXOItem = {
+export type UTXOInput = {
   TxHash: string;
   Index: number;
   Address: string;

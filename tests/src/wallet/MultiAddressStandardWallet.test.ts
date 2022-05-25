@@ -16,7 +16,7 @@ export const singleWallet = async () => {
     netConfig
   );
 
-  const masterWalletID = "master-wallet-id-3";
+  const masterWalletID = "master-wallet-id-12";
   let seed = `3c6f6c0a5aba9e1456a827587f36a45430812ef04aa8cac4774a7d533ecb486dca476c004ae65271305f8907128583d2112e1648a902d44e61d942b02121c2a4`;
   const passphrase = "";
   const passwd = "11111111";
@@ -32,6 +32,7 @@ export const singleWallet = async () => {
   const subWallet: any = await masterWallet.createSubWallet("ELA");
 
   const addresses = subWallet.getAddresses(0, 3, false);
+
   expect(addresses.length).toEqual(3);
   expect(addresses[0]).toEqual("EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L");
   expect(addresses[1]).toEqual("EJsxRrKdQ1mVGhqXUpAwF9DUsLC2LDUn2y");
@@ -71,9 +72,16 @@ export const singleWallet = async () => {
   const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
   const signedInfo: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
   expect(signedInfo.length).toEqual(2);
+
   expect(signedInfo[0].SignType).toEqual("Standard");
   expect(signedInfo[0].Signers.length).toEqual(1);
   expect(signedInfo[0].Signers[0]).toEqual(
     "02abb13a00e3de666bb84a5a70875e3423150f4ce6ab2eb4d187dcf319b34be188"
+  );
+
+  expect(signedInfo[1].SignType).toEqual("Standard");
+  expect(signedInfo[1].Signers.length).toEqual(1);
+  expect(signedInfo[1].Signers[0]).toEqual(
+    "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
   );
 };

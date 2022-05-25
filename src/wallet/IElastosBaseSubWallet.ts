@@ -22,10 +22,10 @@
 import { SignedInfo } from "../transactions/Program";
 import { OutputItem } from "./ElastosBaseSubWallet";
 import { ISubWallet } from "./ISubWallet";
-import { UTXOItem } from "./UTXO";
+import { UTXOInput } from "./UTXO";
 
 export type EncodedTx = {
-  Algorithm: string;
+  Algorithm: "base64";
   Data: string;
   ChainID: string;
   ID?: string;
@@ -58,7 +58,7 @@ export interface IElastosBaseSubWallet extends ISubWallet {
    * @return If success return the content of transaction in json format.
    */
   createTransaction(
-    inputs: UTXOItem[],
+    inputs: UTXOInput[],
     outputs: OutputItem[],
     fee: string,
     memo: string

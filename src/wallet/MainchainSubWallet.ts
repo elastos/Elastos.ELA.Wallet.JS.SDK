@@ -93,7 +93,7 @@ import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
 import { EncodedTx } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
 import { DEPOSIT_OR_WITHDRAW_FEE, SELA_PER_ELA } from "./SubWallet";
-import { UTXOItem, UTXOSet } from "./UTXO";
+import { UTXOInput, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
   CHAINID_IDCHAIN,
@@ -140,7 +140,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
   createDepositTransaction(
     version: uint8_t,
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     sideChainID: string,
     amount: string,
     sideChainAddress: string,
@@ -341,7 +341,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRegisterProducerTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJson: json,
     amount: string,
     fee: string,
@@ -405,7 +405,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUpdateProducerTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJson: json,
     fee: string,
     memo: string
@@ -445,7 +445,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createCancelProducerTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJson: json,
     fee: string,
     memo: string
@@ -489,7 +489,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRetrieveDepositTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     amount: string,
     fee: string,
     memo: string
@@ -684,7 +684,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createVoteTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     voteContentsJson: json,
     fee: string,
     memo: string
@@ -824,7 +824,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRegisterCRTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJSON: json,
     amount: string,
     fee: string,
@@ -902,7 +902,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUpdateCRTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -948,7 +948,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createUnregisterCRTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -998,7 +998,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createRetrieveCRDepositTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     amount: string,
     fee: string,
     memo: string
@@ -1066,7 +1066,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createCRCouncilMemberClaimNodeTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payloadJson: JSONObject,
     fee: string,
     memo: string
@@ -1218,7 +1218,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1308,7 +1308,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalReviewTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1461,7 +1461,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalTrackingTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1582,7 +1582,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createSecretaryGeneralElectionTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1703,7 +1703,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createProposalChangeOwnerTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1825,7 +1825,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createTerminateProposalTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -1946,7 +1946,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createReserveCustomIDTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -2067,7 +2067,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createReceiveCustomIDTransaction(
-    inputsJson: UTXOItem[],
+    inputsJson: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
@@ -2188,7 +2188,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   createChangeCustomIDFeeTransaction(
-    inputs: UTXOItem[],
+    inputs: UTXOInput[],
     payload: json,
     fee: string,
     memo: string
