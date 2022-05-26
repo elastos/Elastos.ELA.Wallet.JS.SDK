@@ -16,15 +16,7 @@ import {
   OutputArray,
   TransactionOutput
 } from "../transactions/TransactionOutput";
-import {
-  bytes_t,
-  json,
-  JSONValue,
-  size_t,
-  uint256,
-  uint32_t,
-  uint8_t
-} from "../types";
+import { bytes_t, size_t, uint256, uint32_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
@@ -62,13 +54,12 @@ export class Wallet extends Lockable {
     fee: BigNumber,
     changeBack2FirstInput = false
   ): Transaction {
-    let memoFixed: string;
     let totalOutputAmount: BigNumber = new BigNumber(0);
     let totalInputAmount: BigNumber = new BigNumber(0);
 
     let tx = Transaction.newFromParams(type, payload);
     if (memo) {
-      memoFixed = "type:text,msg:" + memo;
+      let memoFixed = "type:text,msg:" + memo;
       tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(memoFixed)));
     }
 

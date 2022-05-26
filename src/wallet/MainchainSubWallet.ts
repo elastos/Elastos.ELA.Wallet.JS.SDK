@@ -34,7 +34,9 @@ import {
   CRCProposal,
   CRCProposalDefaultVersion,
   CRCProposalType,
-  CRCProposalVersion01
+  CRCProposalVersion01,
+  JsonKeyDraftData,
+  JsonKeyType
 } from "../transactions/payload/CRCProposal";
 import {
   CRCProposalReview,
@@ -46,6 +48,10 @@ import {
   CRCProposalTrackingDefaultVersion,
   CRCProposalTrackingVersion01
 } from "../transactions/payload/CRCProposalTracking";
+import {
+  CRCProposalWithdrawVersion_01,
+  CRCProposalWithdraw
+} from "../transactions/payload/CRCProposalWithdraw";
 import { CRInfo, CRInfoDIDVersion } from "../transactions/payload/CRInfo";
 import {
   CrossChainOutputVersion,
@@ -2192,7 +2198,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payload: json,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", this.getSubWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputs);
@@ -2240,166 +2246,194 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
-  /*
-      std::string MainchainSubWallet::ProposalWithdrawDigest(const nlohmann::json &payload) const {
-        ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-        ArgInfo("payload: {}", payload.dump());
+  proposalWithdrawDigest(payload: json) {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
 
-        uint8_t version = CRCProposalWithdrawVersion_01;
-        CRCProposalWithdraw proposalWithdraw;
-        try {
-          proposalWithdraw.FromJsonUnsigned(payload, version);
-        } catch (const std::exception &e) {
-          ErrorChecker::ThrowParamException(Error::InvalidArgument, "convert from json");
-        }
+    let version: uint8_t = CRCProposalWithdrawVersion_01;
+    let proposalWithdraw = new CRCProposalWithdraw();
+    try {
+      proposalWithdraw.fromJsonUnsigned(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "convert from json"
+      );
+    }
 
-        if (!proposalWithdraw.IsValidUnsigned(version))
-          ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
+    if (!proposalWithdraw.isValidUnsigned(version))
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
 
-        std::string digest = proposalWithdraw.DigestUnsigned(version).GetHex();
+    let digest = proposalWithdraw.digestUnsigned(version).toString(16);
 
-        ArgInfo("r => {}", digest);
-        return digest;
-      }
+    // ArgInfo("r => {}", digest);
+    return digest;
+  }
 
-      nlohmann::json MainchainSubWallet::CreateProposalWithdrawTransaction(
-              const nlohmann::json &inputsJson,
-                  const nlohmann::json &payload,
-                  const std::string &fee,
-                  const std::string &memo) const {
-        WalletPtr wallet = _walletManager->GetWallet();
-        ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
-        ArgInfo("inputs: {}", inputsJson.dump());
-              ArgInfo("payload: {}", payload.dump());
-        ArgInfo("fee: {}", fee);
-              ArgInfo("memo: {}", memo);
+  createProposalWithdrawTransaction(
+    inputsJson: UTXOInput[],
+    payload: json,
+    fee: string,
+    memo: string
+  ): EncodedTx {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputsJson.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-              UTXOSet utxo;
-              UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputsJson);
 
-        uint8_t version = CRCProposalWithdrawVersion_01;
-        PayloadPtr p(new CRCProposalWithdraw());
-        try {
-          p->FromJson(payload, version);
-        } catch (const std::exception &e) {
-          ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-        }
+    let version = CRCProposalWithdrawVersion_01;
+    let p = new CRCProposalWithdraw();
+    try {
+      p.fromJson(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
 
-        if (!p->IsValid(version))
-          ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
+    if (!p.isValid(version))
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
 
-        BigInt feeAmount;
-        feeAmount.setDec(fee);
+    let feeAmount = new BigNumber(fee);
 
-        TransactionPtr tx = wallet->CreateTransaction(Transaction::crcProposalWithdraw, p, utxo, {}, memo, feeAmount);
-        tx->SetPayloadVersion(version);
+    let tx = wallet.createTransaction(
+      TransactionType.crcProposalWithdraw,
+      p,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
 
-        nlohmann::json result;
-        EncodeTx(result, tx);
-        ArgInfo("r => {}", result.dump());
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
 
-        return result;
-      }
+    return result;
+  }
 
-          std::string MainchainSubWallet::RegisterSidechainOwnerDigest(const nlohmann::json &payload) const {
-              ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-              ArgInfo("payload: {}", payload.dump());
+  registerSidechainOwnerDigest(payload: json): string {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
 
-              uint8_t version = CRCProposalDefaultVersion;
-              CRCProposal proposal;
-              try {
-                  if (payload.contains(JsonKeyDraftData))
-                      version = CRCProposalVersion01;
-                  else
-                      version = CRCProposalDefaultVersion;
-                  nlohmann::json payloadFixed = payload;
-                  payloadFixed[JsonKeyType] = CRCProposal::registerSideChain;
-                  proposal.FromJsonRegisterSidechainUnsigned(payloadFixed, version);
-              } catch (const nlohmann::json::exception &e) {
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-              }
+    let version: uint8_t = CRCProposalDefaultVersion;
+    let proposal = new CRCProposal();
+    try {
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
+      else version = CRCProposalDefaultVersion;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.registerSideChain;
+      proposal.fromJsonRegisterSidechainUnsigned(payloadFixed, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
 
-              if (!proposal.IsValidRegisterSidechainUnsigned(version)) {
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
-              }
+    if (!proposal.isValidRegisterSidechainUnsigned(version)) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
+    }
 
-              std::string digest = proposal.DigestRegisterSidechainUnsigned(version).GetHex();
+    let digest = proposal.digestRegisterSidechainUnsigned(version).toString(16);
 
-              ArgInfo("r => {}", digest);
-              return digest;
-          }
+    // ArgInfo("r => {}", digest);
+    return digest;
+  }
 
-          std::string MainchainSubWallet::RegisterSidechainCRCouncilMemberDigest(const nlohmann::json &payload) const {
-              ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
-              ArgInfo("payload: {}", payload.dump());
+  registerSidechainCRCouncilMemberDigest(payload: json): string {
+    // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
 
-              uint8_t version = CRCProposalDefaultVersion;
-              CRCProposal proposal;
-              try {
-                  if (payload.contains(JsonKeyDraftData))
-                      version = CRCProposalVersion01;
-                  else
-                      version = CRCProposalDefaultVersion;
-                  nlohmann::json payloadFixed = payload;
-                  payloadFixed[JsonKeyType] = CRCProposal::registerSideChain;
-                  proposal.FromJsonRegisterSidechainCRCouncilMemberUnsigned(payloadFixed, version);
-              } catch (const nlohmann::json::exception &e) {
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-              }
+    let version = CRCProposalDefaultVersion;
+    let proposal = new CRCProposal();
+    try {
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
+      else version = CRCProposalDefaultVersion;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.registerSideChain;
+      proposal.fromJsonRegisterSidechainCRCouncilMemberUnsigned(
+        payloadFixed,
+        version
+      );
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
 
-              if (!proposal.IsValidRegisterSidechainCRCouncilMemberUnsigned(version)) {
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
-              }
+    if (!proposal.isValidRegisterSidechainCRCouncilMemberUnsigned(version)) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
+    }
 
-              std::string digest = proposal.DigestRegisterSidechainCRCouncilMemberUnsigned(version).GetHex();
+    let digest = proposal
+      .digestRegisterSidechainCRCouncilMemberUnsigned(version)
+      .toString(16);
 
-              ArgInfo("r => {}", digest);
-              return digest;
-          }
+    // ArgInfo("r => {}", digest);
+    return digest;
+  }
 
-          nlohmann::json MainchainSubWallet::CreateRegisterSidechainTransaction(
-                  const nlohmann::json &inputs,
-                  const nlohmann::json &payload,
-                  const std::string &fee,
-                  const std::string &memo) const {
-              WalletPtr wallet = _walletManager->GetWallet();
-              ArgInfo("{} {}", GetSubWalletID(), GetFunName());
-              ArgInfo("inputs: {}", inputs.dump());
-              ArgInfo("payload: {}", payload.dump());
-              ArgInfo("fee: {}", fee);
-              ArgInfo("memo: {}", memo);
+  createRegisterSidechainTransaction(
+    inputs: UTXOInput[],
+    payload: json,
+    fee: string,
+    memo: string
+  ): EncodedTx {
+    // WalletPtr wallet = _walletManager->GetWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
 
-              UTXOSet utxo;
-              UTXOFromJson(utxo, inputs);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
 
-              uint8_t version = CRCProposalDefaultVersion;
-              PayloadPtr p(new CRCProposal());
-              try {
-                  if (payload.contains(JsonKeyDraftData))
-                      version = CRCProposalVersion01;
-                  else
-                      version = CRCProposalDefaultVersion;
-                  nlohmann::json payloadFixed = payload;
-                  payloadFixed[JsonKeyType] = CRCProposal::registerSideChain;
-                  p->FromJson(payloadFixed, version);
-              } catch (const nlohmann::json::exception &e) {
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "from json");
-              }
+    let version = CRCProposalDefaultVersion;
+    let p = new CRCProposal();
+    try {
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
+      else version = CRCProposalDefaultVersion;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.registerSideChain;
+      p.fromJson(payloadFixed, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
+    }
 
-              if (!p->IsValid(version))
-                  ErrorChecker::ThrowParamException(Error::InvalidArgument, "invalid payload");
+    if (!p.isValid(version))
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid payload"
+      );
 
-              BigInt feeAmount;
-              feeAmount.setDec(fee);
+    let feeAmount = new BigNumber(fee);
+    let tx = this.getWallet().createTransaction(
+      TransactionType.crcProposal,
+      p,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
 
-              TransactionPtr tx = wallet->CreateTransaction(Transaction::crcProposal, p, utxo, {}, memo, feeAmount);
-              tx->SetPayloadVersion(version);
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
 
-              nlohmann::json result;
-              EncodeTx(result, tx);
-              ArgInfo("r => {}", result.dump());
-
-              return result;
-          }
-   */
+    return result;
+  }
 }

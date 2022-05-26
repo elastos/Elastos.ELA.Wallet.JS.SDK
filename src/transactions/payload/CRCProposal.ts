@@ -24,7 +24,17 @@ import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import {
-  bytes_t, json, JSONArray, sizeof_uint16_t, sizeof_uint256_t, size_t, uint16_t, uint256, uint32_t, uint64_t, uint8_t
+  bytes_t,
+  json,
+  JSONArray,
+  sizeof_uint16_t,
+  sizeof_uint256_t,
+  size_t,
+  uint16_t,
+  uint256,
+  uint32_t,
+  uint64_t,
+  uint8_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { BASE64 as Base64 } from "../../walletcore/base64";
@@ -3216,71 +3226,62 @@ export class CRCProposal extends Payload {
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
             this.isEqualBudgets(p._budgets) &&
             this._recipient.equals(p._recipient) &&
-            this._signature.toString() == p._signature.toString() &&
+            this._signature.equals(p._signature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         case CRCProposalType.secretaryGeneralElection:
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
-            this._secretaryPublicKey.toString() ==
-            p._secretaryPublicKey.toString() &&
+            this._secretaryPublicKey.equals(p._secretaryPublicKey) &&
             this._secretaryDID.equals(p._secretaryDID) &&
-            this._signature.toString() == p._signature.toString() &&
-            this._secretarySignature.toString() ==
-            p._secretarySignature.toString() &&
+            this._signature.equals(p._signature) &&
+            this._secretarySignature.equals(p._secretarySignature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         case CRCProposalType.changeProposalOwner:
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
             this._targetProposalHash.eq(p._targetProposalHash) &&
             this._newRecipient.equals(p._newRecipient) &&
-            this._newOwnerPublicKey.toString() ==
-            p._newOwnerPublicKey.toString() &&
-            this._signature.toString() == p._signature.toString() &&
-            this._newOwnerSignature.toString() ==
-            p._newOwnerSignature.toString() &&
+            this._newOwnerPublicKey.equals(p._newOwnerPublicKey) &&
+            this._signature.equals(p._signature) &&
+            this._newOwnerSignature.equals(p._newOwnerSignature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         case CRCProposalType.terminateProposal:
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
             this._targetProposalHash.eq(p._targetProposalHash) &&
-            this._signature.toString() == p._signature.toString() &&
+            this._signature.equals(p._signature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         case CRCProposalType.reserveCustomID:
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
             this.isEqualReservedCustomIDList(p._reservedCustomIDList) &&
-            this._signature.toString() == p._signature.toString() &&
+            this._signature.equals(p._signature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         case CRCProposalType.receiveCustomID:
           equal =
@@ -3293,7 +3294,7 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+              p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.changeCustomIDFee:
           equal =
@@ -3305,19 +3306,18 @@ export class CRCProposal extends Payload {
             this._signature.toString() == p._signature.toString() &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
             this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+              p._crCouncilMemberSignature.toString();
           break;
         case CRCProposalType.registerSideChain:
           equal =
             this._type == p._type &&
             this._categoryData == p._categoryData &&
-            this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
+            this._ownerPublicKey.equals(p._ownerPublicKey) &&
             this._draftHash.eq(p._draftHash) &&
             this._sidechainInfo.equals(p._sidechainInfo) &&
-            this._signature.toString() == p._signature.toString() &&
+            this._signature.equals(p._signature) &&
             this._crCouncilMemberDID.equals(p._crCouncilMemberDID) &&
-            this._crCouncilMemberSignature.toString() ==
-            p._crCouncilMemberSignature.toString();
+            this._crCouncilMemberSignature.equals(p._crCouncilMemberSignature);
           break;
         default:
           equal = false;

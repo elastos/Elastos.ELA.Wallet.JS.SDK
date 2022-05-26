@@ -162,6 +162,7 @@ export class CRCProposalReview extends Payload {
       // SPVLOG_ERROR("deserialize proposal hash");
       return false;
     }
+    this._proposalHash = proposalHash;
 
     let opinion = stream.readUInt8();
     if (!opinion) {
@@ -178,10 +179,13 @@ export class CRCProposalReview extends Payload {
     this._opinionHash = opinionHash;
 
     if (version >= CRCProposalReviewVersion01) {
-      if (!stream.readVarBytes(this._opinionData)) {
+      let opinionData = Buffer.alloc(0);
+      opinionData = stream.readVarBytes(opinionData);
+      if (!opinionData) {
         // SPVLOG_ERROR("deserialize opinion data");
         return false;
       }
+      this._opinionData = opinionData;
     }
 
     let programHash: bytes_t;

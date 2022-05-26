@@ -57,6 +57,7 @@ export class Address {
     } else {
       let payload: bytes_t = Base58Check.decode(address);
       if (payload) {
+        // _programHash includes a byte of prefix and 20 bytes of hash
         addr._programHash = uint168.newFrom21BytesBuffer(payload);
         addr.checkValid();
       } else {
@@ -213,7 +214,7 @@ export class Address {
     else
       return (
         this._isValid == address._isValid &&
-        this._programHash.bytes().compare(address._programHash.bytes()) == 0
+        this._programHash.bytes().equals(address._programHash.bytes())
       );
   }
 
