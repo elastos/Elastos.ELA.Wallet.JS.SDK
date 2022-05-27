@@ -35,4 +35,5 @@ export const sizeof_uint8_t = () => 1;
 export const sizeof_uint16_t = () => 2;
 export const sizeof_uint256_t = () => 32;
 export const sizeof_uint64_t = () => 8;
+export const sizeof_uint32_t = () => 4;
 export const sizeof_uint168_t = () => 21;

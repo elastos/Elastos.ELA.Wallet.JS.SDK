@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
+// Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import BigNumber from "bignumber.js";
@@ -26,6 +26,10 @@ import { Payload } from "./payload/Payload";
 import { Program, ProgramInfo, SignedInfo } from "./Program";
 import { TransactionInput } from "./TransactionInput";
 import { TransactionOutput } from "./TransactionOutput";
+import { Record } from "./payload/Record";
+import { SideChainPow } from "./payload/SideChainPow";
+import { RechargeToSideChain } from "./payload/RechargeToSideChain";
+import { WithdrawFromSideChain } from "./payload/WithdrawFromSideChain";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -760,18 +764,19 @@ export class Transaction {
       payload = new RegisterAsset();
     } else if (type == TransactionType.transferAsset) {
       payload = new TransferAsset();
-    } /*else if (type == record) {
-			payload = PayloadPtr(new Record());
-		} else if (type == deploy) {
-			//todo add deploy _payload
-			//_payload = boost::shared_ptr<PayloadDeploy>(new PayloadDeploy());
-		} else if (type == sideChainPow) {
-			payload = PayloadPtr(new SideChainPow());
-		} else if (type == rechargeToSideChain) { // side chain payload
-			payload = PayloadPtr(new RechargeToSideChain());
-		} else if (type == withdrawFromSideChain) {
-			payload = PayloadPtr(new WithdrawFromSideChain());
-		} else if (type == transferCrossChainAsset) {
+    } else if (type == TransactionType.record) {
+      payload = new Record();
+    } else if (type == TransactionType.deploy) {
+      //todo add deploy _payload
+      //_payload = boost::shared_ptr<PayloadDeploy>(new PayloadDeploy());
+    } else if (type == TransactionType.sideChainPow) {
+      payload = new SideChainPow();
+    } else if (type == TransactionType.rechargeToSideChain) {
+      // side chain payload
+      payload = new RechargeToSideChain();
+    } else if (type == TransactionType.withdrawFromSideChain) {
+      payload = new WithdrawFromSideChain();
+    } /*else if (type == transferCrossChainAsset) {
 			payload = PayloadPtr(new TransferCrossChainAsset());
 		} else if (type == registerProducer || type == updateProducer) {
 			payload = PayloadPtr(new ProducerInfo());
