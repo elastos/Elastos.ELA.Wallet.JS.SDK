@@ -30,6 +30,20 @@ import { Record } from "./payload/Record";
 import { SideChainPow } from "./payload/SideChainPow";
 import { RechargeToSideChain } from "./payload/RechargeToSideChain";
 import { WithdrawFromSideChain } from "./payload/WithdrawFromSideChain";
+import { TransferCrossChainAsset } from "./payload/TransferCrossChainAsset";
+import { ProducerInfo } from "./payload/ProducerInfo";
+import { CancelProducer } from "./payload/CancelProducer";
+import { ReturnDepositCoin } from "./payload/ReturnDepositCoin";
+import { NextTurnDPoSInfo } from "./payload/NextTurnDPoSInfo";
+import { CRInfo } from "./payload/CRInfo";
+import { UnregisterCR } from "./payload/UnregisterCR";
+import { CRCProposal } from "./payload/CRCProposal";
+import { CRCProposalReview } from "./payload/CRCProposalReview";
+import { CRCProposalTracking } from "./payload/CRCProposalTracking";
+import { CRCProposalWithdraw } from "./payload/CRCProposalWithdraw";
+import { CRCProposalRealWithdraw } from "./payload/CRCProposalRealWithdraw";
+import { CRCAssetsRectify } from "./payload/CRCAssetsRectify";
+import { CRCouncilMemberClaimNode } from "./payload/CRCouncilMemberClaimNode";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -776,37 +790,43 @@ export class Transaction {
       payload = new RechargeToSideChain();
     } else if (type == TransactionType.withdrawFromSideChain) {
       payload = new WithdrawFromSideChain();
-    } /*else if (type == transferCrossChainAsset) {
-			payload = PayloadPtr(new TransferCrossChainAsset());
-		} else if (type == registerProducer || type == updateProducer) {
-			payload = PayloadPtr(new ProducerInfo());
-		} else if (type == cancelProducer) {
-			payload = PayloadPtr(new CancelProducer());
-		} else if (type == returnDepositCoin) {
-			payload = PayloadPtr(new ReturnDepositCoin());
-		} else if (type == nextTurnDPOSInfo) {
-			payload = PayloadPtr(new NextTurnDPoSInfo());
-		} else if (type == registerCR || type == updateCR) {
-			payload = PayloadPtr(new CRInfo());
-		} else if (type == unregisterCR) {
-			payload = PayloadPtr(new UnregisterCR());
-		} else if (type == returnCRDepositCoin) {
-			payload = PayloadPtr(new ReturnDepositCoin());
-		} else if (type == crcProposal) {
-			payload = PayloadPtr(new CRCProposal());
-		} else if (type == crcProposalReview) {
-			payload = PayloadPtr(new CRCProposalReview());
-		} else if (type == crcProposalTracking) {
-			payload = PayloadPtr(new CRCProposalTracking());
-		} else if (type == crcProposalWithdraw) {
-			payload = PayloadPtr(new CRCProposalWithdraw());
-		} else if (type == crcProposalRealWithdraw) {
-			payload = PayloadPtr(new CRCProposalRealWithdraw());
-		} else if (type == crcAssetsRectify) {
-			payload = PayloadPtr(new CRCAssetsRectify());
-		} else if (type == crCouncilMemberClaimNode) {
-			payload = PayloadPtr(new CRCouncilMemberClaimNode());
-		} */
+    } else if (type == TransactionType.transferCrossChainAsset) {
+      payload = new TransferCrossChainAsset();
+    } else if (
+      type == TransactionType.registerProducer ||
+      type == TransactionType.updateProducer
+    ) {
+      payload = new ProducerInfo();
+    } else if (type == TransactionType.cancelProducer) {
+      payload = new CancelProducer();
+    } else if (type == TransactionType.returnDepositCoin) {
+      payload = new ReturnDepositCoin();
+    } else if (type == TransactionType.nextTurnDPOSInfo) {
+      payload = new NextTurnDPoSInfo();
+    } else if (
+      type == TransactionType.registerCR ||
+      type == TransactionType.updateCR
+    ) {
+      payload = new CRInfo();
+    } else if (type == TransactionType.unregisterCR) {
+      payload = new UnregisterCR();
+    } else if (type == TransactionType.returnCRDepositCoin) {
+      payload = new ReturnDepositCoin();
+    } else if (type == TransactionType.crcProposal) {
+      payload = new CRCProposal();
+    } else if (type == TransactionType.crcProposalReview) {
+      payload = new CRCProposalReview();
+    } else if (type == TransactionType.crcProposalTracking) {
+      payload = new CRCProposalTracking();
+    } else if (type == TransactionType.crcProposalWithdraw) {
+      payload = new CRCProposalWithdraw();
+    } else if (type == TransactionType.crcProposalRealWithdraw) {
+      payload = new CRCProposalRealWithdraw();
+    } else if (type == TransactionType.crcAssetsRectify) {
+      payload = new CRCAssetsRectify();
+    } else if (type == TransactionType.crCouncilMemberClaimNode) {
+      payload = new CRCouncilMemberClaimNode();
+    }
 
     return payload;
   }

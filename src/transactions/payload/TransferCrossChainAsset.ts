@@ -15,7 +15,6 @@ import {
   JSONValue
 } from "../../types";
 import { ByteStream } from "../../common/bytestream";
-import { extend } from "dayjs";
 import { Payload } from "./Payload";
 
 export const TransferCrossChainVersion = 0x00;
@@ -97,12 +96,14 @@ export class TransferInfo {
 
 export class TransferCrossChainAsset extends Payload {
   private _info: TransferInfo[];
-  /*
 
-		TransferCrossChainAsset::TransferCrossChainAsset(const TransferCrossChainAsset &payload) {
-			this->operator=(payload);
-		}
-		*/
+  static newFromTransferCrossChainAsset() {
+    const transferCrossChainAsset = new TransferCrossChainAsset();
+    transferCrossChainAsset.copyTransferCrossChainAsset(
+      transferCrossChainAsset
+    );
+    return transferCrossChainAsset;
+  }
 
   static newFromParams(info: TransferInfo[]) {
     const transferCrossChainAsset = new TransferCrossChainAsset();
@@ -251,10 +252,32 @@ export class TransferCrossChainAsset extends Payload {
     return this;
   }
 
+  private isEqualTransferInfos(infos: TransferInfo[]): boolean {
+    if (this._info.length !== infos.length) {
+      return false;
+    }
+
+    let equal = false;
+    for (let i = 0; i < infos.length; ++i) {
+      for (let j = 0; j < this._info.length; ++j) {
+        if (this._info[j].equals(infos[i])) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
+        return false;
+      }
+    }
+    return equal;
+  }
+
   equals(payload: TransferCrossChainAsset, version: uint8_t): boolean {
     try {
       if (version == TransferCrossChainVersion) {
-        return this._info == payload._info;
+        return this.isEqualTransferInfos(payload._info);
       } else if (version == TransferCrossChainVersionV1) {
         return true;
       }
