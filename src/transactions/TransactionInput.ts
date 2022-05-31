@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
+// Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 import BigNumber from "bignumber.js";
 import { ByteStream } from "../common/bytestream";

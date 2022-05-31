@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
+// Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import { ByteStream } from "../../common/bytestream";
@@ -11,13 +11,13 @@ export class ReturnDepositCoin extends Payload {
     this.copyReturnDepositCoin(payload);
   }
 
-  destroy() { }
+  destroy() {}
 
   estimateSize(version: uint8_t): size_t {
     return 0;
   }
 
-  serialize(ostream: ByteStream, version: uint8_t) { }
+  serialize(ostream: ByteStream, version: uint8_t) {}
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
     return true;
@@ -27,7 +27,7 @@ export class ReturnDepositCoin extends Payload {
     return {};
   }
 
-  fromJson(j: json, version: uint8_t) { }
+  fromJson(j: json, version: uint8_t) {}
 
   copyPayload(payload: Payload) {
     try {

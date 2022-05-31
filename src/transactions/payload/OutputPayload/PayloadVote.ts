@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
+// Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import BigNumber from "bignumber.js";
@@ -6,8 +6,10 @@ import { Buffer } from "buffer";
 import { ByteStream } from "../../../common/bytestream";
 import { Log } from "../../../common/Log";
 import {
-  bytes_t, json,
-  JSONArray, size_t,
+  bytes_t,
+  json,
+  JSONArray,
+  size_t,
   uint64_t,
   uint8_t
 } from "../../../types";

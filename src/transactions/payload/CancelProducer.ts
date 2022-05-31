@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
+// Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import { Buffer } from "buffer";
@@ -20,7 +20,7 @@ export class CancelProducer extends Payload {
     this.copyCancelProducer(payload);
   }
 
-  destroy() { }
+  destroy() {}
 
   getPublicKey(): bytes_t {
     return this._publicKey;
