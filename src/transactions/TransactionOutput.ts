@@ -28,6 +28,8 @@ import { Address } from "../walletcore/Address";
 import { Asset } from "./Asset";
 import { OutputPayload } from "./payload/OutputPayload/OutputPayload";
 import { PayloadDefault } from "./payload/OutputPayload/PayloadDefault";
+import { PayloadVote } from "./payload/OutputPayload/PayloadVote";
+import { PayloadCrossChain } from "./payload/OutputPayload/PayloadCrossChain";
 
 enum TxVersion {
   Default = 0x00,
@@ -57,10 +59,6 @@ export class TransactionOutput implements JsonSerializer {
   constructor() {
     this._payload = this.generatePayload(this._outputType);
   }
-
-  /*TransactionOutput::TransactionOutput(const TransactionOutput &output) {
-		this->operator=(output);
-	}*/
 
   public static newFromTransactionOutput(
     o: TransactionOutput
@@ -119,17 +117,17 @@ export class TransactionOutput implements JsonSerializer {
     let size = 0;
     let stream = new ByteStream();
 
-    size += getBNsize(this._assetID); // WAS this._assetID.size();
+    size += getBNsize(this._assetID);
     if (this._assetID == Asset.getELAAssetID()) {
-      size += 8; // WAS sizeof(uint64_t);
+      size += 8;
     } else {
-      let amountBytes: bytes_t = getBNHexBytes(this._amount); // WAS this._amount.getHexBytes();
+      let amountBytes: bytes_t = getBNHexBytes(this._amount);
       size += stream.writeVarUInt(amountBytes.length);
       size += amountBytes.length;
     }
 
-    size += 4; // WAS sizeof(this._outputLock);
-    size += this._address.programHash().bytes().length; // WAS this._address.programHash().size();
+    size += 4;
+    size += this._address.programHash().bytes().length;
 
     return size;
   }
@@ -137,12 +135,7 @@ export class TransactionOutput implements JsonSerializer {
   public serialize(ostream: ByteStream, txVersion: uint8_t) {
     ostream.writeBytes(getBNBytes(this._assetID));
     if (Asset.getELAAssetID().eq(this._assetID)) {
-      //let bytes: bytes_t = getBNHexBytes(this._amount); // WAS this._amount.getHexBytes(true);
-      //let amount: uint64_t = Buffer.alloc(sizeof_uint64_t());
-      //memcpy(& amount, & bytes[0], Math.min(bytes.length, sizeof_uint64_t()));
-
-      // TODO: PROBABLY WRONG!
-      ostream.writeBNAsUIntOfSize(this._amount, 8); // WAS ostream.WriteUint64(amount);
+      ostream.writeBNAsUIntOfSize(this._amount, 8);
     } else {
       ostream.writeVarBytes(getBNHexBytes(this._amount));
     }
@@ -164,7 +157,7 @@ export class TransactionOutput implements JsonSerializer {
     }
 
     if (this._assetID.eq(Asset.getELAAssetID())) {
-      this._amount = istream.readUIntOfBytesAsBN(sizeof_uint64_t()); // WAS this._amount.setHexBytes(bytes_t(& amount, sizeof(amount)), true);
+      this._amount = istream.readUIntOfBytesAsBN(sizeof_uint64_t());
       if (this._amount === null) {
         Log.error("deserialize output amount error");
         return false;
@@ -175,7 +168,7 @@ export class TransactionOutput implements JsonSerializer {
         Log.error("deserialize output BN amount error");
         return false;
       }
-      this._amount = newBNFromHexBytes(bytes); // WAS this._amount.setHexBytes(bytes);
+      this._amount = newBNFromHexBytes(bytes);
     }
 
     this._outputLock = istream.readUInt32();
@@ -253,12 +246,12 @@ export class TransactionOutput implements JsonSerializer {
       case Type.Default:
         payload = new PayloadDefault();
         break;
-      /* TODO case Type.VoteOutput:
-				payload = new PayloadVote();
-				break;
-			case Type.CrossChain:
-				payload = new PayloadCrossChain();
-				break; */
+      case Type.VoteOutput:
+        payload = new PayloadVote();
+        break;
+      case Type.CrossChain:
+        payload = new PayloadCrossChain();
+        break;
       default:
         payload = null;
         break;
@@ -269,10 +262,10 @@ export class TransactionOutput implements JsonSerializer {
 
   public toJson(): json {
     return {
-      Amount: this._amount.toString(), // WAS this._amount.getDec(),
-      AssetId: this._assetID.toString(16), // WAS this._assetID.GetHex(),
+      Amount: this._amount.toString(),
+      AssetId: this._assetID.toString(16),
       OutputLock: this._outputLock,
-      ProgramHash: this._address.programHash().bytes().toString("hex"), // WAS this._address.ProgramHash().GetHex(),
+      ProgramHash: this._address.programHash().bytes().toString("hex"),
       Address: this._address.string(),
       OutputType: this._outputType,
       Payload: this._payload.toJson()
@@ -306,8 +299,4 @@ export class TransactionOutput implements JsonSerializer {
       this._payload.equals(o._payload)
     );
   }
-
-  /*bool TransactionOutput:: operator != (const TransactionOutput & o) const {
-	return !operator == (o);;
-	} */
 }

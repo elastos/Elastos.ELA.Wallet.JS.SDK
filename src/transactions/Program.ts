@@ -1,5 +1,25 @@
-// Copyright (c) 2012-2022 The Elastos Open Source Project
-// Distributed under the MIT software license, see the accompanying
+/*
+ * Copyright (c) 2022 Elastos Foundation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
@@ -19,27 +39,25 @@ export type SignedInfo = {
 };
 export type ProgramInfo = { Parameter: string; Code: string };
 
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 export class Program extends ELAMessage implements JsonSerializer {
   private _code: bytes_t;
   private _parameter: bytes_t;
 
-  /*
-	Program::Program(const Program &program) {
-		operator=(program);
-	}
-*/
   public static newFromParams(code: bytes_t, parameter: bytes_t): Program {
     let program = new Program();
-    program._parameter = Buffer.from(parameter);
-    program._code = Buffer.from(code);
+    program._parameter = Buffer.alloc(parameter.length);
+    parameter.copy(program._parameter);
+    program._code = Buffer.alloc(code.length);
+    code.copy(program._code);
     return program;
   }
 
   public static newFromProgram(p: Program): Program {
     let program = new Program();
-    program._code = Buffer.from(p._code);
-    program._parameter = Buffer.from(p._parameter);
+    program._parameter = Buffer.alloc(p._parameter.length);
+    p._parameter.copy(program._parameter);
+    program._code = Buffer.alloc(p._code.length);
+    p._code.copy(program._code);
     return program;
   }
 

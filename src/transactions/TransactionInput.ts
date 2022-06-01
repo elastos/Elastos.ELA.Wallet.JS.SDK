@@ -15,11 +15,6 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
   private _index: uint16_t = 0;
   private _sequence: uint32_t = 0;
 
-  /*
-		TransactionInput::TransactionInput(const TransactionInput &input) {
-			this->operator=(input);
-		}*/
-
   public static newFromTransactionInput(
     input: TransactionInput
   ): TransactionInput {
@@ -67,8 +62,7 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
   }
 
   public getSize(): size_t {
-    // WAS return this._txHash.size() + sizeof(_index) + sizeof(_sequence);
-    return 32 + 2 + 4; // uint256 + uint16 + uint32
+    return 32 + 2 + 4;
   }
 
   public equals(ti: TransactionInput): boolean {
@@ -83,18 +77,17 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
   public estimateSize(): size_t {
     let size: size_t = 0;
 
-    size += 32; // WAS this._txHash.size(); (uint256)
-    size += 2; // sizeof(this._index);
-    size += 4; // sizeof(this._sequence);
+    size += 32;
+    size += 2;
+    size += 4;
 
     return size;
   }
 
   public serialize(stream: ByteStream) {
-    // WAS stream.WriteBytes(this._txHash);
     stream.writeBNAsUIntOfSize(this._txHash, 32);
-    stream.writeUInt16(this._index); // WAS stream.WriteUint16(this._index);
-    stream.writeUInt32(this._sequence); // WAS stream.WriteUint32(this._sequence);
+    stream.writeUInt16(this._index);
+    stream.writeUInt32(this._sequence);
   }
 
   public deserialize(stream: ByteStream): boolean {
@@ -121,16 +114,16 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
 
   public toJson(): json {
     return {
-      TxHash: this._txHash.toString(16), // WAS this._txHash.GetHex(),
+      TxHash: this._txHash.toString(16),
       Index: this._index,
       Sequence: this._sequence
     };
   }
 
   public fromJson(j: json): TransactionInput {
-    this._txHash = new BigNumber(j["TxHash"] as any); // WAS uint256(j["TxHash"].get<std::string>());
-    this._index = j["Index"] as uint16_t; // WAS j["Index"].get<uint16_t>();
-    this._sequence = j["Sequence"] as uint32_t; // WAS j["Sequence"].get<uint32_t>();
+    this._txHash = new BigNumber(j["TxHash"] as string, 16);
+    this._index = j["Index"] as uint16_t;
+    this._sequence = j["Sequence"] as uint32_t;
     return this;
   }
 }

@@ -7,6 +7,6 @@ import { size_t } from "./types";
 
 export abstract class ELAMessage {
   public abstract estimateSize(): size_t;
-  public abstract serialize(stream: ByteStream);
+  public abstract serialize(stream: ByteStream): void;
   public abstract deserialize(stream: ByteStream): boolean;
 }

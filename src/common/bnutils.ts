@@ -19,7 +19,7 @@ export const getBNHexBytes = (bn: BigNumber): Buffer => {
  * Convert a hex string in a buffer into a big number
  */
 export const newBNFromHexBytes = (bytes: Buffer): BigNumber => {
-  return new BigNumber(bytes.toString("hex"));
+  return new BigNumber(bytes.toString("hex"), 16);
 };
 
 /**

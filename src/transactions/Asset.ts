@@ -67,10 +67,6 @@ export class Asset extends ELAMessage implements JsonSerializer {
     return newAsset;
   }
 
-  /* Asset::Asset(const Asset &asset) {
-		this->operator=(asset);
-	} */
-
   public static newFromAsset(asset: Asset): Asset {
     let newAsset = new Asset();
     newAsset._name = asset._name;

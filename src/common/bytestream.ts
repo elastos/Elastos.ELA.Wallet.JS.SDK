@@ -344,7 +344,7 @@ export class ByteStream {
 
   public writeAsciiString(str: string) {
     let len = str.length;
-    if (this.position + len < this.buffer.byteLength) this.reallocate(len);
+    if (this.position + len > this.buffer.byteLength) this.reallocate(len);
 
     for (let i = 0; i < len; i++)
       this.buffer[this.position + i] = str.charCodeAt(i);

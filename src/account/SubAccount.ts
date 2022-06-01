@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
@@ -312,7 +313,7 @@ export class SubAccount {
         for (let index = addresses.length; index > 0; index--) {
           let bipkeyIndex: HDKey = bipkeyChain.deriveWithIndex(index - 1);
           for (let p of pubkeys) {
-            if (bipkeyIndex.getPublicKeyBytes().toString() == p.toString()) {
+            if (bipkeyIndex.getPublicKeyBytes().equals(p)) {
               key = bipkeyIndex;
               return { found: true, key };
             }

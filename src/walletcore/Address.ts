@@ -153,7 +153,8 @@ export class Address {
   }
 
   public setRedeemScript(prefix: Prefix, code: bytes_t) {
-    this._code = Buffer.from(code);
+    this._code = Buffer.alloc(code.length);
+    code.copy(this._code);
     this.generateProgramHash(prefix);
     this.checkValid();
     ErrorChecker.checkCondition(

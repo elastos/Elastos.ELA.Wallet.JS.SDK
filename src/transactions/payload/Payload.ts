@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 import { ByteStream } from "../../common/bytestream";
-import { bytes_t, json, JSONValue, size_t, uint8_t } from "../../types";
+import { bytes_t, JSONValue, size_t, uint8_t } from "../../types";
 
 export abstract class Payload {
   public getData(version: uint8_t): bytes_t {

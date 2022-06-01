@@ -878,7 +878,7 @@ export class Account {
       );
     }
 
-    if (this._localstore.getxPubKeyBitcoin().length === 0) {
+    if (!this._localstore.getxPubKeyBitcoin()) {
       await this.regenerateKey(payPasswd);
       this.init();
     }
