@@ -1,4 +1,3 @@
 import { WalletErrorException } from "./walleterror.exception";
 
-export class InvalidArgumentException extends WalletErrorException {
-}
+export class InvalidArgumentException extends WalletErrorException {}

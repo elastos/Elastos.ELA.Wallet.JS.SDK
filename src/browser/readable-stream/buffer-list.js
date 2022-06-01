@@ -1,4 +1,4 @@
-import {Buffer} from 'buffer';
+import { Buffer } from "buffer";
 
 export default BufferList;
 
@@ -10,7 +10,8 @@ function BufferList() {
 
 BufferList.prototype.push = function (v) {
   var entry = { data: v, next: null };
-  if (this.length > 0) this.tail.next = entry;else this.head = entry;
+  if (this.length > 0) this.tail.next = entry;
+  else this.head = entry;
   this.tail = entry;
   ++this.length;
 };
@@ -25,7 +26,8 @@ BufferList.prototype.unshift = function (v) {
 BufferList.prototype.shift = function () {
   if (this.length === 0) return;
   var ret = this.head.data;
-  if (this.length === 1) this.head = this.tail = null;else this.head = this.head.next;
+  if (this.length === 1) this.head = this.tail = null;
+  else this.head = this.head.next;
   --this.length;
   return ret;
 };
@@ -36,12 +38,13 @@ BufferList.prototype.clear = function () {
 };
 
 BufferList.prototype.join = function (s) {
-  if (this.length === 0) return '';
+  if (this.length === 0) return "";
   var p = this.head;
-  var ret = '' + p.data;
-  while (p = p.next) {
+  var ret = "" + p.data;
+  while ((p = p.next)) {
     ret += s + p.data;
-  }return ret;
+  }
+  return ret;
 };
 
 BufferList.prototype.concat = function (n) {

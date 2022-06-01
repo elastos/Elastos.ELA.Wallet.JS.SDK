@@ -1,16 +1,15 @@
-
-import inherits from '../inherits';
-import {nextTick} from 'process';
-import {Readable} from './readable';
-import {Writable} from './writable';
-
+import inherits from "../inherits";
+import { nextTick } from "process";
+import { Readable } from "./readable";
+import { Writable } from "./writable";
 
 inherits(Duplex, Readable);
 
 var keys = Object.keys(Writable.prototype);
 for (var v = 0; v < keys.length; v++) {
   var method = keys[v];
-  if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
+  if (!Duplex.prototype[method])
+    Duplex.prototype[method] = Writable.prototype[method];
 }
 export default Duplex;
 export function Duplex(options) {
@@ -26,7 +25,7 @@ export function Duplex(options) {
   this.allowHalfOpen = true;
   if (options && options.allowHalfOpen === false) this.allowHalfOpen = false;
 
-  this.once('end', onend);
+  this.once("end", onend);
 }
 
 // the no-half-open enforcer

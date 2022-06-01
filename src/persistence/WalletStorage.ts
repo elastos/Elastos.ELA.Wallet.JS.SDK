@@ -1,7 +1,6 @@
 import { LocalStoreInfo } from "./LocalStore";
 
 /**
-/**
  * Base interface to store persitant wallet data.
  */
 export interface WalletStorage {

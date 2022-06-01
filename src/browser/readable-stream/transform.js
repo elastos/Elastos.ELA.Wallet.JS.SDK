@@ -40,11 +40,9 @@
 // would be consumed, and then the rest would wait (un-transformed) until
 // the results of the previous transformed chunk were consumed.
 
+import { Duplex } from "./duplex";
 
-import {Duplex} from './duplex';
-
-
-import inherits from '../inherits';
+import inherits from "../inherits";
 inherits(Transform, Duplex);
 
 function TransformState(stream) {
@@ -65,7 +63,9 @@ function afterTransform(stream, er, data) {
 
   var cb = ts.writecb;
 
-  if (!cb) return stream.emit('error', new Error('no writecb in Transform class'));
+  if (!cb) {
+    return stream.emit("error", new Error("no writecb in Transform class"));
+  }
 
   ts.writechunk = null;
   ts.writecb = null;
@@ -100,15 +100,18 @@ export function Transform(options) {
   this._readableState.sync = false;
 
   if (options) {
-    if (typeof options.transform === 'function') this._transform = options.transform;
+    if (typeof options.transform === "function")
+      this._transform = options.transform;
 
-    if (typeof options.flush === 'function') this._flush = options.flush;
+    if (typeof options.flush === "function") this._flush = options.flush;
   }
 
-  this.once('prefinish', function () {
-    if (typeof this._flush === 'function') this._flush(function (er) {
-      done(stream, er);
-    });else done(stream);
+  this.once("prefinish", function () {
+    if (typeof this._flush === "function")
+      this._flush(function (er) {
+        done(stream, er);
+      });
+    else done(stream);
   });
 }
 
@@ -128,7 +131,7 @@ Transform.prototype.push = function (chunk, encoding) {
 // an error, then that'll put the hurt on the whole operation.  If you
 // never call cb(), then you'll never get another chunk.
 Transform.prototype._transform = function (chunk, encoding, cb) {
-  throw new Error('Not implemented');
+  throw new Error("Not implemented");
 };
 
 Transform.prototype._write = function (chunk, encoding, cb) {
@@ -138,7 +141,8 @@ Transform.prototype._write = function (chunk, encoding, cb) {
   ts.writeencoding = encoding;
   if (!ts.transforming) {
     var rs = this._readableState;
-    if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
+    if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark)
+      this._read(rs.highWaterMark);
   }
 };
 
@@ -159,16 +163,17 @@ Transform.prototype._read = function (n) {
 };
 
 function done(stream, er) {
-  if (er) return stream.emit('error', er);
+  if (er) return stream.emit("error", er);
 
   // if there's nothing in the write buffer, then that means
   // that nothing more will ever be provided
   var ws = stream._writableState;
   var ts = stream._transformState;
 
-  if (ws.length) throw new Error('Calling transform done when ws.length != 0');
+  if (ws.length) throw new Error("Calling transform done when ws.length != 0");
 
-  if (ts.transforming) throw new Error('Calling transform done when still transforming');
+  if (ts.transforming)
+    throw new Error("Calling transform done when still transforming");
 
   return stream.push(null);
 }

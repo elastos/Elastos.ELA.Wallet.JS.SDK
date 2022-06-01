@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Elastos Foundation
+ * Copyright (c) 2022 Elastos Foundation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 //import { Mutex, MutexInterface } from 'async-mutex';
 
 export class Lockable {
-	/*
+  /*
 	 NOTE: Normally in without ny SPV SDK synchronization operation, no semaphorization should be needed.
 	 We keep methods synchronous and unprotected for now. This can change later.
 
