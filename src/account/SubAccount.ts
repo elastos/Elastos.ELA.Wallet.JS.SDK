@@ -80,6 +80,10 @@ export class SubAccount {
     }
   }
 
+  public getChainAddressCachedAmount(chain: number): number {
+    return this._chainAddressCached.get(chain).length;
+  }
+
   public getBasicInfo(): { Account: AccountBasicInfo } {
     return {
       Account: this._parent.getBasicInfo()

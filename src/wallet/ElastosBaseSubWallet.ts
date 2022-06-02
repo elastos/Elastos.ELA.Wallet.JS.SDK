@@ -28,6 +28,7 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { ChainConfig } from "../config";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
+import { SignedInfo } from "../transactions/Program";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import { TransactionOutput } from "../transactions/TransactionOutput";
 import { bytes_t, uint16_t, uint256, uint32_t, uint64_t } from "../types";
@@ -54,6 +55,12 @@ import {
 //type WalletManagerPtr = SpvService;
 
 export type OutputItem = { Amount: string; Address: string };
+
+export type SigningPublicKeyInfo = {
+  xPubKey: string;
+  publicKey?: string;
+  signed: boolean;
+};
 
 export class ElastosBaseSubWallet
   extends SubWallet
@@ -287,13 +294,23 @@ export class ElastosBaseSubWallet
     return info;
   }
 
-  // only support single address wallet
+  // get the matched public key from a extended key(xPubKey)
+  // with the derived path m'/45'/cosigner_index/chain/index
   public matchSigningPublicKeys(
     encodedTx: EncodedTx,
     xPubKeys: string[],
     internal: boolean
-  ): { xPubKey: string; publicKey: string; signed: boolean }[] {
-    let sortedSigners = [];
+  ): SigningPublicKeyInfo[] | null {
+    let chain: number = internal
+      ? SEQUENCE_INTERNAL_CHAIN
+      : SEQUENCE_EXTERNAL_CHAIN;
+
+    // len means the max value the index(in the derived path) could be
+    const len = this.getWallet().getChainAddressCachedAmount(chain);
+    if (!len) return;
+
+    let sortedSigners: { hdKey: HDKey; pubKey: string; xPubKey: string }[] = [];
+
     for (let i = 0; i < xPubKeys.length; ++i) {
       let xPubKey = xPubKeys[i];
       let hdKey = HDKey.deserializeBase58(xPubKey, KeySpec.Elastos);
@@ -301,27 +318,34 @@ export class ElastosBaseSubWallet
       sortedSigners.push({ hdKey, pubKey, xPubKey });
     }
 
+    // for getting the right cosigner_index
     sortedSigners.sort((a, b) => {
       return a.pubKey.localeCompare(b.pubKey);
     });
 
-    let info: any[] = this.getTransactionSignedInfo(encodedTx);
+    let info: SignedInfo[] = this.getTransactionSignedInfo(encodedTx);
     let signedSigners: string[] = info[0].Signers;
 
-    let chain: number = internal
-      ? SEQUENCE_INTERNAL_CHAIN
-      : SEQUENCE_EXTERNAL_CHAIN;
     let rs = [];
     for (let i = 0; i < sortedSigners.length; ++i) {
       let xPubKey: string = sortedSigners[i].xPubKey;
-      let publicKey = sortedSigners[i].hdKey
-        .deriveWithIndex(i)
-        .deriveWithIndex(chain)
-        .deriveWithIndex(0)
-        .getPublicKeyBytes()
-        .toString("hex");
-      const signed = signedSigners.includes(publicKey);
-      rs.push({ publicKey, xPubKey, signed });
+      let signed = false;
+      for (let index = len; index > 0; index--) {
+        let publicKey = sortedSigners[i].hdKey
+          .deriveWithIndex(i)
+          .deriveWithIndex(chain)
+          .deriveWithIndex(index - 1)
+          .getPublicKeyBytes()
+          .toString("hex");
+        signed = signedSigners.includes(publicKey);
+        if (signed) {
+          rs.push({ publicKey, xPubKey, signed });
+          break;
+        }
+      }
+      if (!signed) {
+        rs.push({ xPubKey, signed: false });
+      }
     }
 
     return rs;

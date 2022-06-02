@@ -1,9 +1,9 @@
 import {
   MasterWalletManager,
   BrowserLocalStorage,
-  SubWallet,
   EncodedTx,
-  SignedInfo
+  SignedInfo,
+  SigningPublicKeyInfo
 } from "@elastosfoundation/wallet-js-sdk";
 
 export const multisigWallet = async () => {
@@ -51,7 +51,7 @@ export const multisigWallet = async () => {
     singleAddress
   );
 
-  const subWallet1: SubWallet = await masterWallet1.createSubWallet("ELA");
+  const subWallet1: any = await masterWallet1.createSubWallet("ELA");
   subWallet1.getAddresses(0, 3, false);
 
   const xPubKey1 = masterWallet1.getPubKeyInfo().xPubKeyHDPM;
@@ -92,6 +92,11 @@ export const multisigWallet = async () => {
 
   const subWallet3: any = await masterWallet3.createSubWallet("ELA");
   const addresses3 = subWallet3.getAddresses(0, 3, false);
+
+  const xPubKey3 = masterWallet3.getPubKeyInfo().xPubKeyHDPM;
+  expect(xPubKey3).toEqual(
+    "xpub69FELQsaiWdLw9x2rFjsykXA7zKAko3s56a8eaGov7qoJ2MztJwzLYYcgaxBDLaPqFHUZZqGcfxzUVV4ohFP9ai3EspLESWEUVwUwhqZxpv"
+  );
 
   expect(addresses3.length).toEqual(3);
   expect(addresses3[0]).toEqual("8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop");
@@ -141,6 +146,23 @@ export const multisigWallet = async () => {
     signedTx,
     payPassword
   );
+
+  const signedXPubKeys: SigningPublicKeyInfo =
+    subWallet2.matchSigningPublicKeys(
+      signedTx1,
+      [...cosigners, xPubKey3],
+      false
+    );
+  expect(signedXPubKeys.length).toEqual(4);
+  expect(signedXPubKeys[0].xPubKey).toEqual(xPubKey3);
+  expect(signedXPubKeys[0].signed).toEqual(true);
+  expect(signedXPubKeys[1].xPubKey).toEqual(xPubKey2);
+  expect(signedXPubKeys[1].signed).toEqual(false);
+  expect(signedXPubKeys[2].xPubKey).toEqual(xPubKey1);
+  expect(signedXPubKeys[2].signed).toEqual(true);
+  expect(signedXPubKeys[3].xPubKey).toEqual(xPubKey);
+  expect(signedXPubKeys[3].signed).toEqual(false);
+
   const signedTx2: EncodedTx = await subWallet2.signTransaction(
     signedTx1,
     payPassword

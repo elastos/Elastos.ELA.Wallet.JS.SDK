@@ -10,6 +10,7 @@ import { WalletErrorException } from "./common/exceptions/walleterror.exception"
 import type { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
 import type { SignedInfo } from "./transactions/Program";
 import type { EncodedTx } from "./wallet/IElastosBaseSubWallet";
+import type { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
 
 export {
   BrowserLocalStorage,
@@ -27,5 +28,6 @@ export type {
   AccountBasicInfo,
   AccountPubKeyInfo,
   EncodedTx,
-  SignedInfo
+  SignedInfo,
+  SigningPublicKeyInfo
 };

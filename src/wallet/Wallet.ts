@@ -130,6 +130,10 @@ export class Wallet extends Lockable {
     return tx;
   }
 
+  public getChainAddressCachedAmount(chain: number): number {
+    return this._subAccount.getChainAddressCachedAmount(chain);
+  }
+
   public getPublickeys(index: uint32_t, count: size_t, internal: boolean) {
     const pubkeys: string[] | PublickeysInfo = this._subAccount.getPublickeys(
       index,
