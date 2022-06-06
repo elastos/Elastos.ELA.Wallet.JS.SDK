@@ -109,7 +109,6 @@ import {
 
 export const DEPOSIT_MIN_ELA = 5000;
 
-// TODO: Migrate all COMMENTS from the C++ IMainchainSubWallet interface here.
 export class MainchainSubWallet extends ElastosBaseSubWallet {
   constructor(
     info: CoinInfo,
@@ -261,6 +260,24 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return depositAddress.string();
   }
 
+  //////////////////////////////////////////////////
+  /*                    Producer                  */
+  //////////////////////////////////////////////////
+  /**
+   * Generate payload for registering or updating producer.
+   *
+   * @param ownerPublicKey The public key to identify a producer. Can't change later. The producer reward will
+   *                       be sent to address of this public key.
+   * @param nodePublicKey  The public key to identify a node. Can be update
+   *                       by CreateUpdateProducerTransaction().
+   * @param nickName       Nickname of producer.
+   * @param url            URL of producer.
+   * @param ipAddress      IP address of node. This argument is deprecated.
+   * @param location       Location code.
+   * @param payPasswd      Pay password is using for signing the payload with the owner private key.
+   *
+   * @return               The payload in JSON format.
+   */
   async generateProducerPayload(
     ownerPublicKey: string,
     nodePublicKey: string,
@@ -312,6 +329,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return payloadJson;
   }
 
+  /**
+   * Generate payaload for unregistering producer.
+   *
+   * @param ownerPublicKey The public key to identify a producer.
+   * @param payPasswd Pay password is using for signing the payload with the owner private key.
+   *
+   * @return The payload in JSON format.
+   */
   async generateCancelProducerPayload(
     ownerPublicKey: string,
     payPasswd: string
@@ -346,6 +371,25 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return payloadJson;
   }
 
+  /**
+   * Create register producer transaction
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Generate by GenerateProducerPayload()
+   * @param amount Amount must lager than 500,000,000,000 sela
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string
+   * @return The transaction in JSON format to be signed and published
+   */
   createRegisterProducerTransaction(
     inputsJson: UTXOInput[],
     payloadJson: json,
@@ -410,6 +454,25 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create update producer transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Generate by GenerateProducerPayload().
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   *
+   * @return The transaction in JSON format to be signed and published.
+   */
   createUpdateProducerTransaction(
     inputsJson: UTXOInput[],
     payloadJson: json,
@@ -450,6 +513,24 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create cancel producer transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Generate by GenerateCancelProducerPayload().
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createCancelProducerTransaction(
     inputsJson: UTXOInput[],
     payloadJson: json,
@@ -494,6 +575,25 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create retrieve deposit transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param amount Retrieve amount including fee
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   *
+   * @return The transaction in JSON format to be signed and published.
+   */
   createRetrieveDepositTransaction(
     inputsJson: UTXOInput[],
     amount: string,
@@ -536,6 +636,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Get owner public key.
+   *
+   * @return Owner public key.
+   */
   getOwnerPublicKey(): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     let publicKey: string = this.getWallet()
@@ -545,6 +650,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return publicKey;
   }
 
+  /**
+   * Get address of owner public key
+   * @return Address of owner public key
+   */
   getOwnerAddress(): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
 
@@ -555,6 +664,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return address;
   }
 
+  /**
+   * Get deposit address of owner.
+   */
   getOwnerDepositAddress(): string {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
@@ -689,6 +801,63 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return true;
   }
 
+  //////////////////////////////////////////////////
+  /*                      Vote                    */
+  //////////////////////////////////////////////////
+  /**
+   * Create vote transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param voteContents Including all kinds of vote. eg
+   *
+   * [
+   *   {
+   *     "Type":"CRC",
+   *     "Candidates":
+   *     {
+   *       "iYMVuGs1FscpgmghSzg243R6PzPiszrgj7": "100000000",
+   *       ...
+   *     }
+   *   },
+   *   {
+   *     "Type":"CRCProposal",
+   *     "Candidates":
+   *     {
+   *       "109780cf45c7a6178ad674ac647545b47b10c2c3e3b0020266d0707e5ca8af7c": "100000000",
+   *       ...
+   *     }
+   *   },
+   *   {
+   *     "Type": "CRCImpeachment",
+   *     "Candidates":
+   *     {
+   *       "innnNZJLqmJ8uKfVHKFxhdqVtvipNHzmZs": "100000000",
+   *       ...
+   *     }
+   *   },
+   *   {
+   *     "Type":"Delegate",
+   *     "Candidates":
+   *     {
+   *       "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4": "100000000",
+   *       ...
+   *     }
+   *   }
+   * ]
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+
+  * @return The transaction in JSON format to be signed and published.
+  */
   createVoteTransaction(
     inputsJson: UTXOInput[],
     voteContentsJson: json,
@@ -744,6 +913,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*                      CRC                     */
+  //////////////////////////////////////////////////
+
+  /**
+   * Get CR deposit
+   * @return
+   */
   getCRDepositAddress(): string {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
@@ -756,6 +933,27 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return addr;
   }
 
+  /**
+   * Generate cr info payload digest for signature.
+   *
+   * @param crPublicKey    The public key to identify a cr. Can't change later.
+   * @param did            DID to be bonded
+   * @param nickName       Nickname of cr.
+   * @param url            URL of cr.
+   * @param location       Location code.
+   *
+   * @return               The payload in JSON format contains the "Digest" field to be signed and then set the "Signature" field. Such as
+   * {
+   * 	"Code":"210370a77a257aa81f46629865eb8f3ca9cb052fcfd874e8648cfbea1fbf071b0280ac",
+   * 	"CID":"iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP",
+   * 	"DID":"icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   * 	"Location":86,
+   * 	"NickName":"test",
+   * 	"Url":"test.com",
+   * 	"Digest":"9970b0612f9146f3f5744f7a843dfa6aac3534a6f44232e08469b212323be573",
+   * 	"Signature":""
+   * 	}
+   */
   generateCRInfoPayload(
     crPublicKey: string,
     did: string,
@@ -804,6 +1002,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return payloadJson;
   }
 
+  /**
+   * Generate unregister cr payload digest for signature.
+   *
+   * @param CID          The id of cr will unregister
+   * @return               The payload in JSON format contains the "Digest" field to be signed and then set the "Signature" field. Such as
+   * {
+   * 	"CID":"iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP",
+   * 	"Digest":"8e17a8bcacc5d70b5b312fccefc19d25d88ac6450322a846132e859509b88001",
+   * 	"Signature":""
+   * 	}
+   */
   generateUnregisterCRPayload(CID: string): json {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("CID: {}", CID);
@@ -829,6 +1038,25 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return payloadJson;
   }
 
+  /**
+   * Create register cr transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payloadJSON Generate by GenerateCRInfoPayload().
+   * @param amount Amount must lager than 500,000,000,000 sela
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createRegisterCRTransaction(
     inputsJson: UTXOInput[],
     payloadJSON: json,
@@ -907,6 +1135,24 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create update cr transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payloadJSON Generate by GenerateCRInfoPayload().
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createUpdateCRTransaction(
     inputsJson: UTXOInput[],
     payloadJSON: JSONObject,
@@ -953,6 +1199,24 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create unregister cr transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payloadJSON Generate by GenerateUnregisterCRPayload().
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createUnregisterCRTransaction(
     inputsJson: UTXOInput[],
     payloadJSON: JSONObject,
@@ -1003,6 +1267,24 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Create retrieve deposit cr transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param amount Retrieve amount including fee
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createRetrieveCRDepositTransaction(
     inputsJson: UTXOInput[],
     amount: string,
@@ -1045,6 +1327,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  /**
+   * Generate digest for signature of CR council members
+   * @param payload
+   * {
+   *   "NodePublicKey": "...",
+   *   "CRCouncilMemberDID": "...",
+   * }
+   * @return
+   */
   CRCouncilMemberClaimNodeDigest(payload: json): string {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
@@ -1071,6 +1362,27 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload
+   * {
+   *   "NodePublicKey": "...",
+   *   "CRCouncilMemberDID": "...",
+   *   "CRCouncilMemberSignature": "..."
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return
+   */
   createCRCouncilMemberClaimNodeTransaction(
     inputsJson: UTXOInput[],
     payloadJson: JSONObject,
@@ -1120,6 +1432,38 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*                     Proposal                 */
+  //////////////////////////////////////////////////
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal payload. Must contain the following:
+   * {
+   *    "Type": 0,
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4",
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "Budgets": [{"Type":0,"Stage":0,"Amount":"300"},{"Type":1,"Stage":1,"Amount":"33"},{"Type":2,"Stage":2,"Amount":"344"}],
+   *    "Recipient": "EPbdmxUVBzfNrVdqJzZEySyWGYeuKAeKqv", // address
+   * }
+   *
+   * Type can be value as below:
+   * {
+   *	 Normal: 0x0000
+   *	 ELIP: 0x0100
+   * }
+   *
+   * Budget must contain the following:
+   * {
+   *   "Type": 0,             // imprest = 0, normalPayment = 1, finalPayment = 2
+   *   "Stage": 0,            // value can be [0, 128)
+   *   "Amount": "100000000"  // sela
+   * }
+   *
+   * @return Digest of payload.
+   */
   proposalOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -1154,6 +1498,28 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal payload. Must contain the following:
+   * {
+   *    "Type": 0,                   // same as mention on method ProposalOwnerDigest()
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4", // Owner DID public key
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "Budgets": [                 // same as mention on method ProposalOwnerDigest()
+   *      {"Type":0,"Stage":0,"Amount":"300"},{"Type":1,"Stage":1,"Amount":"33"},{"Type":2,"Stage":2,"Amount":"344"}
+   *    ],
+   *    "Recipient": "EPbdmxUVBzfNrVdqJzZEySyWGYeuKAeKqv", // address
+   *
+   *    // signature of owner
+   *    "Signature": "ff0ff9f45478f8f9fcd50b15534c9a60810670c3fb400d831cd253370c42a0af79f7f4015ebfb4a3791f5e45aa1c952d40408239dead3d23a51314b339981b76",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY"
+   * }
+   *
+   * @return Digest of payload.
+   */
   proposalCRCouncilMemberDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1188,6 +1554,13 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Calculate proposal hash.
+   *
+   * @param payload Proposal payload signed by owner and CR committee. Same as payload of CreateProposalTransaction()
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   calculateProposalHash(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1223,6 +1596,41 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return hashString;
   }
 
+  /**
+   * Create proposal transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Proposal payload signed by owner and CR committee.
+   * {
+   *    "Type": 0,                   // same as mention on method ProposalOwnerDigest()
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4", // Owner DID public key
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "Budgets": [                 // same as mention on method ProposalOwnerDigest()
+   *      {"Type":0,"Stage":0,"Amount":"300"},{"Type":1,"Stage":1,"Amount":"33"},{"Type":2,"Stage":2,"Amount":"344"}
+   *    ],
+   *    "Recipient": "EPbdmxUVBzfNrVdqJzZEySyWGYeuKAeKqv", // address
+   *
+   *    // signature of owner
+   *    "Signature": "ff0ff9f45478f8f9fcd50b15534c9a60810670c3fb400d831cd253370c42a0af79f7f4015ebfb4a3791f5e45aa1c952d40408239dead3d23a51314b339981b76",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   *    "CRCouncilMemberSignature": "ff0ff9f45478f8f9fcd50b15534c9a60810670c3fb400d831cd253370c42a0af79f7f4015ebfb4a3791f5e45aa1c952d40408239dead3d23a51314b339981b76"
+   * }
+   *
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string
+   * @return The transaction in JSON format to be signed and published
+   */
   createProposalTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1280,6 +1688,23 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*               Proposal Review                */
+  //////////////////////////////////////////////////
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Payload proposal review.
+   * {
+   *   "ProposalHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *   "VoteResult": 1,    // approve = 0, reject = 1, abstain = 2
+   *   "OpinionHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *   "OpinionData": "", // Optional, string format, limit 1 Mbytes
+   *   "DID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY", // did of CR council member
+   * }
+   *
+   * @return Digest of payload.
+   */
   proposalReviewDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -1313,6 +1738,34 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Create proposal review transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Signed payload.
+   * {
+   *   "ProposalHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *   "VoteResult": 1,    // approve = 0, reject = 1, abstain = 2
+   *   "OpinionHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *   "OpinionData": "", // Optional, string format, limit 1 Mbytes
+   *   "DID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY", // did of CR council member's did
+   *   // signature of CR council member
+   *   "Signature": "ff0ff9f45478f8f9fcd50b15534c9a60810670c3fb400d831cd253370c42a0af79f7f4015ebfb4a3791f5e45aa1c952d40408239dead3d23a51314b339981b76"
+   * }
+   *
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createProposalReviewTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1367,6 +1820,25 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*               Proposal Tracking              */
+  //////////////////////////////////////////////////
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal tracking payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "MessageHash": "0b5ee188b455ab5605cd452d7dda5c205563e1b30c56e93c6b9fda133f8cc4d4",
+   *   "MessageData": "", // Optional, string format, limit 800 Kbytes
+   *   "Stage": 0, // value can be [0, 128)
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   // If this proposal tracking is not use for changing owner, will be empty, eg: "NewOwnerPublicKey":"". Otherwise not empty.
+   *   "NewOwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   * }
+   *
+   * @return Digest of payload
+   */
   proposalTrackingOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1398,6 +1870,23 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal tracking payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "MessageHash": "0b5ee188b455ab5605cd452d7dda5c205563e1b30c56e93c6b9fda133f8cc4d4",
+   *   "MessageData": "", // Optional, string format, limit 800 Kbytes
+   *   "Stage": 0, // value can be [0, 128)
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   // If this proposal tracking is not use for changing owner, will be empty, eg: "NewOwnerPublicKey":"". Otherwise not empty.
+   *   "NewOwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   "OwnerSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109",
+   * }
+   *
+   * @return Digest of payload.
+   */
   proposalTrackingNewOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1430,6 +1919,28 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal tracking payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "MessageHash": "0b5ee188b455ab5605cd452d7dda5c205563e1b30c56e93c6b9fda133f8cc4d4",
+   *   "MessageData": "", // Optional, string format, limit 800 Kbytes
+   *   "Stage": 0, // value can be [0, 128)
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   // If this proposal tracking is not use for changing owner, will be empty, eg: "NewOwnerPublicKey":"". Otherwise not empty.
+   *   "NewOwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   "OwnerSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109",
+   *   // If NewOwnerPubKey is empty, this must be empty. eg: "NewOwnerSignature":""
+   *   "NewOwnerSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109",
+   *   "Type": 0, // common = 0, progress = 1, rejected = 2, terminated = 3, changeOwner = 4, finalized = 5
+   *   "SecretaryGeneralOpinionHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "SecretaryGeneralOpinionData": "", // Optional, string format, limit 200 Kbytes
+   * }
+   *
+   * @return Digest of payload
+   */
   proposalTrackingSecretaryDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1466,6 +1977,41 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Create proposal tracking transaction.
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Proposal tracking payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "MessageHash": "0b5ee188b455ab5605cd452d7dda5c205563e1b30c56e93c6b9fda133f8cc4d4",
+   *   "MessageData": "", // Optional, string format, limit 800 Kbytes
+   *   "Stage": 0, // value can be [0, 128)
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   // If this proposal tracking is not use for changing owner, will be empty, eg: "NewOwnerPublicKey":"". Otherwise not empty.
+   *   "NewOwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   "OwnerSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109",
+   *   // If NewOwnerPubKey is empty, this must be empty. eg: "NewOwnerSignature":""
+   *   "NewOwnerSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109",
+   *   "Type": 0, // common = 0, progress = 1, rejected = 2, terminated = 3, changeOwner = 4, finalized = 5
+   *   "SecretaryGeneralOpinionHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "SecretaryGeneralOpinionData": "", // Optional, string format, limit 200 Kbytes
+   *   "SecretaryGeneralSignature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109"
+   * }
+   *
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string. Can be empty string.
+   * @return The transaction in JSON format to be signed and published.
+   */
   createProposalTrackingTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1524,6 +2070,21 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*      Proposal Secretary General Election     */
+  //////////////////////////////////////////////////
+  /**
+   * @param payload Proposal secretary election payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4",
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SecretaryGeneralPublicKey": "...",
+   *    "SecretaryGeneralDID": "...",
+   * }
+   * @return
+   */
   proposalSecretaryGeneralElectionDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1553,6 +2114,21 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Proposal secretary election payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4",
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SecretaryGeneralPublicKey": "...",
+   *    "SecretaryGeneralDID": "...",
+   *    "Signature": "...",
+   *    "SecretaryGeneralSignature": "...",
+   *    "CRCouncilMemberDID": "...",
+   * }
+   * @return
+   */
   proposalSecretaryGeneralElectionCRCouncilMemberDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1587,6 +2163,34 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Proposal secretary election payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4",
+   *    "DraftHash": "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SecretaryGeneralPublicKey": "...",
+   *    "SecretaryGeneralDID": "...",
+   *    "Signature": "...",
+   *    "SecretaryGeneralSignature": "...",
+   *    "CRCouncilMemberDID": "...",
+   *    "CRCouncilMemberSignature": "..."
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remarks string
+   * @return
+   */
   createSecretaryGeneralElectionTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1641,8 +2245,22 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  //             Proposal Change Owner            //
+  /*             Proposal Change Owner            */
   //////////////////////////////////////////////////
+  /**
+   * Use for owner & new owner sign
+   * @param payload Proposal change owner payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   *    "NewRecipient": "...",
+   *    "NewOwnerPublicKey": "...",
+   * }
+   * @return
+   */
   proposalChangeOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1674,6 +2292,22 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Proposal change owner payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   *    "NewRecipient": "...",
+   *    "NewOwnerPublicKey": "...",
+   *    "Signature": "...",
+   *    "NewOwnerSignature": "...",
+   *    "CRCouncilMemberDID": "..."
+   * }
+   * @return
+   */
   proposalChangeOwnerCRCouncilMemberDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1708,6 +2342,36 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   *
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Proposal change owner payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   *    "NewRecipient": "...",
+   *    "NewOwnerPublicKey": "...",
+   *    "Signature": "...",
+   *    "NewOwnerSignature": "...",
+   *    "CRCouncilMemberDID": "...",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string.
+   * @return
+   */
   createProposalChangeOwnerTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1763,8 +2427,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  //           Proposal Terminate Proposal        //
+  /*           Proposal Terminate Proposal        */
   //////////////////////////////////////////////////
+  /**
+   * @param payload Terminate proposal payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   * }
+   * @return
+   */
   terminateProposalOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1796,6 +2471,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Terminate proposal payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "...",
+   * }
+   * @return
+   */
   terminateProposalCRCouncilMemberDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1830,6 +2518,32 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Terminate proposal payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "TargetProposalHash": "...",
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "...",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string
+   * @return
+   */
   createTerminateProposalTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -1884,8 +2598,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  //              Reserve Custom ID               //
+  /*              Reserve Custom ID               */
   //////////////////////////////////////////////////
+  /**
+   * @param payload Reserve Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReservedCustomIDList": ["...", "...", ...],
+   * }
+   * @return
+   */
   reserveCustomIDOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1917,6 +2642,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Reserve Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReservedCustomIDList": ["...", "...", ...],
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   * }
+   * @return
+   */
   reserveCustomIDCRCouncilMemberDigest(payload): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -1951,6 +2689,32 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Reserve Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReservedCustomIDList": ["...", "...", ...],
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string
+   * @return
+   */
   createReserveCustomIDTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -2005,8 +2769,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  //               Receive Custom ID              //
+  /*               Receive Custom ID              */
   //////////////////////////////////////////////////
+  /**
+   * @param payload Receive Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReceivedCustomIDList": ["...", "...", ...],
+   *    "ReceiverDID": "iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP"
+   * }
+   * @return
+   */
   receiveCustomIDOwnerDigest(payload): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dum);
@@ -2038,6 +2814,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Receive Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReceivedCustomIDList": ["...", "...", ...],
+   *    "ReceiverDID": "iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP"
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   * }
+   * @return
+   */
   rceiveCustomIDCRCouncilMemberDigest(payload): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
@@ -2072,6 +2862,33 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Receive Custom ID payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "ReceivedCustomIDList": ["...", "...", ...],
+   *    "ReceiverDID": "iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP"
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string
+   * @return
+   */
   createReceiveCustomIDTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -2126,8 +2943,22 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  //              Change Custom ID Fee            //
+  /*              Change Custom ID Fee            */
   //////////////////////////////////////////////////
+  /**
+   * @param payload Change custom ID fee payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "CustomIDFeeRateInfo": {
+   *      "RateOfCustomIDFee": 10000,
+   *      "EIDEffectiveHeight": 10000
+   *    }
+   * }
+   * @return
+   */
   changeCustomIDFeeOwnerDigest(payload): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -2159,6 +2990,22 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param payload Change custom ID fee payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "CustomIDFeeRateInfo": {
+   *      "RateOfCustomIDFee": 10000,
+   *      "EIDEffectiveHeight": 10000
+   *    },
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   * }
+   * @return
+   */
   changeCustomIDFeeCRCouncilMemberDigest(payload): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -2193,6 +3040,35 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @param inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload Change custom ID fee payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "CustomIDFeeRateInfo": {
+   *      "RateOfCustomIDFee": 10000,
+   *      "EIDEffectiveHeight": 10000
+   *    },
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string
+   * @return
+   */
   createChangeCustomIDFeeTransaction(
     inputs: UTXOInput[],
     payload: json,
@@ -2246,6 +3122,22 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*               Proposal Withdraw              */
+  //////////////////////////////////////////////////
+  /**
+   * Generate digest of payload.
+   *
+   * @param payload Proposal payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   "Recipient": "EPbdmxUVBzfNrVdqJzZEySyWGYeuKAeKqv", // address
+   *   "Amount": "100000000", // 1 ela = 100000000 sela
+   * }
+   *
+   * @return Digest of payload.
+   */
   proposalWithdrawDigest(payload: json) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -2273,6 +3165,31 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * Create proposal withdraw transaction.
+   * @inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @payload Proposal payload.
+   * {
+   *   "ProposalHash": "7c5d2e7cfd7d4011414b5ddb3ab43e2aca247e342d064d1091644606748d7513",
+   *   "OwnerPublicKey": "02c632e27b19260d80d58a857d2acd9eb603f698445cc07ba94d52296468706331",
+   *   "Recipient": "EPbdmxUVBzfNrVdqJzZEySyWGYeuKAeKqv", // address
+   *   "Amount": "100000000", // 1 ela = 100000000 sela
+   *   "Signature": "9a24a084a6f599db9906594800b6cb077fa7995732c575d4d125c935446c93bbe594ee59e361f4d5c2142856c89c5d70c8811048bfb2f8620fbc18a06cb58109"
+   * }
+   * @fee Fee amount. Bigint string in SELA
+   * @memo Remarks string. Can be empty string.
+   *
+   * @return Transaction in JSON format.
+   */
   createProposalWithdrawTransaction(
     inputsJson: UTXOInput[],
     payload: json,
@@ -2322,6 +3239,27 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return result;
   }
 
+  //////////////////////////////////////////////////
+  /*               Proposal Register side-chain   */
+  //////////////////////////////////////////////////
+  /**
+   * @payload Change custom ID fee payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SidechainInfo": {
+   *      "SideChainName": "...",
+   *      "MagicNumber": 0, // uint32_t
+   *      "GenesisHash": "...", // hexstring of uint256
+   *      "ExchangeRate": 1, // uint64_t
+   *      "EffectiveHeight": 1000, // uint32_t
+   *      "ResourcePath": "..." // path string
+   *    }
+   * }
+   * @return
+   */
   registerSidechainOwnerDigest(payload: json): string {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -2351,6 +3289,26 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @payload Change custom ID fee payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SidechainInfo": {
+   *      "SideChainName": "...",
+   *      "MagicNumber": 0, // uint32_t
+   *      "GenesisHash": "...", // hexstring of uint256
+   *      "ExchangeRate": 1, // uint64_t
+   *      "EffectiveHeight": 1000, // uint32_t
+   *      "ResourcePath": "..." // path string
+   *    }
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   * }
+   * @return
+   */
   registerSidechainCRCouncilMemberDigest(payload: json): string {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
@@ -2385,6 +3343,39 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return digest;
   }
 
+  /**
+   * @inputs UTXO which will be used. eg
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @payload Register side-chain payload
+   * {
+   *    "CategoryData": "testdata",  // limit: 4096 bytes
+   *    "OwnerPublicKey": "...",
+   *    "DraftHash": "...",
+   *    "DraftData": "", // Optional, string format, limit 1 Mbytes
+   *    "SidechainInfo": {
+   *      "SideChainName": "...",
+   *      "MagicNumber": 0, // uint32_t
+   *      "GenesisHash": "...", // hexstring of uint256
+   *      "ExchangeRate": 1, // uint64_t
+   *      "EffectiveHeight": 1000, // uint32_t
+   *      "ResourcePath": "..." // path string
+   *    }
+   *    "Signature": "...",
+   *    "CRCouncilMemberDID": "icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
+   *    "CRCouncilMemberSignature": "...",
+   * }
+   * @fee Fee amount. Bigint string in SELA
+   * @memo Remark string
+   * @return
+   */
   createRegisterSidechainTransaction(
     inputs: UTXOInput[],
     payload: json,

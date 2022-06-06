@@ -23,7 +23,9 @@
 import {
   MasterWallet,
   MasterWalletManager,
-  BrowserLocalStorage
+  BrowserLocalStorage,
+  EncodedTx,
+  SignedInfo
 } from "@elastosfoundation/wallet-js-sdk";
 
 describe("MasterWalletManager Tests", () => {
@@ -80,63 +82,37 @@ describe("MasterWalletManager Tests", () => {
     const inputsJson = [
       {
         Address: addresses[0],
-        Amount: "299980000",
+        Amount: "99960000",
         TxHash:
-          "25040f33e9dbfa05f7f2d4398a3d060b68920d41a320f43076ce5217d434db3f",
+          "b9bf4f41d1844c5f76cc86f82e5c3e113388ed97fa48e78051c367e1d9399f9b",
         Index: 1
       }
     ];
     const outputsJson = [
       {
-        Address: "8VG2YGpbjGCoVbvjBrtd6kdagmDhsPWB7p",
-        Amount: "100000000"
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "99950000"
       }
     ];
     const fee = "10000";
     const memo = "test creating a transaction";
 
-    const tx = subWallet.createTransaction(inputsJson, outputsJson, fee, memo);
-    const signedTx = await subWallet.signTransaction(tx, passwd);
-
-    const signedInfo = subWallet.getTransactionSignedInfo(signedTx);
+    const tx: EncodedTx = subWallet.createTransaction(
+      inputsJson,
+      outputsJson,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "031f56955cc005122f11cec5264ea5968240a90f01434fb0a1b7429be4b9157d46"
+    );
     const rawTx = subWallet.convertToRawTransaction(signedTx);
-    // then call rpc`sendrawtransaction` to send the rawTx to the ela testnet
-  });
-
-  test("get master wallet IDs", async () => {
-    const masterWallets = await masterWalletManager.getAllMasterWallets();
-    expect(masterWallets.length).toBe(1);
+    console.log("rawTx", rawTx);
+    // then call rpc `sendrawtransaction` to send the rawTx to the ela testnet
   });
 });
-
-/* localStore data of the master wallet with id 'master-wallet-id-3'
-{
-  "xPrivKey": "U2FsdGVkX187fKODb1BguK6y894KpOxg501rUrr1O70P559TzUbMTGvVRXcGpCd5bLEkPerKAntIlIDZrqep1+RzC4BXBcoRRs2mNOnbgeCTXRZ60PYWEzwcUoSOtZHH60NkuJYZWXt4TF4JdiR4iT0qi5qtxL6DblJshuZimWkhn4eqDviJ8pumELUBmyC7IJoEWl3bqE7NXsIe6u1dPANo6bSVlEcMWW96FgEGu3k=",
-  "xPubKey": "xpub6D85mnCjCnAh7JtBicwxdeW2qmUayEppbRBt84UwYFzmYKWuwfHW9nTrKqMmXvPjspDQU1zcbFv8wmSDyQh4kG96FA1eKc6i6Mwae2mGyGU",
-  "xPubKeyHDPM": "xpub6954Nq5fpH52vaxQuNr15zTXdNMWqfrzgv1QfJR6rG9V4AnBjSagzs3f1Dq4r9ZnUWFFd4rigspLYEkNYi7nQyjzAMw2LTDX7RaANUXt5Fz",
-  "requestPrivKey": "U2FsdGVkX1/vpfqlbP7bk57a2Dh228VablSwKC2B4jml9rtQNy89lQAqRouCreMzdQ2a1x+e+nBp5b2SUdmLpS5/F3uFIeA2ynlENESR7+lQNMTlzrhyAEt6fDX+xUW3O0B++PfZt67YG6hT1ET2BgflPBTMjE7K3xYt5MGUHZp/XF4ysia5KHhCfrZlAS381O6zdOTEQzLdRWDap4931xSpuL/TAu4wKx705gmLDj4=",
-  "requestPubKey": "0254c4bbfda0bc6660214f8dd81c605fd368b7f8f070f96fe351bcc528b09d77a7",
-  "publicKeyRing": [
-    {
-      "xPubKey": "xpub6954Nq5fpH52vaxQuNr15zTXdNMWqfrzgv1QfJR6rG9V4AnBjSagzs3f1Dq4r9ZnUWFFd4rigspLYEkNYi7nQyjzAMw2LTDX7RaANUXt5Fz",
-      "requestPubKey": "0254c4bbfda0bc6660214f8dd81c605fd368b7f8f070f96fe351bcc528b09d77a7"
-    }
-  ],
-  "m": 1,
-  "n": 1,
-  "mnemonicHasPassphrase": false,
-  "derivationStrategy": "BIP44",
-  "account": 0,
-  "mnemonic": "U2FsdGVkX1/BntFP/cidYBZNydIrP2vegzwji0tJYErKDLkalgoZIiyoUhiiUZIynKl9jZfEIw8z5VMTHZD/05LHVKn7G1SzsRMUkiM4G1Fotlv6KVNGALndu2TqCuwwjPA7wbE4dLEZ6YigurbvpkQdyeKhHWt99N/KpbpdSF5zk6R+YUStOJYpxKHXICBP0e7Ilg+vgcc4CldmYzDKSkFFvjWAiaC4w4HBm8V6mAq+1R4dUhjjiQ/0xgSAAF4rxDn8tbj4+M11oWC+jx57a0386yHcqxt2O55ja6+Cje6YKilC9GWIzh/kP4sBY+Xnm3hvTe3F/4DUkkasL6C0lLQm5Rf6UGbR2Rmn0agTwr5Q1y/XefkF9Mm9a75Vi8kYfQZ8CuCnRckql2expXey719CRNK9d9xWXNtN+YBWLpU=",
-  "ownerPubKey": "020c3d28bb2ee7365348722c686b4b60a10ddca032c444e3170022cd35bb079138",
-  "singleAddress": true,
-  "readonly": false,
-  "coinInfo": [{ "ChainID": "ELA" }],
-  "seed": "U2FsdGVkX19kNzYZQeYlnpZ2ZpAqhlTpBc8rQYOj0ffUMUVjKTv5jp5/3chJaJSKkDe+t0ljYjFymF71PnpQXeAnX0BAnOjU5vsOVcVODfiXEMXwCcmr5P/e8JT1MycqoQSIYEQD6kaiWTYmdwjKsN5QgyYC7YPHiJThXL4iitqAodeDNqFKPZl+tbvG+q96PxSza8Skld7jy1Xqm7nbMwmbysQb44FG0hf1UQ1ePE4BevHcLMvUSuJY0bs6RPaPqkt6P63LRrrA/MQJo+7HexqSSQizcTQiMXCVtYM02zvNfn0QCHm1FFBAGilqd+z2mNQPRYXQP//jFJ8zT2t/h5A2FMIX2sKBxlijJFi+yPSpQygIQ/H/UqksBRb7Z2Dy",
-  "ethscPrimaryPubKey": "04caf60d80da2b6be7d1d7e9c4f77e73848e11c60c8d82d04589bd889acdd982101889abf48d793aeb2bc7206f3a81968bf1f340de1921270f9fbaa1b01179d250",
-  "SinglePrivateKey": "U2FsdGVkX18N9Va4TV7JQEJJc7NECIpZWM1I1olEIHwz6ZwaXMsRfxmdBj6Xj3TXEoDOTQV6Ob+5EnCCyOVBQS9820qsLjTsXaI72IPmFtxiN7ZttHhpITj28dWflxsKNZBUlZUNhzD3NCBL9gFtsdcAWSLZGiR5+SCXiLuELYxq+ALnRI78SlacWYmVVefsUmKJr25vYplVa1JZ2BlESmumslrENNw/mAhhXxT7qNw=",
-  "ripplePrimaryPubKey": "0328024e7d60a49bf573487ce9858f94434c7879dcd62be8bc1b8902e9c826bf6b",
-  "xPubKeyBitcoin": "xpub6D2sniEHZaZqZSiFpMxai9e6EWxJtWMHYATkq8uYrF8jZGdA7dXQP15BWRwHZUZh8N5h9uCPjP6CCikr6F69JLHUq9wppXzbR8hmEK7SKp5",
-  "passphrase": ""
-}
-*/

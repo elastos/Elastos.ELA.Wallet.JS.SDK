@@ -123,14 +123,21 @@ describe("MasterWalletManager Tests", () => {
     const memo = "test creating a multisign transaction";
 
     const tx = subWallet3.createTransaction(inputsJson, outputsJson, fee, memo);
-    console.log("multisig tx", tx);
     const signedTx = await subWallet3.signTransaction(tx, payPassword);
-    console.log("multisig signedTx...", signedTx);
     const signedTx1 = await subWallet1.signTransaction(signedTx, payPassword);
-    console.log("multisig signedTx1...", signedTx1);
+    const info = subWallet1.getTransactionSignedInfo(signedTx1);
+    expect(info.length).toEqual(1);
 
-    const signedInfo = subWallet1.getTransactionSignedInfo(signedTx1);
-    console.log("multisig signedInfo", signedInfo);
+    expect(info[0].SignType).toEqual("MultiSign");
+    expect(info[0].M).toEqual(2);
+    expect(info[0].N).toEqual(4);
+    expect(info[0].Signers.length).toEqual(2);
+    expect(info[0].Signers[0]).toEqual(
+      "02ba6d6332cc4b2d499c24b7516a891a9021924fed5028380df6714438476b718a"
+    );
+    expect(info[0].Signers[1]).toEqual(
+      "023ceb84fc0655dfdefe56b2292411429c45fc8a8ac98ed8fca23d59ef744f60ab"
+    );
     const rawTx = subWallet1.convertToRawTransaction(signedTx1);
     console.log("multisig rawTx", rawTx);
     // then call rpc 'sendrawtransaction' to send the rawTx to the ela testnet

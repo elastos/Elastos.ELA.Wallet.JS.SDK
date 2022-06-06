@@ -281,7 +281,7 @@ export class ElastosBaseSubWallet
     return r;
   }
 
-  public getTransactionSignedInfo(encodedTx: EncodedTx) {
+  public getTransactionSignedInfo(encodedTx: EncodedTx): SignedInfo[] {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("tx: {}", encodedTx.dump());
 
@@ -351,7 +351,7 @@ export class ElastosBaseSubWallet
     return rs;
   }
 
-  public convertToRawTransaction(tx: EncodedTx) {
+  public convertToRawTransaction(tx: EncodedTx): string {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("tx: {}", tx.dump());
 

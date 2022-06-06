@@ -147,7 +147,7 @@ export const multisigWallet = async () => {
     payPassword
   );
 
-  const signedXPubKeys: SigningPublicKeyInfo =
+  const signedXPubKeys: SigningPublicKeyInfo[] =
     subWallet2.matchSigningPublicKeys(
       signedTx1,
       [...cosigners, xPubKey3],

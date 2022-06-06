@@ -11,6 +11,7 @@ import type { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
 import type { SignedInfo } from "./transactions/Program";
 import type { EncodedTx } from "./wallet/IElastosBaseSubWallet";
 import type { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
+import type { LocalStoreInfo } from "./persistence/LocalStore";
 
 export {
   BrowserLocalStorage,
@@ -29,5 +30,6 @@ export type {
   AccountPubKeyInfo,
   EncodedTx,
   SignedInfo,
-  SigningPublicKeyInfo
+  SigningPublicKeyInfo,
+  LocalStoreInfo
 };
