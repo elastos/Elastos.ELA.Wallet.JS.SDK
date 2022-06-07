@@ -363,7 +363,17 @@ export class MasterWallet {
     if (this._createdWallets && this._createdWallets[chainID]) {
       const subWallet = this._createdWallets[chainID];
       // ArgInfo("r => already created");
-      return subWallet;
+      if (chainID == "ELA") {
+        return subWallet as MainchainSubWallet;
+      } else if (chainID == "IDChain") {
+        // return subWallet as IDChainSubWallet;
+      } else if (chainID == "BTC") {
+        // return subWallet as BTCSubWallet;
+      } else if (chainID.indexOf("ETH") !== -1) {
+        // return subWallet as EthSidechainSubWallet;
+      } else if (chainID == "XRP") {
+        // return subWallet as RippleSubWallet;
+      }
     }
 
     const chainConfig = this._config.getChainConfig(chainID);

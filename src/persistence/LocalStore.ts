@@ -22,7 +22,7 @@
 
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
-import { CoinInfo, ChainInfo } from "../walletcore/CoinInfo";
+import { CoinInfo, ChainIDInfo } from "../walletcore/CoinInfo";
 import { PublicKeyRing, PublicKeyRingInfo } from "../walletcore/publickeyring";
 import { WalletStorage } from "./WalletStorage";
 
@@ -43,7 +43,7 @@ export type LocalStoreInfo = {
   ownerPubKey: string;
   singleAddress: boolean;
   readonly: boolean;
-  coinInfo?: ChainInfo[];
+  coinInfo?: ChainIDInfo[];
   seed?: string;
   ethscPrimaryPubKey?: string;
   ripplePrimaryPubKey?: string;
@@ -199,8 +199,8 @@ export class LocalStore {
         this._xPubKeyBitcoin = null;
       }
 
-      this._subWalletsInfoList = (j["coinInfo"] as ChainInfo[]).map((j) =>
-        new CoinInfo().fromJson(j as ChainInfo)
+      this._subWalletsInfoList = (j["coinInfo"] as ChainIDInfo[]).map((j) =>
+        new CoinInfo().fromJson(j as ChainIDInfo)
       );
     } catch (e) {
       ErrorChecker.throwLogicException(

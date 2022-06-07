@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-export type ChainInfo = {
+export type ChainIDInfo = {
   ChainID: string;
 };
 export class CoinInfo {
@@ -16,13 +16,13 @@ export class CoinInfo {
     this._chainID = id;
   }
 
-  public toJson(): ChainInfo {
+  public toJson(): ChainIDInfo {
     return {
       ChainID: this._chainID
     };
   }
 
-  public fromJson(j: ChainInfo): CoinInfo {
+  public fromJson(j: ChainIDInfo): CoinInfo {
     this._chainID = j["ChainID"] as string;
     if (this._chainID === "IdChain") this._chainID = "IDChain";
 

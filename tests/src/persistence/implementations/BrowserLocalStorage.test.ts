@@ -37,7 +37,7 @@ beforeEach(() => {
 describe("BrowserLocalStorage Tests", () => {
   test("should save to localStorage", async () => {
     const key = "master-wallet-id-0";
-    // standard wallet data
+    // a standard wallet data
     const value = {
       xPrivKey:
         "U2FsdGVkX187fKODb1BguK6y894KpOxg501rUrr1O70P559TzUbMTGvVRXcGpCd5bLEkPerKAntIlIDZrqep1+RzC4BXBcoRRs2mNOnbgeCTXRZ60PYWEzwcUoSOtZHH60NkuJYZWXt4TF4JdiR4iT0qi5qtxL6DblJshuZimWkhn4eqDviJ8pumELUBmyC7IJoEWl3bqE7NXsIe6u1dPANo6bSVlEcMWW96FgEGu3k=",
@@ -83,10 +83,5 @@ describe("BrowserLocalStorage Tests", () => {
     const browserStorage = new BrowserLocalStorage();
     await browserStorage.saveStore(key, value);
     expect(setItem).toHaveBeenLastCalledWith(key, JSON.stringify(value));
-    expect(Object.keys(localStorage.__STORE__).length).toBe(1);
-
-    const ids = await browserStorage.getMasterWalletIDs();
-    expect(ids.length).toBe(1);
-    expect(ids[0]).toBe("master-wallet-id-0");
   });
 });
