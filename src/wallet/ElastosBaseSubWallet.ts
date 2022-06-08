@@ -356,6 +356,7 @@ export class ElastosBaseSubWallet
     // ArgInfo("tx: {}", tx.dump());
 
     let txn: Transaction = this.decodeTx(tx);
+    console.log("convertToRawTransaction txn...", txn);
     let stream = new ByteStream();
     txn.serialize(stream);
     let rawtx: string = stream.getBytes().toString("hex");

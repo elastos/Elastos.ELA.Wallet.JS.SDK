@@ -28,7 +28,7 @@ export class CandidateVotes {
   static newFromParams(candidate: bytes_t, votes: BigNumber) {
     const cv = new CandidateVotes();
     cv._candidate = candidate;
-    cv._votes = new BigNumber(votes);
+    cv._votes = votes;
     return cv;
   }
 
@@ -48,7 +48,8 @@ export class CandidateVotes {
     ostream.writeVarBytes(this._candidate);
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      ostream.writeBNAsUIntOfSize(this._votes, 8);
+      // ostream.writeBNAsUIntOfSize(this._votes, 8);
+      ostream.writeVarUInt(this._votes);
     }
   }
 
@@ -57,15 +58,14 @@ export class CandidateVotes {
     candidate = istream.readVarBytes(candidate);
     if (!candidate) {
       Log.error("CandidateVotes deserialize candidate fail");
-      return false;
     }
     this._candidate = candidate;
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      let votes = istream.readUIntOfBytesAsBN(8);
+      // let votes = istream.readUIntOfBytesAsBN(8);
+      let votes = istream.readVarUInt();
       if (!votes) {
         Log.error("CandidateVotes deserialize votes fail");
-        return false;
       }
       this._votes = votes;
     }
@@ -100,10 +100,14 @@ export enum VoteContentType {
   CRCImpeachment,
   Max
 }
+export type VoteContentInfo = {
+  Type: string;
+  Candidates: { [key: string]: string };
+};
 
 export class VoteContent {
   private _type: VoteContentType;
-  private _candidates: CandidateVotes[];
+  private _candidates: CandidateVotes[] = [];
   constructor() {
     this._type = VoteContentType.Delegate;
   }
@@ -183,9 +187,8 @@ export class VoteContent {
     ostream.writeUInt8(this._type);
 
     ostream.writeVarUInt(this._candidates.length);
-    for (let i = 0; i < this._candidates.length; i++) {
-      this._candidates[i].serialize(ostream, version);
-    }
+
+    this._candidates.forEach((c) => c.serialize(ostream, version));
   }
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
@@ -195,19 +198,19 @@ export class VoteContent {
     }
     this._type = type;
 
-    let size = new BigNumber(0);
-    size = istream.readVarUInt();
+    let size = istream.readVarUInt();
     if (!size) {
       Log.error("VoteContent deserialize candidates count error");
       return false;
     }
 
-    let candidates: CandidateVotes[] = [];
+    this._candidates = [];
     for (let i = 0; i < size.toNumber(); ++i) {
-      if (!candidates[i].deserialize(istream, version)) {
+      let candidateVotes = new CandidateVotes();
+      if (!candidateVotes.deserialize(istream, version)) {
         Log.error("VoteContent deserialize candidates error");
-        return false;
       }
+      this._candidates.push(candidateVotes);
     }
 
     return true;
@@ -253,13 +256,12 @@ export class PayloadVote extends OutputPayload {
   private _version: uint8_t;
   private _content: VoteContent[];
 
-  static newFromVersion(version: uint8_t) {
-    const payloadVote = new PayloadVote();
-    payloadVote._version = version;
-    return payloadVote;
+  constructor() {
+    super();
+    this._version = 0;
   }
 
-  static newFromParams(voteContents: VoteContent[], version: uint8_t) {
+  static newFromParams(voteContents: VoteContent[], version = 0) {
     const payloadVote = new PayloadVote();
     payloadVote._content = voteContents;
     payloadVote._version = version;
@@ -318,10 +320,12 @@ export class PayloadVote extends OutputPayload {
   }
 
   deserialize(stream: ByteStream) {
-    if (!stream.readUInt8(this._version)) {
+    let version = stream.readUInt8();
+    if (!version) {
       Log.error("payload vote deserialize version error");
       return false;
     }
+    this._version = version;
 
     let contentCount = stream.readVarUInt();
     if (!contentCount) {
@@ -329,13 +333,15 @@ export class PayloadVote extends OutputPayload {
       return false;
     }
 
+    this._content = [];
     for (let i = 0; i < contentCount.toNumber(); ++i) {
-      if (!this._content[i].deserialize(stream, this._version)) {
+      let voteContent = new VoteContent();
+      if (!voteContent.deserialize(stream, this._version)) {
         Log.error("payload vote deserialize content error");
         return false;
       }
+      this._content.push(voteContent);
     }
-
     return true;
   }
 

@@ -63,7 +63,8 @@ import {
   VoteContent,
   VoteContentArray,
   VoteContentType,
-  VOTE_PRODUCER_CR_VERSION
+  VOTE_PRODUCER_CR_VERSION,
+  VoteContentInfo
 } from "../transactions/payload/OutputPayload/PayloadVote";
 import { Payload } from "../transactions/payload/Payload";
 import { ProducerInfo } from "../transactions/payload/ProducerInfo";
@@ -700,105 +701,131 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   voteContentFromJson(
     voteContents: VoteContentArray,
     maxAmount: BigNumber,
-    j: json
-  ): boolean {
+    j: VoteContentInfo[]
+  ): { maxAmount: BigNumber } {
     let tmpAmount = new BigNumber(0);
 
-    if (j["Type"] == "CRC") {
-      let vc = VoteContent.newFromType(VoteContentType.CRC);
-      let candidateVotesJson = j["Candidates"] as JSONArray;
-      for (let i = 0; i < candidateVotesJson.length; ++i) {
-        let voteAmount = new BigNumber(0);
-        const item = candidateVotesJson[i];
-        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
+    for (let it = 0; it < j.length; ++it) {
+      if (j[it]["Type"] == "CRC") {
+        let vc = VoteContent.newFromType(VoteContentType.CRC);
+        let candidateVotesJson = j[it]["Candidates"];
+        let keys = Object.keys(candidateVotesJson);
+        for (let i = 0; i < keys.length; ++i) {
+          let voteAmount = new BigNumber(0);
+          const rs = this.voteAmountFromJson(
+            voteAmount,
+            candidateVotesJson[keys[i]]
+          );
+          if (rs) {
+            voteAmount = new BigNumber(candidateVotesJson[keys[i]]);
+          }
 
-        let key = Object.keys(item)[0];
-        let cid = Address.newFromAddressString(key);
-        ErrorChecker.checkParam(
-          !cid.valid(),
-          Error.Code.InvalidArgument,
-          "invalid candidate cid"
-        );
-        let candidate = cid.programHash().bytes();
+          let key = keys[i];
+          let cid = Address.newFromAddressString(key);
+          ErrorChecker.checkParam(
+            !cid.valid(),
+            Error.Code.InvalidArgument,
+            "invalid candidate cid"
+          );
+          let candidate = cid.programHash().bytes();
 
-        vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
+          vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
+        }
+        tmpAmount = vc.getTotalVoteAmount();
+        if (tmpAmount.gt(maxAmount)) {
+          maxAmount = tmpAmount;
+        }
+        voteContents.push(vc);
+      } else if (j[it]["Type"] == "CRCProposal") {
+        let vc = VoteContent.newFromType(VoteContentType.CRCProposal);
+        let candidateVotesJson = j[it]["Candidates"];
+        let keys = Object.keys(candidateVotesJson);
+        for (let i = 0; i < keys.length; ++i) {
+          let voteAmount = new BigNumber(0);
+          let rs = this.voteAmountFromJson(
+            voteAmount,
+            candidateVotesJson[keys[i]]
+          );
+          if (rs) {
+            voteAmount = new BigNumber(candidateVotesJson[keys[i]]);
+          }
+
+          let key = keys[i];
+          let proposalHash = Buffer.from(key, "hex");
+
+          ErrorChecker.checkParam(
+            proposalHash.length != 32,
+            Error.Code.InvalidArgument,
+            "invalid proposal hash"
+          );
+
+          vc.addCandidate(
+            CandidateVotes.newFromParams(proposalHash, voteAmount)
+          );
+        }
+        tmpAmount = vc.getMaxVoteAmount();
+        if (tmpAmount.gt(maxAmount)) {
+          maxAmount = tmpAmount;
+        }
+        voteContents.push(vc);
+      } else if (j[it]["Type"] == "CRCImpeachment") {
+        let vc = VoteContent.newFromType(VoteContentType.CRCImpeachment);
+        let candidateVotesJson = j[it]["Candidates"];
+        let keys = Object.keys(candidateVotesJson);
+        for (let i = 0; i < keys.length; ++i) {
+          let voteAmount = new BigNumber(0);
+          let rs = this.voteAmountFromJson(
+            voteAmount,
+            candidateVotesJson[keys[i]]
+          );
+          if (rs) {
+            voteAmount = new BigNumber(candidateVotesJson[keys[i]]);
+          }
+
+          let key = keys[i];
+          let cid = Address.newFromAddressString(key);
+          ErrorChecker.checkParam(
+            !cid.valid(),
+            Error.Code.InvalidArgument,
+            "invalid candidate cid"
+          );
+          let candidate = cid.programHash().bytes();
+
+          vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
+        }
+        tmpAmount = vc.getTotalVoteAmount();
+        if (tmpAmount.gt(maxAmount)) {
+          maxAmount = tmpAmount;
+        }
+        voteContents.push(vc);
+      } else if (j[it]["Type"] == "Delegate") {
+        let vc = VoteContent.newFromType(VoteContentType.Delegate);
+        let candidateVotesJson = j[it]["Candidates"];
+        let keys = Object.keys(candidateVotesJson);
+        for (let i = 0; i < keys.length; ++i) {
+          let voteAmount = new BigNumber(0);
+          let rs = this.voteAmountFromJson(
+            voteAmount,
+            candidateVotesJson[keys[i]]
+          );
+          if (rs) {
+            voteAmount = new BigNumber(candidateVotesJson[keys[i]]);
+          }
+
+          let key = keys[i];
+          let pubkey = Buffer.from(key, "hex");
+
+          vc.addCandidate(CandidateVotes.newFromParams(pubkey, voteAmount));
+        }
+        tmpAmount = vc.getMaxVoteAmount();
+        if (tmpAmount.gt(maxAmount)) {
+          maxAmount = tmpAmount;
+        }
+        voteContents.push(vc);
       }
-      tmpAmount = vc.getTotalVoteAmount();
-      if (tmpAmount.gt(maxAmount)) {
-        maxAmount = tmpAmount;
-      }
-      voteContents.push(vc);
-    } else if (j["Type"] == "CRCProposal") {
-      let vc = VoteContent.newFromType(VoteContentType.CRCProposal);
-      let candidateVotesJson = j["Candidates"] as JSONArray;
-      for (let i = 0; i < candidateVotesJson.length; ++i) {
-        let voteAmount = new BigNumber(0);
-
-        const item = candidateVotesJson[i];
-        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
-        let key = Object.keys(item)[0];
-        let proposalHash = Buffer.from(key, "hex");
-
-        ErrorChecker.checkParam(
-          proposalHash.length != 32,
-          Error.Code.InvalidArgument,
-          "invalid proposal hash"
-        );
-
-        vc.addCandidate(CandidateVotes.newFromParams(proposalHash, voteAmount));
-      }
-      tmpAmount = vc.getMaxVoteAmount();
-      if (tmpAmount.gt(maxAmount)) {
-        maxAmount = tmpAmount;
-      }
-      voteContents.push(vc);
-    } else if (j["Type"] == "CRCImpeachment") {
-      let vc = VoteContent.newFromType(VoteContentType.CRCImpeachment);
-      let candidateVotesJson = j["Candidates"] as JSONArray;
-      for (let i = 0; i < candidateVotesJson.length; ++i) {
-        let voteAmount = new BigNumber(0);
-
-        const item = candidateVotesJson[i];
-        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
-
-        let key = Object.keys(item)[0];
-        let cid = Address.newFromAddressString(key);
-        ErrorChecker.checkParam(
-          !cid.valid(),
-          Error.Code.InvalidArgument,
-          "invalid candidate cid"
-        );
-        let candidate = cid.programHash().bytes();
-
-        vc.addCandidate(CandidateVotes.newFromParams(candidate, voteAmount));
-      }
-      tmpAmount = vc.getTotalVoteAmount();
-      if (tmpAmount.gt(maxAmount)) {
-        maxAmount = tmpAmount;
-      }
-      voteContents.push(vc);
-    } else if (j["Type"] == "Delegate") {
-      let vc = VoteContent.newFromType(VoteContentType.Delegate);
-      let candidateVotesJson = j["Candidates"] as JSONArray;
-      for (let i = 0; i < candidateVotesJson.length; ++i) {
-        const item = candidateVotesJson[i];
-        let voteAmount = new BigNumber(0);
-        this.voteAmountFromJson(voteAmount, Object.values(item)[0]);
-
-        let key = Object.keys(item)[0];
-
-        let pubkey = Buffer.from(key, "hex");
-
-        vc.addCandidate(CandidateVotes.newFromParams(pubkey, voteAmount));
-      }
-      tmpAmount = vc.getMaxVoteAmount();
-      if (tmpAmount.gt(maxAmount)) {
-        maxAmount = tmpAmount;
-      }
-      voteContents.push(vc);
     }
 
-    return true;
+    return { maxAmount };
   }
 
   //////////////////////////////////////////////////
@@ -807,7 +834,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   /**
    * Create vote transaction.
    *
-   * @param inputs UTXO which will be used. eg
+   * @param inputsJson UTXO which will be used. eg
    * [
    *   {
    *     "TxHash": "...", // string
@@ -817,7 +844,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param voteContents Including all kinds of vote. eg
+   * @param voteContentsJson Including all kinds of vote. eg
    *
    * [
    *   {
@@ -860,10 +887,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   */
   createVoteTransaction(
     inputsJson: UTXOInput[],
-    voteContentsJson: json,
+    voteContentsJson: VoteContentInfo[],
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -871,19 +898,27 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxos: UTXOSet;
+    let utxos = new UTXOSet();
     this.UTXOFromJson(utxos, inputsJson);
 
     let outputAmount = new BigNumber(0);
-    let voteContents: VoteContentArray;
-    this.voteContentFromJson(voteContents, outputAmount, voteContentsJson);
+    let voteContents: VoteContentArray = [];
+    let rs = this.voteContentFromJson(
+      voteContents,
+      outputAmount,
+      voteContentsJson
+    );
+
+    if (rs && rs.maxAmount) {
+      outputAmount = rs.maxAmount;
+    }
 
     let outputPayload = PayloadVote.newFromParams(
       voteContents,
       VOTE_PRODUCER_CR_VERSION
     );
 
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     let output = TransactionOutput.newFromParams(
       outputAmount,
       utxos[0].getAddress(),
@@ -905,6 +940,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount,
       true
     );
+
+    console.log("createVoteTransaction tx...", tx);
 
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
@@ -1166,7 +1203,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let payloadVersion: uint8_t = CRInfoDIDVersion;
@@ -1230,7 +1267,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     ErrorChecker.checkParam(
@@ -1298,7 +1335,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let feeAmount = new BigNumber(fee);
