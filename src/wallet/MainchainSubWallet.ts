@@ -262,7 +262,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  /*                    Producer                  */
+  /*            Producer (DPoS node)              */
   //////////////////////////////////////////////////
   /**
    * Generate payload for registering or updating producer.

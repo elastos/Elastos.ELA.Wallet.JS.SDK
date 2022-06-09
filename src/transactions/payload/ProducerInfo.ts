@@ -1,19 +1,29 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import {
   bytes_t,
-  json,
   sizeof_uint64_t,
   size_t,
   uint64_t,
   uint8_t
 } from "../../types";
 import { Payload } from "./Payload";
+
+export type ProducerInfoJson = {
+  OwnerPublicKey: string;
+  NodePublicKey: string;
+  NickName: string;
+  Url: string;
+  Location: string;
+  Address: string;
+  Signature: string;
+};
 
 export class ProducerInfo extends Payload {
   private _ownerPublicKey: bytes_t;
@@ -165,13 +175,16 @@ export class ProducerInfo extends Payload {
     size += this._ownerPublicKey.length;
     size += stream.writeVarUInt(this._nodePublicKey.length);
     size += this._nodePublicKey.length;
-    size += stream.writeVarUInt(this._nickName.length);
-    size += this._nickName.length;
-    size += stream.writeVarUInt(this._url.length);
-    size += this._url.length;
+    let nickName = Buffer.from(this._nickName, "utf8");
+    size += stream.writeVarUInt(nickName.length);
+    size += nickName.length;
+    let url = Buffer.from(this._url, "utf8");
+    size += stream.writeVarUInt(url.length);
+    size += url.length;
     size += sizeof_uint64_t(); // size of this.loacation
-    size += stream.writeVarUInt(this._address.length);
-    size += this._address.length;
+    let address = Buffer.from(this._address, "utf8");
+    size += stream.writeVarUInt(address.length);
+    size += address.length;
     size += stream.writeVarUInt(this._signature.length);
     size += this._signature.length;
 
@@ -199,8 +212,8 @@ export class ProducerInfo extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): ProducerInfoJson {
+    let j = <ProducerInfoJson>{};
     j["OwnerPublicKey"] = this._ownerPublicKey.toString("hex");
     j["NodePublicKey"] = this._nodePublicKey.toString("hex");
     j["NickName"] = this._nickName;
@@ -211,14 +224,14 @@ export class ProducerInfo extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._ownerPublicKey = Buffer.from(j["OwnerPublicKey"] as string, "hex");
-    this._nodePublicKey = Buffer.from(j["NodePublicKey"] as string, "hex");
-    this._nickName = j["NickName"] as string;
-    this._url = j["Url"] as string;
-    this._location = new BigNumber(j["Location"] as string, 16);
-    this._address = j["Address"] as string;
-    this._signature = Buffer.from(j["Signature"] as string, "hex");
+  fromJson(j: ProducerInfoJson, version: uint8_t) {
+    this._ownerPublicKey = Buffer.from(j["OwnerPublicKey"], "hex");
+    this._nodePublicKey = Buffer.from(j["NodePublicKey"], "hex");
+    this._nickName = j["NickName"];
+    this._url = j["Url"];
+    this._location = new BigNumber(j["Location"], 16);
+    this._address = j["Address"];
+    this._signature = Buffer.from(j["Signature"], "hex");
   }
 
   copyPayload(payload: Payload) {
@@ -247,13 +260,13 @@ export class ProducerInfo extends Payload {
     try {
       const p = payload as ProducerInfo;
       return (
-        this._ownerPublicKey.toString() == p._ownerPublicKey.toString() &&
-        this._nodePublicKey.toString() == p._nodePublicKey.toString() &&
+        this._ownerPublicKey.equals(p._ownerPublicKey) &&
+        this._nodePublicKey.equals(p._nodePublicKey) &&
         this._nickName == p._nickName &&
         this._url == p._url &&
         this._location.eq(p._location) &&
         this._address == p._address &&
-        this._signature.toString() == p._signature.toString()
+        this._signature.equals(p._signature)
       );
     } catch (e) {
       Log.error("payload is not instance of ProducerInfo");

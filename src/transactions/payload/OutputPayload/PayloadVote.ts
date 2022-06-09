@@ -218,6 +218,7 @@ export class VoteContent {
       let candidateVotes = new CandidateVotes();
       if (!candidateVotes.deserialize(istream, version)) {
         Log.error("VoteContent deserialize candidates error");
+        return false;
       }
       this._candidates.push(candidateVotes);
     }
