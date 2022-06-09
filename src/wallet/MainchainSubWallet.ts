@@ -834,7 +834,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   /**
    * Create vote transaction.
    *
-   * @param inputsJson UTXO which will be used. eg
+   * @param inputs UTXO which will be used. eg
    * [
    *   {
    *     "TxHash": "...", // string
@@ -844,7 +844,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param voteContentsJson Including all kinds of vote. eg
+   * @param voteContents Including all kinds of vote. eg
    *
    * [
    *   {
@@ -886,8 +886,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   * @return The transaction in JSON format to be signed and published.
   */
   createVoteTransaction(
-    inputsJson: UTXOInput[],
-    voteContentsJson: VoteContentInfo[],
+    inputs: UTXOInput[],
+    voteContents: VoteContentInfo[],
     fee: string,
     memo: string
   ): EncodedTx {
@@ -899,14 +899,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxos = new UTXOSet();
-    this.UTXOFromJson(utxos, inputsJson);
+    this.UTXOFromJson(utxos, inputs);
 
     let outputAmount = new BigNumber(0);
-    let voteContents: VoteContentArray = [];
+    let voteContentArr: VoteContentArray = [];
     let rs = this.voteContentFromJson(
-      voteContents,
+      voteContentArr,
       outputAmount,
-      voteContentsJson
+      voteContents
     );
 
     if (rs && rs.maxAmount) {
@@ -914,7 +914,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     }
 
     let outputPayload = PayloadVote.newFromParams(
-      voteContents,
+      voteContentArr,
       VOTE_PRODUCER_CR_VERSION
     );
 

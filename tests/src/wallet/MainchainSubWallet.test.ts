@@ -25,7 +25,8 @@ import {
   BrowserLocalStorage,
   EncodedTx,
   SignedInfo,
-  MainchainSubWallet
+  MainchainSubWallet,
+  VoteContentInfo
 } from "@elastosfoundation/wallet-js-sdk";
 
 describe("Mainchain SubWallet Transaction Tests", () => {
@@ -73,12 +74,30 @@ describe("Mainchain SubWallet Transaction Tests", () => {
         Index: 0
       }
     ];
-    const voteContents = [
+    const voteContents: VoteContentInfo[] = [
+      {
+        Type: "CRCImpeachment",
+        Candidates: { innnNZJLqmJ8uKfVHKFxhdqVtvipNHzmZs: "100000000" }
+      },
+      {
+        Type: "CRCProposal",
+        Candidates: {
+          "109780cf45c7a6178ad674ac647545b47b10c2c3e3b0020266d0707e5ca8af7c":
+            "100000000"
+        }
+      },
+      {
+        Type: "Delegate",
+        Candidates: {
+          "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4":
+            "100000000"
+        }
+      },
       {
         Type: "CRC",
         Candidates: {
-          iXviwqspCcLFw3waXKyQFbeP82Cfg3S9Je: "100", // CR10
-          ifzo3Fx82sUb6BAqw6K9ok8trvfKPfFwTL: "100" // CR11
+          iXviwqspCcLFw3waXKyQFbeP82Cfg3S9Je: "1000", // CR10
+          ifzo3Fx82sUb6BAqw6K9ok8trvfKPfFwTL: "1000" // CR11
         }
       }
     ];

@@ -1,26 +1,22 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../../common/bytestream";
 import { Log } from "../../../common/Log";
-import {
-  bytes_t,
-  json,
-  JSONArray,
-  size_t,
-  uint64_t,
-  uint8_t
-} from "../../../types";
+import { bytes_t, size_t, uint64_t, uint8_t } from "../../../types";
 import { OutputPayload } from "../OutputPayload/OutputPayload";
 
 export const VOTE_PRODUCER_CR_VERSION = 0x01;
 export type VoteContentArray = VoteContent[];
 
+export type CandidateVotesInfo = { Candidate: string; Votes?: string };
+
 export class CandidateVotes {
   private _candidate: bytes_t;
-  private _votes: BigNumber;
+  private _votes: uint64_t;
   constructor() {
     this._votes = new BigNumber(0);
   }
@@ -36,7 +32,7 @@ export class CandidateVotes {
     return this._candidate;
   }
 
-  getVotes(): BigNumber {
+  getVotes(): uint64_t {
     return this._votes;
   }
 
@@ -57,6 +53,7 @@ export class CandidateVotes {
     candidate = istream.readVarBytes(candidate);
     if (!candidate) {
       Log.error("CandidateVotes deserialize candidate fail");
+      return false;
     }
     this._candidate = candidate;
 
@@ -64,6 +61,7 @@ export class CandidateVotes {
       let votes = istream.readUIntOfBytesAsBN(8);
       if (!votes) {
         Log.error("CandidateVotes deserialize votes fail");
+        return false;
       }
       this._votes = votes;
     }
@@ -71,8 +69,8 @@ export class CandidateVotes {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): CandidateVotesInfo {
+    let j = <CandidateVotesInfo>{};
     j["Candidate"] = this._candidate.toString("hex");
     if (version >= VOTE_PRODUCER_CR_VERSION) {
       j["Votes"] = this._votes.toString();
@@ -80,17 +78,18 @@ export class CandidateVotes {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._candidate = Buffer.from(j["Candidate"] as string, "hex");
+  fromJson(j: CandidateVotesInfo, version: uint8_t) {
+    this._candidate = Buffer.from(j["Candidate"], "hex");
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      this._votes = new BigNumber(j["Votes"] as string);
+      this._votes = new BigNumber(j["Votes"]);
     }
   }
 
   equals(cv: CandidateVotes): boolean {
-    return this._candidate == cv._candidate && this._votes == cv._votes;
+    return this._candidate.equals(cv._candidate) && this._votes.eq(cv._votes);
   }
 }
+
 export enum VoteContentType {
   Delegate,
   CRC,
@@ -98,9 +97,19 @@ export enum VoteContentType {
   CRCImpeachment,
   Max
 }
+
+interface CandidateVotesObj {
+  [key: string]: string;
+}
+
 export type VoteContentInfo = {
-  Type: string;
-  Candidates: { [key: string]: string };
+  Type: "Delegate" | "CRC" | "CRCProposal" | "CRCImpeachment";
+  Candidates: CandidateVotesObj;
+};
+
+export type VoteContentJson = {
+  Type: number;
+  Candidates: CandidateVotesInfo[];
 };
 
 export class VoteContent {
@@ -162,7 +171,7 @@ export class VoteContent {
   getMaxVoteAmount(): BigNumber {
     let max = new BigNumber(0);
 
-    for (let i = 0; i < this._candidates.length; i++) {
+    for (let i = 0; i < this._candidates.length; ++i) {
       if (max < this._candidates[i].getVotes()) {
         max = this._candidates[i].getVotes();
       }
@@ -191,8 +200,10 @@ export class VoteContent {
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
     let type = istream.readUInt8();
-    if (!type) {
+    // ignore the Delegate vote type
+    if (!type && type !== 0) {
       Log.error("VoteContent deserialize type error");
+      return false;
     }
     this._type = type;
 
@@ -214,11 +225,11 @@ export class VoteContent {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): VoteContentJson {
+    let j = <VoteContentJson>{};
     j["Type"] = this._type;
 
-    let candidates: JSONArray;
+    let candidates = [];
     for (let i = 0; i < this._candidates.length; ++i) {
       candidates.push(this._candidates[i].toJson(version));
     }
@@ -227,28 +238,48 @@ export class VoteContent {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._type = j["Type"] as VoteContentType;
+  fromJson(j: VoteContentJson, version: uint8_t) {
+    this._type = j["Type"];
 
-    let candidates = j["Candidates"] as [];
+    let candidates = j["Candidates"];
+    this._candidates = [];
     for (let i = 0; i < candidates.length; ++i) {
-      this._candidates[i].fromJson(candidates[i], version);
+      let candidate = new CandidateVotes();
+      candidate.fromJson(candidates[i], version);
+      this._candidates.push(candidate);
     }
   }
 
-  isEqual(candidates: CandidateVotes[]): boolean {
+  private isEqualCandidates(candidates: CandidateVotes[]): boolean {
+    if (this._candidates.length !== candidates.length) {
+      return false;
+    }
+    let equal = false;
     for (let i = 0; i < candidates.length; ++i) {
-      if (!this._candidates[i].equals(candidates[i])) {
+      for (let j = 0; j < this._candidates.length; ++j) {
+        if (this._candidates[j].equals(candidates[i])) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
         return false;
       }
     }
-    return true;
+    return equal;
   }
 
   equals(vc: VoteContent): boolean {
-    return this._type == vc._type && this.isEqual(vc._candidates);
+    return this._type == vc._type && this.isEqualCandidates(vc._candidates);
   }
 }
+
+export type PayloadVoteInfo = {
+  Version: number;
+  VoteContent: VoteContentJson[];
+};
 
 export class PayloadVote extends OutputPayload {
   private _version: uint8_t;
@@ -343,11 +374,11 @@ export class PayloadVote extends OutputPayload {
     return true;
   }
 
-  toJson(): json {
-    let j = {};
+  toJson(): PayloadVoteInfo {
+    let j = <PayloadVoteInfo>{};
     j["Version"] = this._version;
 
-    let voteContent;
+    let voteContent = [];
     for (let i = 0; i < this._content.length; ++i) {
       voteContent.push(this._content[i].toJson(this._version));
     }
@@ -356,12 +387,14 @@ export class PayloadVote extends OutputPayload {
     return j;
   }
 
-  fromJson(j: json) {
-    this._version = j["Version"] as number;
-    let voteContent = j["VoteContent"] as [];
-
+  fromJson(j: PayloadVoteInfo) {
+    this._version = j["Version"];
+    let voteContent = j["VoteContent"];
+    this._content = [];
     for (let i = 0; i < voteContent.length; ++i) {
-      this._content[i].fromJson(voteContent[i], this._version);
+      let content = new VoteContent();
+      content.fromJson(voteContent[i], this._version);
+      this._content.push(content);
     }
   }
 
@@ -383,12 +416,33 @@ export class PayloadVote extends OutputPayload {
     return this;
   }
 
+  private isEqualContent(content: VoteContent[]): boolean {
+    if (this._content.length !== content.length) {
+      return false;
+    }
+    let equal = false;
+    for (let i = 0; i < content.length; ++i) {
+      for (let j = 0; j < this._content.length; ++j) {
+        if (this._content[j].equals(content[i])) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
+        return false;
+      }
+    }
+    return equal;
+  }
+
   equals(payload: OutputPayload): boolean {
     try {
       const payloadVote = payload as PayloadVote;
       return (
         this._version == payloadVote._version &&
-        this._content == payloadVote._content
+        this.isEqualContent(payloadVote._content)
       );
     } catch (e) {
       Log.error("payload is not instance of PayloadVote");
