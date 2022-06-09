@@ -48,8 +48,7 @@ export class CandidateVotes {
     ostream.writeVarBytes(this._candidate);
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      // ostream.writeBNAsUIntOfSize(this._votes, 8);
-      ostream.writeVarUInt(this._votes);
+      ostream.writeBNAsUIntOfSize(this._votes, 8);
     }
   }
 
@@ -62,8 +61,7 @@ export class CandidateVotes {
     this._candidate = candidate;
 
     if (version >= VOTE_PRODUCER_CR_VERSION) {
-      // let votes = istream.readUIntOfBytesAsBN(8);
-      let votes = istream.readVarUInt();
+      let votes = istream.readUIntOfBytesAsBN(8);
       if (!votes) {
         Log.error("CandidateVotes deserialize votes fail");
       }
@@ -177,7 +175,7 @@ export class VoteContent {
     let total = new BigNumber(0);
 
     for (let i = 0; i < this._candidates.length; i++) {
-      total.plus(this._candidates[i].getVotes());
+      total = total.plus(this._candidates[i].getVotes());
     }
 
     return total;
