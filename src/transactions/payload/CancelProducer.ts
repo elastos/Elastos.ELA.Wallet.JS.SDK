@@ -4,8 +4,10 @@
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
-import { bytes_t, json, size_t, uint8_t } from "../../types";
+import { bytes_t, size_t, uint8_t } from "../../types";
 import { Payload } from "./Payload";
+
+export type CancelProducerInfo = { PublicKey: string; Signature: string };
 
 export class CancelProducer extends Payload {
   private _publicKey: bytes_t;
@@ -82,16 +84,16 @@ export class CancelProducer extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): CancelProducerInfo {
+    let j = <CancelProducerInfo>{};
     j["PublicKey"] = this._publicKey.toString("hex");
     j["Signature"] = this._signature.toString("hex");
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._publicKey = Buffer.from(j["PublicKey"] as string, "hex");
-    this._signature = Buffer.from(j["Signature"] as string, "hex");
+  fromJson(j: CancelProducerInfo, version: uint8_t) {
+    this._publicKey = Buffer.from(j["PublicKey"], "hex");
+    this._signature = Buffer.from(j["Signature"], "hex");
   }
 
   copyPayload(payload: Payload) {
@@ -115,8 +117,8 @@ export class CancelProducer extends Payload {
     try {
       const p = payload as CancelProducer;
       return (
-        this._publicKey.toString() == p._publicKey.toString() &&
-        this._signature.toString() == p._signature.toString()
+        this._publicKey.equals(p._publicKey) &&
+        this._signature.equals(p._signature)
       );
     } catch (e) {
       Log.error("payload is not instance of CancelProducer");

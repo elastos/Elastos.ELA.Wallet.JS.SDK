@@ -28,6 +28,7 @@ import {
   MainchainSubWallet,
   VoteContentInfo
 } from "@elastosfoundation/wallet-js-sdk";
+import BigNumber from "bignumber.js";
 
 describe("Mainchain SubWallet Transaction Tests", () => {
   let masterWalletManager: MasterWalletManager;
@@ -62,13 +63,11 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
       "ELA"
     );
-    const addresses = subWallet.getAddresses(0, 1, false);
-    console.log("addresses...", addresses);
-
-    const inputsJson = [
+    subWallet.getAddresses(0, 1, false);
+    const inputs = [
       {
         Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
-        Amount: "100000000",
+        Amount: "1000000000000",
         TxHash:
           "68f493a61a34a775b10af3df00713eba78d88d1b0d49b5834b0c332e7f976342",
         Index: 0
@@ -105,7 +104,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const memo = "test the vote transaction";
 
     const tx: EncodedTx = subWallet.createVoteTransaction(
-      inputsJson,
+      inputs,
       voteContents,
       fee,
       memo
@@ -123,6 +122,76 @@ describe("Mainchain SubWallet Transaction Tests", () => {
 
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     console.log("info", info);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("create register producer transaction(", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-19";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    subWallet.getAddresses(0, 1, false);
+
+    const ownerPublicKey = subWallet.getOwnerPublicKey();
+    const nodePublicKey =
+      "020c3d28bb2ee7365348722c686b4b60a10ddca032c444e3170022cd35bb079138";
+    const nickName = "elastos";
+    const url = "elastos.info";
+    const ipAddress = "162.241.11.xxx";
+    const location = new BigNumber(0);
+    const payPasswd = passwd;
+
+    const payload = await subWallet.generateProducerPayload(
+      ownerPublicKey,
+      nodePublicKey,
+      nickName,
+      url,
+      ipAddress,
+      location,
+      payPasswd
+    );
+
+    const inputs = [
+      {
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "999999988000",
+        TxHash:
+          "f7ef97040667cda4bdc08a8a8c49029e86422b43e15796ad84782f59271392e3",
+        Index: 1
+      }
+    ];
+    const amount = "500100000000";
+    const fee = "10000";
+    const memo = "test the register producer transaction";
+
+    const tx: EncodedTx = subWallet.createRegisterProducerTransaction(
+      inputs,
+      payload,
+      amount,
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
 
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");

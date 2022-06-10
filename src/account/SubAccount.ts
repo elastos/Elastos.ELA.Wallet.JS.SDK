@@ -435,13 +435,10 @@ export class SubAccount {
     return null;
   }
 
-  async deriveOwnerKey(payPasswd: string): Promise<DeterministicKey> {
+  async deriveOwnerKey(payPasswd: string): Promise<HDKey> {
     // 44'/coinIndex'/account'/change/index
     const rootKey = await this._parent.rootKey(payPasswd);
-    const privateKey = rootKey
-      .deriveWithPath("m/44'/0'/1'/0/0")
-      .getPrivateKeyBase58();
-    return DeterministicKey.fromExtendedKey(privateKey);
+    return rootKey.deriveWithPath("m/44'/0'/1'/0/0");
   }
 
   async deriveDIDKey(payPasswd: string): Promise<HDKey> {

@@ -145,12 +145,14 @@ export class ProducerInfo extends Payload {
       Log.error("Deserialize: read nick name");
       return false;
     }
+    this._nickName = nickName;
 
     const url = istream.readVarString();
     if (!url) {
       Log.error("Deserialize: read url");
       return false;
     }
+    this._url = url;
 
     let location = istream.readUIntOfBytesAsBN(8);
     if (!location) {

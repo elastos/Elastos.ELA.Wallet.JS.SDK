@@ -274,10 +274,12 @@ export class Wallet extends Lockable {
 
   async signWithOwnerKey(msg: bytes_t, payPasswd: string) {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const key: DeterministicKey = await this._subAccount.deriveOwnerKey(
-      payPasswd
+    const key = await this._subAccount.deriveOwnerKey(payPasswd);
+    const privateKey = key.getPrivateKeyBase58();
+    return EcdsaSigner.sign(
+      privateKey,
+      Buffer.from(msg.toString("hex"), "hex")
     );
-    return key.sign(msg);
   }
 
   protected loadUsedAddress() {}

@@ -336,7 +336,8 @@ export class ByteStream {
    */
   public readVarString(): string | null {
     let bytes = Buffer.alloc(0);
-    if (!this.readVarBytes(bytes)) {
+    bytes = this.readVarBytes(bytes);
+    if (!bytes) {
       return null;
     }
     return bytes.toString();

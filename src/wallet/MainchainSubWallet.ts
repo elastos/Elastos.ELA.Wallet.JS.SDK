@@ -25,7 +25,10 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { ChainConfig } from "../config";
 import { Asset } from "../transactions/Asset";
-import { CancelProducer } from "../transactions/payload/CancelProducer";
+import {
+  CancelProducer,
+  CancelProducerInfo
+} from "../transactions/payload/CancelProducer";
 import {
   CRCouncilMemberClaimNode,
   CRCouncilMemberClaimNodeVersion
@@ -67,7 +70,10 @@ import {
   VoteContentInfo
 } from "../transactions/payload/OutputPayload/PayloadVote";
 import { Payload } from "../transactions/payload/Payload";
-import { ProducerInfo } from "../transactions/payload/ProducerInfo";
+import {
+  ProducerInfo,
+  ProducerInfoJson
+} from "../transactions/payload/ProducerInfo";
 import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import {
@@ -83,18 +89,10 @@ import {
   TransactionOutput,
   Type
 } from "../transactions/TransactionOutput";
-import {
-  bytes_t,
-  json,
-  JSONArray,
-  JSONObject,
-  size_t,
-  uint64_t,
-  uint8_t
-} from "../types";
+import { bytes_t, json, JSONObject, size_t, uint64_t, uint8_t } from "../types";
 import { Address, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
-import { DeterministicKey } from "../walletcore/deterministickey";
+import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import { SHA256 } from "../walletcore/sha256";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
 import { EncodedTx } from "./IElastosBaseSubWallet";
@@ -146,7 +144,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
   createDepositTransaction(
     version: uint8_t,
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     sideChainID: string,
     amount: string,
     sideChainAddress: string,
@@ -167,7 +165,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxos = new UTXOSet();
-    this.UTXOFromJson(utxos, inputsJson);
+    this.UTXOFromJson(utxos, inputs);
 
     if (
       version != TransferCrossChainVersion &&
@@ -267,15 +265,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   /**
    * Generate payload for registering or updating producer.
    *
-   * @param ownerPublicKey The public key to identify a producer. Can't change later. The producer reward will
-   *                       be sent to address of this public key.
+   * @param ownerPublicKey The public key to identify a producer. Can't change
+   *                       later. The producer reward will be sent to address
+   *                       of this public key.
    * @param nodePublicKey  The public key to identify a node. Can be update
    *                       by CreateUpdateProducerTransaction().
    * @param nickName       Nickname of producer.
    * @param url            URL of producer.
    * @param ipAddress      IP address of node. This argument is deprecated.
    * @param location       Location code.
-   * @param payPasswd      Pay password is using for signing the payload with the owner private key.
+   * @param payPasswd      Pay password is using for signing the payload with
+   *                       the owner private key.
    *
    * @return               The payload in JSON format.
    */
@@ -299,12 +299,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     ErrorChecker.checkPassword(payPasswd, "Generate payload");
 
-    let verifyPubKey = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS);
-    let ownerPubKey = Buffer.from(ownerPublicKey);
-    verifyPubKey.publicKey = ownerPubKey;
+    let ownerPubKey = Buffer.from(ownerPublicKey, "hex");
+    EcdsaSigner.getKeyFromPublic(ownerPubKey);
 
-    let nodePubKey = Buffer.from(nodePublicKey);
-    verifyPubKey.publicKey = nodePubKey;
+    let nodePubKey = Buffer.from(nodePublicKey, "hex");
+    EcdsaSigner.getKeyFromPublic(nodePubKey);
 
     let pr = new ProducerInfo();
     pr.setPublicKey(ownerPubKey);
@@ -318,10 +317,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     pr.serializeUnsigned(ostream, 0);
     let prUnsigned = ostream.getBytes();
 
-    const signature = await this.getWallet().signWithOwnerKey(
+    let signature = await this.getWallet().signWithOwnerKey(
       prUnsigned,
       payPasswd
     );
+
     pr.setSignature(signature);
 
     let payloadJson = pr.toJson(0);
@@ -341,7 +341,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   async generateCancelProducerPayload(
     ownerPublicKey: string,
     payPasswd: string
-  ): Promise<json> {
+  ) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("ownerPubKey: {}", ownerPublicKey);
     // ArgInfo("payPasswd: *");
@@ -355,7 +355,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
 
     let pc = new CancelProducer();
-    pc.setPublicKey(Buffer.from(ownerPublicKey));
+    pc.setPublicKey(Buffer.from(ownerPublicKey, "hex"));
 
     let ostream = new ByteStream();
     pc.serializeUnsigned(ostream, 0);
@@ -367,7 +367,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
     pc.setSignature(signature);
 
-    let payloadJson: json = pc.toJson(0);
+    let payloadJson = pc.toJson(0);
     // ArgInfo("r => {}", payloadJson.dump());
     return payloadJson;
   }
@@ -385,19 +385,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payload Generate by GenerateProducerPayload()
+   * @param payloadJson Generate by GenerateProducerPayload()
    * @param amount Amount must lager than 500,000,000,000 sela
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string
    * @return The transaction in JSON format to be signed and published
    */
   createRegisterProducerTransaction(
-    inputsJson: UTXOInput[],
-    payloadJson: json,
+    inputs: UTXOInput[],
+    payloadJson: ProducerInfoJson,
     amount: string,
     fee: string,
     memo: string
-  ): json {
+  ) {
     let wallet = this.getWallet();
 
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
@@ -407,8 +407,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
 
     ErrorChecker.checkBigIntAmount(amount);
     let bgAmount = new BigNumber(amount);
@@ -435,7 +435,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     let pubkey: bytes_t = payload.getPublicKey();
 
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     let receiveAddr = Address.newWithPubKey(Prefix.PrefixDeposit, pubkey);
     outputs.push(TransactionOutput.newFromParams(bgAmount, receiveAddr));
 
@@ -468,15 +468,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payload Generate by GenerateProducerPayload().
+   * @param payloadJson Generate by GenerateProducerPayload().
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string.
    *
    * @return The transaction in JSON format to be signed and published.
    */
   createUpdateProducerTransaction(
-    inputsJson: UTXOInput[],
-    payloadJson: json,
+    inputs: UTXOInput[],
+    payloadJson: ProducerInfoJson,
     fee: string,
     memo: string
   ) {
@@ -487,8 +487,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
     let payload = new ProducerInfo();
     try {
       payload.fromJson(payloadJson, 0);
@@ -527,17 +527,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payload Generate by GenerateCancelProducerPayload().
+   * @param payloadJson Generate by GenerateCancelProducerPayload().
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string.
    * @return The transaction in JSON format to be signed and published.
    */
   createCancelProducerTransaction(
-    inputsJson: UTXOInput[],
-    payloadJson: json,
+    inputs: UTXOInput[],
+    payloadJson: CancelProducerInfo,
     fee: string,
     memo: string
-  ): json {
+  ) {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -545,8 +545,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
 
     let payload = new CancelProducer();
     try {
@@ -596,11 +596,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createRetrieveDepositTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     amount: string,
     fee: string,
     memo: string
-  ): json {
+  ) {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -608,19 +608,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
 
     let feeAmount = new BigNumber(fee);
     let bgAmount = new BigNumber(amount);
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     let receiveAddr: Address = utxo[0].getAddress();
     outputs.push(
       TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
     );
 
     let payload = new ReturnDepositCoin();
-    let tx = this.getWallet().createTransaction(
+    let tx = wallet.createTransaction(
       TransactionType.returnDepositCoin,
       payload,
       utxo,
@@ -941,8 +941,6 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       true
     );
 
-    console.log("createVoteTransaction tx...", tx);
-
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
@@ -1095,7 +1093,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createRegisterCRTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payloadJSON: json,
     amount: string,
     fee: string,
@@ -1109,8 +1107,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
 
     ErrorChecker.checkBigIntAmount(amount);
 
@@ -1191,7 +1189,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createUpdateCRTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -1204,7 +1202,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let payloadVersion: uint8_t = CRInfoDIDVersion;
     let payload = new CRInfo();
@@ -1255,7 +1253,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createUnregisterCRTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payloadJSON: JSONObject,
     fee: string,
     memo: string
@@ -1268,7 +1266,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     ErrorChecker.checkParam(
       !payloadJSON["Signature"],
@@ -1323,7 +1321,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createRetrieveCRDepositTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     amount: string,
     fee: string,
     memo: string
@@ -1336,7 +1334,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let feeAmount = new BigNumber(fee);
     let bgAmount = new BigNumber(amount);
@@ -1374,7 +1372,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   CRCouncilMemberClaimNodeDigest(payload: json): string {
-    let wallet = this.getWallet();
+    // let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -1410,7 +1408,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payload
+   * @param payloadJson
    * {
    *   "NodePublicKey": "...",
    *   "CRCouncilMemberDID": "...",
@@ -1421,7 +1419,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createCRCouncilMemberClaimNodeTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payloadJson: JSONObject,
     fee: string,
     memo: string
@@ -1434,7 +1432,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo: UTXOSet;
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let payload = new CRCouncilMemberClaimNode();
