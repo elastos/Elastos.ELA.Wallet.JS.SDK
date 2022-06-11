@@ -26,6 +26,7 @@ import {
   SignType as AccountSignType
 } from "../account/Account";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
+import { SHA256 } from "../walletcore/sha256";
 
 export class Wallet extends Lockable {
   protected _walletID: string;
@@ -275,10 +276,11 @@ export class Wallet extends Lockable {
   async signWithOwnerKey(msg: bytes_t, payPasswd: string) {
     // boost::mutex::scoped_lock scopedLock(lock);
     const key = await this._subAccount.deriveOwnerKey(payPasswd);
-    const privateKey = key.getPrivateKeyBase58();
+    const digest = SHA256.encodeToBuffer(msg).toString("hex");
+
     return EcdsaSigner.sign(
-      privateKey,
-      Buffer.from(msg.toString("hex"), "hex")
+      key.getPrivateKeyBytes(),
+      Buffer.from(digest, "hex")
     );
   }
 
