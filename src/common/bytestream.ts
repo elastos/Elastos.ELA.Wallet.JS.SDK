@@ -340,7 +340,7 @@ export class ByteStream {
     if (!bytes) {
       return null;
     }
-    return bytes.toString();
+    return bytes.toString("utf8");
   }
 
   public writeAsciiString(str: string) {

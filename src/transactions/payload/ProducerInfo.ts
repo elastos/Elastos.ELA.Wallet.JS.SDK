@@ -133,7 +133,7 @@ export class ProducerInfo extends Payload {
     this._ownerPublicKey = ownerPublicKey;
 
     let nodePublicKey: bytes_t;
-    nodePublicKey = istream.readVarBytes(this._nodePublicKey);
+    nodePublicKey = istream.readVarBytes(nodePublicKey);
     if (!nodePublicKey) {
       Log.error("Deserialize: read node public key");
       return false;
