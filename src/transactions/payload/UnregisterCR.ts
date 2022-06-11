@@ -1,13 +1,20 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
 import { uint168 } from "../../common/uint168";
-import { bytes_t, size_t, uint8_t, json } from "../../types";
+import { bytes_t, size_t, uint8_t } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { Log } from "../../common/Log";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
+
+export type UnregisterCRInfo = {
+  CID: string;
+  Signature: string;
+  Digest?: string;
+};
 
 export class UnregisterCR extends Payload {
   private _cid: uint168;
@@ -83,8 +90,8 @@ export class UnregisterCR extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j = {};
+  toJson(version: uint8_t): UnregisterCRInfo {
+    let j = <UnregisterCRInfo>{};
     j["CID"] = Address.newFromAddressString(
       this._cid.bytes().toString()
     ).string();
@@ -92,12 +99,9 @@ export class UnregisterCR extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    let cid = j["CID"] as string;
-    this._cid = Address.newFromAddressString(cid).programHash();
-
-    let signature = j["Signature"] as string;
-    this._signature = Buffer.from(signature, "hex");
+  fromJson(j: UnregisterCRInfo, version: uint8_t) {
+    this._cid = Address.newFromAddressString(j["CID"]).programHash();
+    this._signature = Buffer.from(j["Signature"], "hex");
   }
 
   copyPayload(payload: Payload) {

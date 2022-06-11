@@ -173,20 +173,27 @@ export class ProducerInfo extends Payload {
   estimateSize(version: uint8_t): size_t {
     let size: size_t = 0;
     let stream = new ByteStream();
+
     size += stream.writeVarUInt(this._ownerPublicKey.length);
     size += this._ownerPublicKey.length;
+
     size += stream.writeVarUInt(this._nodePublicKey.length);
     size += this._nodePublicKey.length;
+
     let nickName = Buffer.from(this._nickName, "utf8");
     size += stream.writeVarUInt(nickName.length);
     size += nickName.length;
+
     let url = Buffer.from(this._url, "utf8");
     size += stream.writeVarUInt(url.length);
     size += url.length;
+
     size += sizeof_uint64_t(); // size of this.loacation
+
     let address = Buffer.from(this._address, "utf8");
     size += stream.writeVarUInt(address.length);
     size += address.length;
+
     size += stream.writeVarUInt(this._signature.length);
     size += this._signature.length;
 

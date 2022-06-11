@@ -1,11 +1,11 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { uint168 } from "../../common/uint168";
 import {
-  json,
   bytes_t,
   size_t,
   uint64_t,
@@ -21,6 +21,17 @@ import { SHA256 } from "../../walletcore/sha256";
 
 export const CRInfoVersion = 0x00;
 export const CRInfoDIDVersion = 0x01;
+
+export type CRInfoJson = {
+  Code: string;
+  CID: string;
+  DID: string;
+  NickName: string;
+  Url: string;
+  Location: string;
+  Signature: string;
+  Digest?: string;
+};
 
 export class CRInfo extends Payload {
   private _code: bytes_t;
@@ -48,6 +59,7 @@ export class CRInfo extends Payload {
     crInfo._url = url;
     crInfo._location = location;
     crInfo._signature = signature;
+    return crInfo;
   }
 
   getCode(): bytes_t {
@@ -112,16 +124,25 @@ export class CRInfo extends Payload {
 
     size += stream.writeVarUInt(this._code.length);
     size += this._code.length;
+
+    size += stream.writeVarUInt(this._cid.bytes().length);
     size += this._cid.bytes().length;
+
     if (version > CRInfoVersion) {
+      size += stream.writeVarUInt(this._did.bytes().length);
       size += this._did.bytes().length;
     }
 
-    size += stream.writeVarUInt(this._nickName.length);
-    size += this._nickName.length;
-    size += stream.writeVarUInt(this._url.length);
-    size += this._url.length;
+    let nickName = Buffer.from(this._nickName, "utf8");
+    size += stream.writeVarUInt(nickName.length);
+    size += nickName.length;
+
+    let url = Buffer.from(this._url, "utf8");
+    size += stream.writeVarUInt(url.length);
+    size += url.length;
+
     size += sizeof_uint64_t();
+
     size += stream.writeVarUInt(this._signature.length);
     size += this._signature.length;
 
@@ -168,12 +189,15 @@ export class CRInfo extends Payload {
       return false;
     }
     this._code = code;
+
     let cid: bytes_t;
     cid = istream.readVarBytes(cid);
     if (!cid) {
       Log.error("CRInfo Deserialize: read _cid");
       return false;
     }
+    this._cid = uint168.newFrom21BytesBuffer(cid);
+
     if (version > CRInfoVersion) {
       let did: bytes_t;
       did = istream.readVarBytes(cid);
@@ -181,19 +205,23 @@ export class CRInfo extends Payload {
         Log.error("CRInfo Deserialize: read _did");
         return false;
       }
+      this._did = uint168.newFrom21BytesBuffer(did);
     }
+
     let nickName = istream.readVarString();
     if (!nickName) {
       Log.error("CRInfoDeserialize: read nick name");
       return false;
     }
     this._nickName = nickName;
+
     let url = istream.readVarString();
     if (!url) {
       Log.error("CRInfo Deserialize: read url");
       return false;
     }
     this._url = url;
+
     let location = istream.readUIntOfBytesAsBN(8);
     if (!location) {
       Log.error("CRInfo Deserialize: read location");
@@ -203,8 +231,8 @@ export class CRInfo extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j = {};
+  toJson(version: uint8_t): CRInfoJson {
+    let j = <CRInfoJson>{};
     j["Code"] = this._code.toString("hex");
     j["CID"] = Address.newFromAddressString(
       this._cid.bytes().toString()
@@ -214,26 +242,19 @@ export class CRInfo extends Payload {
     ).string();
     j["NickName"] = this._nickName;
     j["Url"] = this._url;
-    j["Location"] = this._location.toString();
+    j["Location"] = this._location.toString(16);
     j["Signature"] = this._signature.toString("hex");
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    let code = j["Code"] as string;
-    this._code = Buffer.from(code, "hex");
-
-    let cid = j["CID"] as string;
-    this._cid = Address.newFromAddressString(cid).programHash();
-
-    let did = j["DID"] as string;
-    this._did = Address.newFromAddressString(did).programHash();
-
-    this._nickName = j["NickName"] as string;
-    this._url = j["Url"] as string;
-    this._location = new BigNumber(j["Location"] as string);
-
-    this._signature = Buffer.from(j["Signature"] as string, "hex");
+  fromJson(j: CRInfoJson, version: uint8_t) {
+    this._code = Buffer.from(j["Code"], "hex");
+    this._cid = Address.newFromAddressString(j["CID"]).programHash();
+    this._did = Address.newFromAddressString(j["DID"]).programHash();
+    this._nickName = j["NickName"];
+    this._url = j["Url"];
+    this._location = new BigNumber(j["Location"], 16);
+    this._signature = Buffer.from(j["Signature"], "hex");
   }
 
   isValid(version: uint8_t): boolean {
@@ -272,15 +293,15 @@ export class CRInfo extends Payload {
     try {
       const p = payload as CRInfo;
       let equal: boolean =
-        this._code.toString() == p._code.toString() &&
-        this._cid.bytes().toString() == p._cid.bytes().toString() &&
+        this._code.equals(p._code) &&
+        this._cid.bytes().equals(p._cid.bytes()) &&
         this._nickName == p._nickName &&
         this._url == p._url &&
         this._location.eq(p._location) &&
-        this._signature.toString() == p._signature.toString();
+        this._signature.equals(p._signature);
 
       if (version > CRInfoDIDVersion) {
-        const rs = this._did.bytes().toString() == p._did.bytes().toString();
+        const rs = this._did.bytes().equals(p._did.bytes());
         equal = equal && rs;
       }
 

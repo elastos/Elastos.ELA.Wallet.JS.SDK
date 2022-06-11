@@ -55,7 +55,11 @@ import {
   CRCProposalWithdrawVersion_01,
   CRCProposalWithdraw
 } from "../transactions/payload/CRCProposalWithdraw";
-import { CRInfo, CRInfoDIDVersion } from "../transactions/payload/CRInfo";
+import {
+  CRInfo,
+  CRInfoDIDVersion,
+  CRInfoJson
+} from "../transactions/payload/CRInfo";
 import {
   CrossChainOutputVersion,
   PayloadCrossChain
@@ -82,7 +86,10 @@ import {
   TransferCrossChainVersionV1,
   TransferInfo
 } from "../transactions/payload/TransferCrossChainAsset";
-import { UnregisterCR } from "../transactions/payload/UnregisterCR";
+import {
+  UnregisterCR,
+  UnregisterCRInfo
+} from "../transactions/payload/UnregisterCR";
 import { Transaction, TransactionType } from "../transactions/Transaction";
 import {
   OutputArray,
@@ -657,11 +664,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   getOwnerAddress(): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
-
     let address = this.getWallet().getOwnerAddress().string();
 
     // ArgInfo("r => {}", address);
-
     return address;
   }
 
@@ -676,7 +681,6 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let addr: string = addrPtr.string();
 
     // ArgInfo("r => {}", addr);
-
     return addr;
   }
 
@@ -977,9 +981,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param url            URL of cr.
    * @param location       Location code.
    *
-   * @return               The payload in JSON format contains the "Digest" field to be signed and then set the "Signature" field. Such as
+   * @return               The payload in JSON format contains the "Digest"
+   * field to be signed and then set the "Signature" field. Such as
    * {
-   * 	"Code":"210370a77a257aa81f46629865eb8f3ca9cb052fcfd874e8648cfbea1fbf071b0280ac",
+   *    "Code":"210370a77a257aa81f46629865eb8f3ca9cb052fcfd874e8648cfbea1fbf071b0280ac",
    * 	"CID":"iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP",
    * 	"DID":"icwTktC5M6fzySQ5yU7bKAZ6ipP623apFY",
    * 	"Location":86,
@@ -989,13 +994,13 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * 	"Signature":""
    * 	}
    */
-  generateCRInfoPayload(
+  async generateCRInfoPayload(
     crPublicKey: string,
     did: string,
     nickName: string,
     url: string,
     location: uint64_t
-  ): json {
+  ) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("crPublicKey: {}", crPublicKey);
     // ArgInfo("did: {}", did);
@@ -1041,14 +1046,16 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * Generate unregister cr payload digest for signature.
    *
    * @param CID          The id of cr will unregister
-   * @return               The payload in JSON format contains the "Digest" field to be signed and then set the "Signature" field. Such as
+   * @return             The payload in JSON format contains the "Digest"
+   * field to be signed and then set the "Signature" field.
+   * Such as
    * {
    * 	"CID":"iT42VNGXNUeqJ5yP4iGrqja6qhSEdSQmeP",
    * 	"Digest":"8e17a8bcacc5d70b5b312fccefc19d25d88ac6450322a846132e859509b88001",
    * 	"Signature":""
    * 	}
    */
-  generateUnregisterCRPayload(CID: string): json {
+  generateUnregisterCRPayload(CID: string): UnregisterCRInfo {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("CID: {}", CID);
 
@@ -1059,7 +1066,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       "invalid crDID"
     );
 
-    let unregisterCR: UnregisterCR;
+    let unregisterCR = new UnregisterCR();
     unregisterCR.setCID(cid.programHash());
 
     let ostream = new ByteStream();
@@ -1086,7 +1093,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payloadJSON Generate by GenerateCRInfoPayload().
+   * @param payloadJson Generate by GenerateCRInfoPayload().
    * @param amount Amount must lager than 500,000,000,000 sela
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string.
@@ -1094,11 +1101,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createRegisterCRTransaction(
     inputs: UTXOInput[],
-    payloadJSON: json,
+    payloadJson: CRInfoJson,
     amount: string,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -1125,7 +1132,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
 
     ErrorChecker.checkParam(
-      !payloadJSON["Signature"],
+      !payloadJson["Signature"],
       Error.Code.InvalidArgument,
       "Signature can not be empty"
     );
@@ -1133,7 +1140,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let payloadVersion: uint8_t = CRInfoDIDVersion;
     let payload = new CRInfo();
     try {
-      payload.fromJson(payloadJSON, payloadVersion);
+      payload.fromJson(payloadJson, payloadVersion);
       ErrorChecker.checkParam(
         !payload.isValid(payloadVersion),
         Error.Code.InvalidArgument,
@@ -1150,7 +1157,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let receiveAddr = new Address();
     receiveAddr.setRedeemScript(Prefix.PrefixDeposit, code);
 
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     outputs.push(TransactionOutput.newFromParams(bgAmount, receiveAddr));
 
     let tx = wallet.createTransaction(
@@ -1183,17 +1190,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payloadJSON Generate by GenerateCRInfoPayload().
+   * @param payloadJson Generate by GenerateCRInfoPayload().
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string.
    * @return The transaction in JSON format to be signed and published.
    */
   createUpdateCRTransaction(
     inputs: UTXOInput[],
-    payloadJSON: JSONObject,
+    payloadJson: CRInfoJson,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -1207,7 +1214,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let payloadVersion: uint8_t = CRInfoDIDVersion;
     let payload = new CRInfo();
     try {
-      payload.fromJson(payloadJSON, payloadVersion);
+      payload.fromJson(payloadJson, payloadVersion);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
@@ -1247,17 +1254,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   },
    *   ...
    * ]
-   * @param payloadJSON Generate by GenerateUnregisterCRPayload().
+   * @param payloadJson Generate by GenerateUnregisterCRPayload().
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remarks string. Can be empty string.
    * @return The transaction in JSON format to be signed and published.
    */
   createUnregisterCRTransaction(
     inputs: UTXOInput[],
-    payloadJSON: JSONObject,
+    payloadJson: UnregisterCRInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -1269,14 +1276,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     this.UTXOFromJson(utxo, inputs);
 
     ErrorChecker.checkParam(
-      !payloadJSON["Signature"],
+      !payloadJson["Signature"],
       Error.Code.InvalidArgument,
       "invalied signature"
     );
 
     let payload = new UnregisterCR();
     try {
-      payload.fromJson(payloadJSON, 0);
+      payload.fromJson(payloadJson, 0);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
@@ -1325,7 +1332,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     amount: string,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -1339,7 +1346,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let feeAmount = new BigNumber(fee);
     let bgAmount = new BigNumber(amount);
 
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     let receiveAddr = utxo[0].getAddress();
     outputs.push(
       TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
@@ -1423,7 +1430,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payloadJson: JSONObject,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson.dump());
@@ -1431,7 +1438,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -1679,7 +1686,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let p = new CRCProposal();
