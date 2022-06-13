@@ -125,8 +125,8 @@ export class UnregisterCR extends Payload {
     try {
       const p = payload as UnregisterCR;
       return (
-        this._cid.bytes().toString() == p._cid.bytes().toString() &&
-        this._signature.toString() == p._signature.toString()
+        this._cid.bytes().equals(p._cid.bytes()) &&
+        this._signature.equals(p._signature)
       );
     } catch (e) {
       Log.error("payload is not instance of UnregisterCR");

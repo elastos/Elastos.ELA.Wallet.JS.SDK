@@ -248,7 +248,11 @@ export class Wallet extends Lockable {
     );
 
     if (privateKey) {
-      const signature = EcdsaSigner.sign(privateKey, Buffer.from(msg, "hex"));
+      let digest = SHA256.encodeToBuffer(Buffer.from(msg)).toString("hex");
+      const signature = EcdsaSigner.sign(
+        privateKey,
+        Buffer.from(digest, "hex")
+      );
       return signature.toString("hex");
     }
   }

@@ -436,7 +436,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
 
@@ -502,7 +502,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
     let feeAmount = new BigNumber(fee);
@@ -561,7 +561,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
 
@@ -994,13 +994,13 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * 	"Signature":""
    * 	}
    */
-  async generateCRInfoPayload(
+  generateCRInfoPayload(
     crPublicKey: string,
     did: string,
     nickName: string,
     url: string,
     location: uint64_t
-  ) {
+  ): CRInfoJson {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("crPublicKey: {}", crPublicKey);
     // ArgInfo("did: {}", did);
@@ -1015,7 +1015,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       "Public key length should be 33 or 65 bytes"
     );
 
-    let pubkey = Buffer.from(crPublicKey);
+    let pubkey = Buffer.from(crPublicKey, "hex");
 
     let didAddress = Address.newFromAddressString(did);
     let address = Address.newWithPubKey(Prefix.PrefixStandard, pubkey);
@@ -1149,7 +1149,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
 
@@ -1218,7 +1218,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
 
@@ -1287,7 +1287,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
-        "Payload format err: " + e.what()
+        "Payload format err: " + e
       );
     }
 

@@ -27,7 +27,6 @@ import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
 import { bytes_t, size_t, uint256, uint32_t } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
-import { DeterministicKey } from "../walletcore/deterministickey";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import {
   HDKey,

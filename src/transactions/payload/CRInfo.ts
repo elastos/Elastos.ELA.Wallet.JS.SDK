@@ -15,7 +15,6 @@ import {
 import { Log } from "../../common/Log";
 import { Payload } from "./Payload";
 import BigNumber from "bignumber.js";
-import { Address } from "../../walletcore/Address";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
 
@@ -29,8 +28,8 @@ export type CRInfoJson = {
   NickName: string;
   Url: string;
   Location: string;
-  Signature: string;
-  Digest?: string;
+  Signature?: string;
+  Digest: string;
 };
 
 export class CRInfo extends Payload {
@@ -234,23 +233,24 @@ export class CRInfo extends Payload {
   toJson(version: uint8_t): CRInfoJson {
     let j = <CRInfoJson>{};
     j["Code"] = this._code.toString("hex");
-    j["CID"] = Address.newFromAddressString(
-      this._cid.bytes().toString()
-    ).string();
-    j["DID"] = Address.newFromAddressString(
-      this._did.bytes().toString()
-    ).string();
+    j["CID"] = this._cid.bytes().toString("hex");
+    j["DID"] = this._did.bytes().toString("hex");
+
     j["NickName"] = this._nickName;
     j["Url"] = this._url;
     j["Location"] = this._location.toString(16);
-    j["Signature"] = this._signature.toString("hex");
+    if (j["Signature"]) {
+      j["Signature"] = this._signature.toString("hex");
+    }
     return j;
   }
 
   fromJson(j: CRInfoJson, version: uint8_t) {
     this._code = Buffer.from(j["Code"], "hex");
-    this._cid = Address.newFromAddressString(j["CID"]).programHash();
-    this._did = Address.newFromAddressString(j["DID"]).programHash();
+    let cid = Buffer.from(j["CID"], "hex");
+    this._cid = uint168.newFrom21BytesBuffer(cid);
+    let did = Buffer.from(j["DID"], "hex");
+    this._did = uint168.newFrom21BytesBuffer(did);
     this._nickName = j["NickName"];
     this._url = j["Url"];
     this._location = new BigNumber(j["Location"], 16);
@@ -261,10 +261,16 @@ export class CRInfo extends Payload {
     let stream = new ByteStream(this._code);
     let pubKey: bytes_t;
     pubKey = stream.readVarBytes(pubKey);
+
     let ostream = new ByteStream();
     this.serializeUnsigned(ostream, version);
-    let digest = SHA256.encodeToBuffer(ostream.getBytes());
-    return EcdsaSigner.verify(pubKey, this._signature, digest);
+
+    let digest = SHA256.encodeToBuffer(ostream.getBytes()).toString("hex");
+    return EcdsaSigner.verify(
+      pubKey,
+      this._signature,
+      Buffer.from(digest, "hex")
+    );
   }
 
   copyPayload(payload: Payload) {
