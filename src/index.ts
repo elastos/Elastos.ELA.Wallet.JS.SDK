@@ -13,6 +13,7 @@ import type { EncodedTx } from "./wallet/IElastosBaseSubWallet";
 import type { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
 import type { LocalStoreInfo } from "./persistence/LocalStore";
 import type { VoteContentInfo } from "./transactions/payload/OutputPayload/PayloadVote";
+import type { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
 
 export {
   BrowserLocalStorage,
@@ -33,5 +34,7 @@ export type {
   SignedInfo,
   SigningPublicKeyInfo,
   LocalStoreInfo,
-  VoteContentInfo
+  VoteContentInfo,
+  CRInfoPayload,
+  CRInfoJson
 };

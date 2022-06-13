@@ -17,9 +17,20 @@ import { Payload } from "./Payload";
 import BigNumber from "bignumber.js";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
+import { Address } from "../../walletcore/Address";
 
 export const CRInfoVersion = 0x00;
 export const CRInfoDIDVersion = 0x01;
+
+export type CRInfoPayload = {
+  Code: string;
+  CID: string;
+  DID: string;
+  NickName: string;
+  Url: string;
+  Location: string;
+  Digest: string;
+};
 
 export type CRInfoJson = {
   Code: string;
@@ -29,7 +40,6 @@ export type CRInfoJson = {
   Url: string;
   Location: string;
   Signature?: string;
-  Digest: string;
 };
 
 export class CRInfo extends Payload {
@@ -233,8 +243,9 @@ export class CRInfo extends Payload {
   toJson(version: uint8_t): CRInfoJson {
     let j = <CRInfoJson>{};
     j["Code"] = this._code.toString("hex");
-    j["CID"] = this._cid.bytes().toString("hex");
-    j["DID"] = this._did.bytes().toString("hex");
+
+    j["CID"] = Address.newFromProgramHash(this._cid).string();
+    j["DID"] = Address.newFromProgramHash(this._did).string();
 
     j["NickName"] = this._nickName;
     j["Url"] = this._url;
@@ -247,10 +258,8 @@ export class CRInfo extends Payload {
 
   fromJson(j: CRInfoJson, version: uint8_t) {
     this._code = Buffer.from(j["Code"], "hex");
-    let cid = Buffer.from(j["CID"], "hex");
-    this._cid = uint168.newFrom21BytesBuffer(cid);
-    let did = Buffer.from(j["DID"], "hex");
-    this._did = uint168.newFrom21BytesBuffer(did);
+    this._cid = Address.newFromAddressString(j["CID"]).programHash();
+    this._did = Address.newFromAddressString(j["DID"]).programHash();
     this._nickName = j["NickName"];
     this._url = j["Url"];
     this._location = new BigNumber(j["Location"], 16);

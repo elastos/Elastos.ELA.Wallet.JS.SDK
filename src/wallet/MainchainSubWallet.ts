@@ -58,7 +58,8 @@ import {
 import {
   CRInfo,
   CRInfoDIDVersion,
-  CRInfoJson
+  CRInfoJson,
+  CRInfoPayload
 } from "../transactions/payload/CRInfo";
 import {
   CrossChainOutputVersion,
@@ -1000,7 +1001,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     nickName: string,
     url: string,
     location: uint64_t
-  ): CRInfoJson {
+  ): CRInfoPayload {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("crPublicKey: {}", crPublicKey);
     // ArgInfo("did: {}", did);
@@ -1039,7 +1040,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payloadJson["Digest"] = digest.toString("hex");
 
     // ArgInfo("r => {}", payloadJson.dump());
-    return payloadJson;
+    return payloadJson as CRInfoPayload;
   }
 
   /**

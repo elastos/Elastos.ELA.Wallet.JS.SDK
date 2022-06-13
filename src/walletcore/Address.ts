@@ -104,6 +104,13 @@ export class Address {
     return address;
   }
 
+  public static newFromProgramHash(programHash: uint168) {
+    let address = new Address();
+    address._programHash = programHash;
+    address.checkValid();
+    return address;
+  }
+
   public valid(): boolean {
     return this._isValid;
   }
