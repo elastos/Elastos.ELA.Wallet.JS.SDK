@@ -181,9 +181,9 @@ export class CRInfo extends Payload {
 
   serializeUnsigned(ostream: ByteStream, version: uint8_t) {
     ostream.writeVarBytes(this._code);
-    ostream.writeVarBytes(this._cid.bytes());
+    ostream.writeBytes(this._cid.bytes());
     if (version > CRInfoVersion) {
-      ostream.writeVarBytes(this._did.bytes());
+      ostream.writeBytes(this._did.bytes());
     }
     ostream.writeVarString(this._nickName);
     ostream.writeVarString(this._url);
@@ -200,7 +200,7 @@ export class CRInfo extends Payload {
     this._code = code;
 
     let cid: bytes_t;
-    cid = istream.readVarBytes(cid);
+    cid = istream.readBytes(cid, 21);
     if (!cid) {
       Log.error("CRInfo Deserialize: read _cid");
       return false;
@@ -209,7 +209,7 @@ export class CRInfo extends Payload {
 
     if (version > CRInfoVersion) {
       let did: bytes_t;
-      did = istream.readVarBytes(cid);
+      did = istream.readBytes(did, 21);
       if (!did) {
         Log.error("CRInfo Deserialize: read _did");
         return false;
