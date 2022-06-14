@@ -99,7 +99,7 @@ import {
   Type
 } from "../transactions/TransactionOutput";
 import { bytes_t, json, JSONObject, size_t, uint64_t, uint8_t } from "../types";
-import { Address, Prefix } from "../walletcore/Address";
+import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import { SHA256 } from "../walletcore/sha256";
@@ -1351,9 +1351,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let bgAmount = new BigNumber(amount);
 
     let outputs: OutputArray = [];
-    let receiveAddr = utxo[0].getAddress();
+    // code from the dev branch of c++ sdk
+    let addresses: AddressArray = wallet.getAddresses(0, 1, false);
+    ErrorChecker.checkParam(
+      addresses.length == 0,
+      Error.Code.InvalidArgument,
+      "can't get address"
+    );
     outputs.push(
-      TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
+      TransactionOutput.newFromParams(bgAmount.minus(feeAmount), addresses[0])
     );
 
     let payload = new ReturnDepositCoin();
