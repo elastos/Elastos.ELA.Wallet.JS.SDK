@@ -31,6 +31,7 @@ import {
 } from "../transactions/payload/CancelProducer";
 import {
   CRCouncilMemberClaimNode,
+  CRCouncilMemberClaimNodeInfo,
   CRCouncilMemberClaimNodeVersion
 } from "../transactions/payload/CRCouncilMemberClaimNode";
 import {
@@ -1387,13 +1388,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  CRCouncilMemberClaimNodeDigest(payload: json): string {
+  CRCouncilMemberClaimNodeDigest(
+    payload: CRCouncilMemberClaimNodeInfo
+  ): string {
     // let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
     let version: uint8_t = CRCouncilMemberClaimNodeVersion;
-    let p: CRCouncilMemberClaimNode;
+    let p = new CRCouncilMemberClaimNode();
     try {
       p.fromJsonUnsigned(payload, version);
     } catch (e) {
@@ -1436,7 +1439,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createCRCouncilMemberClaimNodeTransaction(
     inputs: UTXOInput[],
-    payloadJson: JSONObject,
+    payloadJson: CRCouncilMemberClaimNodeInfo,
     fee: string,
     memo: string
   ): EncodedTx {

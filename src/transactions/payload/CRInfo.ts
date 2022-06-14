@@ -134,11 +134,9 @@ export class CRInfo extends Payload {
     size += stream.writeVarUInt(this._code.length);
     size += this._code.length;
 
-    size += stream.writeVarUInt(this._cid.bytes().length);
     size += this._cid.bytes().length;
 
     if (version > CRInfoVersion) {
-      size += stream.writeVarUInt(this._did.bytes().length);
       size += this._did.bytes().length;
     }
 
@@ -150,7 +148,7 @@ export class CRInfo extends Payload {
     size += stream.writeVarUInt(url.length);
     size += url.length;
 
-    size += sizeof_uint64_t();
+    size += sizeof_uint64_t(); // location
 
     size += stream.writeVarUInt(this._signature.length);
     size += this._signature.length;

@@ -22,8 +22,9 @@
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
-import { bytes_t, json, size_t, uint256, uint8_t } from "../../types";
+import { bytes_t, size_t, uint256, uint8_t } from "../../types";
 import { Address } from "../../walletcore/Address";
+import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
 import { Payload } from "./Payload";
 
@@ -31,6 +32,12 @@ export const JsonKeyNodePublicKey = "NodePublicKey";
 export const JsonKeyCRCouncilMemberDID = "CRCouncilMemberDID";
 export const JsonKeyCRCouncilMemberSignature = "CRCouncilMemberSignature";
 export const CRCouncilMemberClaimNodeVersion = 0;
+
+export type CRCouncilMemberClaimNodeInfo = {
+  NodePublicKey: string;
+  CRCouncilMemberDID: string;
+  CRCouncilMemberSignature?: string;
+};
 
 export class CRCouncilMemberClaimNode extends Payload {
   private _nodePublicKey: bytes_t;
@@ -71,17 +78,17 @@ export class CRCouncilMemberClaimNode extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
+  toJson(version: uint8_t): CRCouncilMemberClaimNodeInfo {
     let j = this.toJsonUnsigned(version);
     j[JsonKeyCRCouncilMemberSignature] =
       this._crCouncilMemberSignature.toString("hex");
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CRCouncilMemberClaimNodeInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
     this._crCouncilMemberSignature = Buffer.from(
-      j[JsonKeyCRCouncilMemberSignature] as string,
+      j[JsonKeyCRCouncilMemberSignature],
       "hex"
     );
   }
@@ -124,9 +131,11 @@ export class CRCouncilMemberClaimNode extends Payload {
     try {
       const realPayload = payload as CRCouncilMemberClaimNode;
       equal =
-        this._nodePublicKey == realPayload._nodePublicKey &&
-        this._crCouncilMemberDID == realPayload._crCouncilMemberDID &&
-        this._crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+        this._nodePublicKey.equals(realPayload._nodePublicKey) &&
+        this._crCouncilMemberDID.equals(realPayload._crCouncilMemberDID) &&
+        this._crCouncilMemberSignature.equals(
+          realPayload._crCouncilMemberSignature
+        );
     } catch (e) {
       // SPVLOG_ERROR("payload is not instance of CRCouncilMemberClaimNode");
       equal = false;
@@ -141,10 +150,13 @@ export class CRCouncilMemberClaimNode extends Payload {
   }
 
   deserializeUnsigned(stream: ByteStream, version: uint8_t): boolean {
-    if (!stream.readVarBytes(this._nodePublicKey)) {
+    let nodePublicKey: bytes_t;
+    nodePublicKey = stream.readVarBytes(nodePublicKey);
+    if (!nodePublicKey) {
       // SPVLOG_ERROR("deserialize node pubkey");
       return false;
     }
+    this._nodePublicKey = nodePublicKey;
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
@@ -159,8 +171,8 @@ export class CRCouncilMemberClaimNode extends Payload {
     return true;
   }
 
-  toJsonUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonUnsigned(version: uint8_t): CRCouncilMemberClaimNodeInfo {
+    let j = <CRCouncilMemberClaimNodeInfo>{};
 
     j[JsonKeyNodePublicKey] = this._nodePublicKey.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
@@ -168,15 +180,17 @@ export class CRCouncilMemberClaimNode extends Payload {
     return j;
   }
 
-  fromJsonUnsigned(j: json, version: uint8_t) {
-    this._nodePublicKey = Buffer.from(j[JsonKeyNodePublicKey] as string, "hex");
-    let did = j[JsonKeyCRCouncilMemberDID] as string;
-    this._crCouncilMemberDID = Address.newFromAddressString(did);
+  fromJsonUnsigned(j: CRCouncilMemberClaimNodeInfo, version: uint8_t) {
+    this._nodePublicKey = Buffer.from(j[JsonKeyNodePublicKey], "hex");
+    this._crCouncilMemberDID = Address.newFromAddressString(
+      j[JsonKeyCRCouncilMemberDID]
+    );
   }
 
   isValidUnsigned(version: uint8_t): boolean {
     try {
       // Key key(CTElastos, _nodePublicKey);
+      let key = EcdsaSigner.getKeyFromPublic(this._nodePublicKey);
     } catch (e) {
       // SPVLOG_ERROR("invalid node pubkey");
       return false;
@@ -194,7 +208,7 @@ export class CRCouncilMemberClaimNode extends Payload {
     if (this._digestUnsigned.isZero()) {
       let stream = new ByteStream();
       this.serializeUnsigned(stream, version);
-      let digest = SHA256.encodeToString(stream.getBytes());
+      let digest = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
       this._digestUnsigned = new BigNumber(digest, 16);
     }
 
