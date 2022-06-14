@@ -1320,11 +1320,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * [
    *   {
    *     "TxHash": "...", // string
-   *     "Index": 123, // int
-   *     "Address": "...", // string
-   *     "Amount": "100000000" // bigint string in SELA
-   *   },
-   *   ...
+   *     "Index": 0, // int
+   *     "Address": "DreWWZa4k6XuUcKcJRzSGUdGHMopoXnGUY", // string, deposit address
+   *     "Amount": "501000000000" // bigint string in SELA
+   *   }
    * ]
    * @param amount Retrieve amount including fee
    * @param fee Fee amount. Bigint string in SELA

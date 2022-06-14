@@ -204,17 +204,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
   });
 
   test("create register CR transaction", async () => {
-    let masterWalletManager: MasterWalletManager;
-    const netType = "TestNet";
-
-    const browserStorage = new BrowserLocalStorage();
-    const netConfig = { NetType: netType, ELA: {} };
-
-    masterWalletManager = await MasterWalletManager.create(
-      browserStorage,
-      netType,
-      netConfig
-    );
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -290,6 +279,53 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       memo
     );
 
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("create retrieve CR deposit transaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-21";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    subWallet.getAddresses(0, 1, false);
+
+    const inputs = [
+      {
+        Address: "DreWWZa4k6XuUcKcJRzSGUdGHMopoXnGUY", // deposit address
+        Amount: "501000000000",
+        TxHash:
+          "91d71b7cf2b43b4c6b715fc0738697c469192c51c2ee7aa9cd479f7b24dc5a82",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "test the retrieve cr deposit transaction";
+    const amount = "501000000000"; // funds you deposited
+    const tx: EncodedTx = subWallet.createRetrieveCRDepositTransaction(
+      inputs,
+      amount,
+      fee,
+      memo
+    );
     const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     expect(info.length).toEqual(1);
