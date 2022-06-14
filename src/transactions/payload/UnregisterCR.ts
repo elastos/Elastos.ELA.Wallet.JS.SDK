@@ -10,10 +10,14 @@ import { Log } from "../../common/Log";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
 
+export type UnregisterCRPayload = {
+  CID: string;
+  Digest: string;
+};
+
 export type UnregisterCRInfo = {
   CID: string;
   Signature: string;
-  Digest?: string;
 };
 
 export class UnregisterCR extends Payload {
@@ -66,7 +70,6 @@ export class UnregisterCR extends Payload {
 
     let signature: bytes_t;
     signature = istream.readVarBytes(signature);
-
     if (!signature) {
       Log.error("UnregisterCR Deserialize: read _signature");
       return false;
@@ -76,12 +79,12 @@ export class UnregisterCR extends Payload {
   }
 
   serializeUnsigned(ostream: ByteStream, version: uint8_t) {
-    ostream.writeVarBytes(this._cid.bytes());
+    ostream.writeBytes(this._cid.bytes());
   }
 
   deserializeUnsigned(istream: ByteStream, version: uint8_t) {
     let cid: bytes_t;
-    cid = istream.readVarBytes(cid);
+    cid = istream.readBytes(cid, 21);
     if (!cid) {
       Log.error("UnregisterCR Deserialize: read _did");
       return false;
@@ -92,10 +95,13 @@ export class UnregisterCR extends Payload {
 
   toJson(version: uint8_t): UnregisterCRInfo {
     let j = <UnregisterCRInfo>{};
-    j["CID"] = Address.newFromAddressString(
-      this._cid.bytes().toString()
-    ).string();
-    j["Signature"] = this._signature.toString("hex");
+    j["CID"] = Address.newFromProgramHash(this._cid).string();
+    if (this._signature) {
+      j["Signature"] = this._signature.toString("hex");
+    } else {
+      j["Signature"] = "";
+    }
+
     return j;
   }
 

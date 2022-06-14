@@ -39,7 +39,7 @@ export type CRInfoJson = {
   NickName: string;
   Url: string;
   Location: string;
-  Signature?: string;
+  Signature: string;
 };
 
 export class CRInfo extends Payload {
@@ -252,6 +252,8 @@ export class CRInfo extends Payload {
     j["Location"] = this._location.toString(16);
     if (j["Signature"]) {
       j["Signature"] = this._signature.toString("hex");
+    } else {
+      j["Signature"] = "";
     }
     return j;
   }
