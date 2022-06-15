@@ -308,9 +308,12 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
     subWallet.getAddresses(0, 1, false);
 
+    let depositAddress = subWallet.getCRDepositAddress();
+    expect(depositAddress).toBe("DreWWZa4k6XuUcKcJRzSGUdGHMopoXnGUY");
+
     const inputs = [
       {
-        Address: "DreWWZa4k6XuUcKcJRzSGUdGHMopoXnGUY", // deposit address
+        Address: depositAddress,
         Amount: "501000000000",
         TxHash:
           "91d71b7cf2b43b4c6b715fc0738697c469192c51c2ee7aa9cd479f7b24dc5a82",
