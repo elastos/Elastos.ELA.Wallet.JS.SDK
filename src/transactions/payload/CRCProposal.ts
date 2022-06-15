@@ -24,6 +24,7 @@ import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
+import { uint168 } from "../../common/uint168";
 import {
   bytes_t,
   sizeof_uint16_t,
@@ -948,8 +949,9 @@ export class CRCProposal extends Payload {
       Log.error("deserialize sponsor did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -1099,8 +1101,9 @@ export class CRCProposal extends Payload {
       Log.error("deserialize sponsor did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -1379,8 +1382,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize sponsor did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -1653,8 +1656,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize cr council mem did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -1927,8 +1930,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize cr council mem did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -2187,8 +2190,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize cr council mem did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -2434,8 +2437,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize change custom id fee cr council mem did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -2672,8 +2675,8 @@ export class CRCProposal extends Payload {
       return false;
     }
 
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
     return true;
   }
@@ -2898,8 +2901,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize upgrade code cr council did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;

@@ -36,6 +36,7 @@ import { Payload } from "./Payload";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
 import { BASE64 as Base64 } from "../../walletcore/base64";
+import { uint168 } from "../../common/uint168";
 
 export const CRCProposalReviewDefaultVersion = 0;
 export const CRCProposalReviewVersion01 = 0x01;
@@ -202,7 +203,10 @@ export class CRCProposalReview extends Payload {
       Log.error("deserialize did");
       return false;
     }
-    this._did = Address.newFromAddressString(programHash.toString("hex"));
+
+    this._did = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
+    );
 
     return true;
   }

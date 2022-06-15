@@ -27,8 +27,7 @@ import {
   uint8_t,
   size_t,
   sizeof_uint256_t,
-  sizeof_uint8_t,
-  json
+  sizeof_uint8_t
 } from "../../types";
 import { SHA256 } from "../../walletcore/sha256";
 import { ByteStream } from "../../common/bytestream";

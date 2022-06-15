@@ -27,8 +27,7 @@ import {
   uint8_t,
   sizeof_uint256_t,
   sizeof_uint64_t,
-  bytes_t,
-  json
+  bytes_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
@@ -36,6 +35,7 @@ import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import { Payload } from "./Payload";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
+import { uint168 } from "../../common/uint168";
 
 const JsonKeyProposalHash = "ProposalHash";
 const JsonKeyOwnerPubkey = "OwnerPublicKey";
@@ -155,7 +155,10 @@ export class CRCProposalWithdraw extends Payload {
         Log.error("deserialize recipient");
         return false;
       }
-      this._recipient = Address.newFromAddressString(programHash.toString());
+
+      this._recipient = Address.newFromProgramHash(
+        uint168.newFrom21BytesBuffer(programHash)
+      );
 
       let amount = stream.readUIntOfBytesAsBN(8);
       if (!amount) {
