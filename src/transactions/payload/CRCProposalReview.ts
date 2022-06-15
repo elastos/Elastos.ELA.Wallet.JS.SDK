@@ -27,8 +27,7 @@ import {
   uint8_t,
   size_t,
   sizeof_uint256_t,
-  sizeof_uint8_t,
-  json
+  sizeof_uint8_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
@@ -56,6 +55,15 @@ export enum VoteResult {
   abstain = 0x02,
   unknownVoteResult
 }
+
+export type CRCProposalReviewInfo = {
+  ProposalHash: string;
+  VoteResult: number;
+  OpinionHash: string;
+  OpinionData?: string;
+  DID: string;
+  Signature?: string;
+};
 
 export class CRCProposalReview extends Payload {
   private _proposalHash: uint256;
@@ -159,30 +167,30 @@ export class CRCProposalReview extends Payload {
   deserializeUnsigned(stream: ByteStream, version: uint8_t): boolean {
     let proposalHash = stream.readUIntOfBytesAsBN(32);
     if (!proposalHash) {
-      // SPVLOG_ERROR("deserialize proposal hash");
+      Log.error("deserialize proposal hash");
       return false;
     }
     this._proposalHash = proposalHash;
 
     let opinion = stream.readUInt8();
     if (!opinion) {
-      // SPVLOG_ERROR("deserialize opinion");
+      Log.error("deserialize opinion");
       return false;
     }
     this._voteResult = opinion as VoteResult;
 
     let opinionHash = stream.readUIntOfBytesAsBN(32);
     if (!opinionHash) {
-      // SPVLOG_ERROR("desrialize opinion hash");
+      Log.error("desrialize opinion hash");
       return false;
     }
     this._opinionHash = opinionHash;
 
     if (version >= CRCProposalReviewVersion01) {
-      let opinionData = Buffer.alloc(0);
+      let opinionData: bytes_t;
       opinionData = stream.readVarBytes(opinionData);
       if (!opinionData) {
-        // SPVLOG_ERROR("deserialize opinion data");
+        Log.error("deserialize opinion data");
         return false;
       }
       this._opinionData = opinionData;
@@ -191,7 +199,7 @@ export class CRCProposalReview extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize did");
+      Log.error("deserialize did");
       return false;
     }
     this._did = Address.newFromAddressString(programHash.toString("hex"));
@@ -206,22 +214,22 @@ export class CRCProposalReview extends Payload {
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeUnsigned(istream, version)) {
-      // SPVLOG_ERROR("proposal review deserialize unsigned");
+      Log.error("proposal review deserialize unsigned");
       return false;
     }
 
     let signature: bytes_t;
     signature = istream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("proposal review deserialize signature");
+      Log.error("proposal review deserialize signature");
       return false;
     }
     this._signature = signature;
     return true;
   }
 
-  toJsonUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonUnsigned(version: uint8_t) {
+    let j = <CRCProposalReviewInfo>{};
     j[JsonKeyProposalHash] = this._proposalHash.toString(16);
     j[JsonKeyVoteResult] = this._voteResult;
     j[JsonKeyOpinionHash] = this._opinionHash.toString(16);
@@ -231,12 +239,12 @@ export class CRCProposalReview extends Payload {
     return j;
   }
 
-  fromJsonUnsigned(j: json, version: uint8_t) {
-    this._proposalHash = new BigNumber(j[JsonKeyProposalHash] as string, 16);
+  fromJsonUnsigned(j: CRCProposalReviewInfo, version: uint8_t) {
+    this._proposalHash = new BigNumber(j[JsonKeyProposalHash], 16);
     this._voteResult = j[JsonKeyVoteResult] as VoteResult;
-    this._opinionHash = new BigNumber(j[JsonKeyOpinionHash] as string, 16);
+    this._opinionHash = new BigNumber(j[JsonKeyOpinionHash], 16);
     if (version >= CRCProposalReviewVersion01) {
-      let opinionData = j[JsonKeyOpinionData] as string;
+      let opinionData = j[JsonKeyOpinionData];
       this._opinionData = Buffer.from(Base64.decode(opinionData), "hex");
       ErrorChecker.checkParam(
         this._opinionData.length > OPINION_DATA_MAX_SIZE,
@@ -250,28 +258,28 @@ export class CRCProposalReview extends Payload {
         "opinion hash not match"
       );
     }
-    this._did = Address.newFromAddressString(j[JsonKeyDID] as string);
+    this._did = Address.newFromAddressString(j[JsonKeyDID]);
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = this.toJsonUnsigned(version);
+  toJson(version: uint8_t): CRCProposalReviewInfo {
+    let j = this.toJsonUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CRCProposalReviewInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string);
   }
 
   isValidUnsigned(version: uint8_t): boolean {
     if (this._voteResult >= VoteResult.unknownVoteResult) {
-      // SPVLOG_ERROR("invalid opinion: {}", _voteResult);
+      Log.error("invalid opinion: {}", this._voteResult);
       return false;
     }
 
     if (!this._did.valid()) {
-      // SPVLOG_ERROR("invalid committee did");
+      Log.error("invalid committee did");
       return false;
     }
 
@@ -282,7 +290,7 @@ export class CRCProposalReview extends Payload {
     if (!this.isValidUnsigned(version)) return false;
 
     if (this._signature.length === 0) {
-      // SPVLOG_ERROR("signature is empty");
+      Log.error("signature is empty");
       return false;
     }
 
@@ -294,7 +302,7 @@ export class CRCProposalReview extends Payload {
       const review = payload as CRCProposalReview;
       this.copyCRCProposalReview(review);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposalReview");
+      Log.error("payload is not instance of CRCProposalReview");
     }
     return this;
   }
@@ -313,15 +321,14 @@ export class CRCProposalReview extends Payload {
     try {
       const p = payload as CRCProposalReview;
       let equal: boolean =
-        this._proposalHash.isEqualTo(p._proposalHash) &&
+        this._proposalHash.eq(p._proposalHash) &&
         this._voteResult == p._voteResult &&
-        this._opinionHash.isEqualTo(p._opinionHash) &&
+        this._opinionHash.eq(p._opinionHash) &&
         this._did.equals(p._did) &&
-        this._signature.toString() == p._signature.toString();
+        this._signature.equals(p._signature);
 
       if (version >= CRCProposalReviewVersion01) {
-        let isEqual = this._opinionData.toString() == p._opinionData.toString();
-        equal = equal && isEqual;
+        equal = equal && this._opinionData.equals(p._opinionData);
       }
 
       return equal;

@@ -67,6 +67,21 @@ export enum CRCProposalTrackingType {
   unknowTrackingType
 }
 
+export type CRCProposalTrackingInfo = {
+  ProposalHash: string;
+  MessageHash: string;
+  MessageData?: string;
+  Stage: number;
+  OwnerPublicKey: string;
+  NewOwnerPublicKey: string;
+  OwnerSignature?: string;
+  NewOwnerSignature?: string;
+  Type?: number;
+  SecretaryGeneralOpinionHash?: string;
+  SecretaryGeneralOpinionData?: string;
+  SecretaryGeneralSignature?: string;
+};
+
 export class CRCProposalTracking extends Payload {
   private _proposalHash: uint256;
   private _messageHash: uint256;
@@ -269,14 +284,14 @@ export class CRCProposalTracking extends Payload {
   deserializeOwnerUnsigned(stream: ByteStream, version: uint8_t): boolean {
     let programHash = stream.readUIntOfBytesAsBN(32);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize proposal hash");
+      Log.error("deserialize proposal hash");
       return false;
     }
     this._proposalHash = programHash;
 
     let messageHash = stream.readUIntOfBytesAsBN(32);
     if (!messageHash) {
-      // SPVLOG_ERROR("deserialize document hash");
+      Log.error("deserialize document hash");
       return false;
     }
     this._messageHash = messageHash;
@@ -285,7 +300,7 @@ export class CRCProposalTracking extends Payload {
       let messageData: bytes_t;
       messageData = stream.readVarBytes(messageData);
       if (!messageData) {
-        // SPVLOG_ERROR("deserialize msg data");
+        Log.error("deserialize msg data");
         return false;
       }
       this._messageData = messageData;
@@ -293,7 +308,7 @@ export class CRCProposalTracking extends Payload {
 
     let stage = stream.readUInt8();
     if (!stage) {
-      // SPVLOG_ERROR("deserialize stage");
+      Log.error("deserialize stage");
       return false;
     }
     this._stage = stage;
@@ -301,7 +316,7 @@ export class CRCProposalTracking extends Payload {
     let ownerPubKey: bytes_t;
     ownerPubKey = stream.readVarBytes(this._ownerPubKey);
     if (!ownerPubKey) {
-      // SPVLOG_ERROR("deserialize owner public key");
+      Log.error("deserialize owner public key");
       return false;
     }
     this._ownerPubKey = ownerPubKey;
@@ -309,7 +324,7 @@ export class CRCProposalTracking extends Payload {
     let newOwnerPubKey: bytes_t;
     newOwnerPubKey = stream.readVarBytes(newOwnerPubKey);
     if (!newOwnerPubKey) {
-      // SPVLOG_ERROR("deserialize new owner public key");
+      Log.error("deserialize new owner public key");
       return false;
     }
     this._newOwnerPubKey = newOwnerPubKey;
@@ -327,7 +342,7 @@ export class CRCProposalTracking extends Payload {
     if (!this.deserializeOwnerUnsigned(stream, version)) return false;
 
     if (!stream.readVarBytes(this._ownerSign)) {
-      // SPVLOG_ERROR("deserialize owner sign");
+      Log.error("deserialize owner sign");
       return false;
     }
 
@@ -353,21 +368,21 @@ export class CRCProposalTracking extends Payload {
     let newOwnerSign: bytes_t;
     newOwnerSign = stream.readVarBytes(newOwnerSign);
     if (!newOwnerSign) {
-      // SPVLOG_ERROR("deserialize new owner sign");
+      Log.error("deserialize new owner sign");
       return false;
     }
     this._newOwnerPubKey = newOwnerSign;
 
     let type: uint8_t = stream.readUInt8();
     if (!type) {
-      // SPVLOG_ERROR("deserialize type");
+      Log.error("deserialize type");
       return false;
     }
     this._type = type as CRCProposalTrackingType;
 
     let secretaryGeneralOpinionHash = stream.readUIntOfBytesAsBN(32);
     if (!secretaryGeneralOpinionHash) {
-      // SPVLOG_ERROR("deserialize secretary opinion hash");
+      Log.error("deserialize secretary opinion hash");
       return false;
     }
     this._secretaryGeneralOpinionHash = secretaryGeneralOpinionHash;
@@ -378,7 +393,7 @@ export class CRCProposalTracking extends Payload {
         secretaryGeneralOpinionData
       );
       if (!secretaryGeneralOpinionData) {
-        // SPVLOG_ERROR("deserialize secretary opinion data");
+        Log.error("deserialize secretary opinion data");
         return false;
       }
       this._secretaryGeneralOpinionData = secretaryGeneralOpinionData;
@@ -394,14 +409,14 @@ export class CRCProposalTracking extends Payload {
 
   deserialize(istream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeSecretaryUnsigned(istream, version)) {
-      // SPVLOG_ERROR("deserialize secretary unsigned");
+      Log.error("deserialize secretary unsigned");
       return false;
     }
 
     let secretaryGeneralSignature: bytes_t;
     secretaryGeneralSignature = istream.readVarBytes(secretaryGeneralSignature);
     if (!secretaryGeneralSignature) {
-      // SPVLOG_ERROR("deserialize secretary signature");
+      Log.error("deserialize secretary signature");
       return false;
     }
     this._secretaryGeneralSignature = secretaryGeneralSignature;
@@ -409,8 +424,8 @@ export class CRCProposalTracking extends Payload {
     return true;
   }
 
-  toJsonOwnerUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonOwnerUnsigned(version: uint8_t): CRCProposalTrackingInfo {
+    let j = <CRCProposalTrackingInfo>{};
     j[JsonKeyProposalHash] = this._proposalHash.toString(16);
     j[JsonKeyMessageHash] = this._messageHash.toString(16);
     if (version >= CRCProposalTrackingVersion01) {
@@ -423,12 +438,14 @@ export class CRCProposalTracking extends Payload {
     return j;
   }
 
-  fromJsonOwnerUnsigned(j: json, version: uint8_t) {
-    this._proposalHash = new BigNumber(j[JsonKeyProposalHash] as string, 16);
-    this._messageHash = new BigNumber(j[JsonKeyMessageHash] as string, 16);
+  fromJsonOwnerUnsigned(j: CRCProposalTrackingInfo, version: uint8_t) {
+    this._proposalHash = new BigNumber(j[JsonKeyProposalHash], 16);
+    this._messageHash = new BigNumber(j[JsonKeyMessageHash], 16);
     if (version >= CRCProposalTrackingVersion01) {
-      let messageData = j[JsonKeyMessageData] as string;
-      this._messageData = Buffer.from(Base64.decode(messageData), "hex");
+      this._messageData = Buffer.from(
+        Base64.decode(j[JsonKeyMessageData]),
+        "hex"
+      );
       ErrorChecker.checkParam(
         this._messageData.length > MESSAGE_DATA_MAX_SIZE,
         Error.Code.ProposalContentTooLarge,
@@ -442,27 +459,24 @@ export class CRCProposalTracking extends Payload {
         "message hash not match"
       );
     }
-    this._stage = j[JsonKeyStage] as number;
-    this._ownerPubKey = Buffer.from(j[JsonKeyOwnerPublicKey] as string, "hex");
-    this._newOwnerPubKey = Buffer.from(
-      j[JsonKeyNewOwnerPublicKey] as string,
-      "hex"
-    );
+    this._stage = j[JsonKeyStage];
+    this._ownerPubKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._newOwnerPubKey = Buffer.from(j[JsonKeyNewOwnerPublicKey], "hex");
   }
 
-  toJsonNewOwnerUnsigned(version: uint8_t): json {
-    let j: json = this.toJsonOwnerUnsigned(version);
+  toJsonNewOwnerUnsigned(version: uint8_t): CRCProposalTrackingInfo {
+    let j = this.toJsonOwnerUnsigned(version);
     j[JsonKeyOwnerSignature] = this._ownerSign.toString("hex");
     return j;
   }
 
-  fromJsonNewOwnerUnsigned(j: json, version: uint8_t) {
+  fromJsonNewOwnerUnsigned(j: CRCProposalTrackingInfo, version: uint8_t) {
     this.fromJsonOwnerUnsigned(j, version);
-    this._ownerSign = Buffer.from(j[JsonKeyOwnerSignature] as string, "hex");
+    this._ownerSign = Buffer.from(j[JsonKeyOwnerSignature], "hex");
   }
 
-  toJsonSecretaryUnsigned(version: uint8_t): json {
-    let j: json = this.toJsonNewOwnerUnsigned(version);
+  toJsonSecretaryUnsigned(version: uint8_t): CRCProposalTrackingInfo {
+    let j = this.toJsonNewOwnerUnsigned(version);
     j[JsonKeyNewOwnerSignature] = this._newOwnerSign.toString("hex");
     j[JsonKeyType] = this._type;
     j[JsonKeySecretaryGeneralOpinionHash] =
@@ -476,7 +490,7 @@ export class CRCProposalTracking extends Payload {
     return j;
   }
 
-  fromJsonSecretaryUnsigned(j: json, version: uint8_t) {
+  fromJsonSecretaryUnsigned(j: CRCProposalTrackingInfo, version: uint8_t) {
     this.fromJsonNewOwnerUnsigned(j, version);
     this._newOwnerSign = Buffer.from(
       j[JsonKeyNewOwnerSignature] as string,
@@ -508,25 +522,25 @@ export class CRCProposalTracking extends Payload {
     }
   }
 
-  toJson(version: uint8_t): json {
+  toJson(version: uint8_t): CRCProposalTrackingInfo {
     let j = this.toJsonSecretaryUnsigned(version);
     j[JsonKeySecretaryGeneralSignature] =
       this._secretaryGeneralSignature.toString("hex");
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CRCProposalTrackingInfo, version: uint8_t) {
     this.fromJsonSecretaryUnsigned(j, version);
 
     this._secretaryGeneralSignature = Buffer.from(
-      j[JsonKeySecretaryGeneralSignature] as string,
+      j[JsonKeySecretaryGeneralSignature],
       "hex"
     );
   }
 
   isValidOwnerUnsigned(version: uint8_t): boolean {
     if (this._stage > 127) {
-      // SPVLOG_ERROR("invalid stage");
+      Log.error("invalid stage");
       return false;
     }
 
@@ -534,7 +548,7 @@ export class CRCProposalTracking extends Payload {
       // Key key(CTElastos, _ownerPubKey);
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPubKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid owner pubkey");
+      Log.error("invalid owner pubkey");
       return false;
     }
 
@@ -543,7 +557,7 @@ export class CRCProposalTracking extends Payload {
         // Key key(CTElastos, _newOwnerPubKey);
         let key = EcdsaSigner.getKeyFromPublic(this._newOwnerPubKey);
       } catch (e) {
-        // SPVLOG_ERROR("invalid new owner pubkey");
+        Log.error("invalid new owner pubkey");
         return false;
       }
     }
@@ -563,11 +577,11 @@ export class CRCProposalTracking extends Payload {
           Buffer.from(this.digestOwnerUnsigned(version).toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify owner sign fail");
+        Log.error("verify owner sign fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("versify new owner sign exception: {}", e.what());
+      Log.error("versify new owner sign exception: {}", e.what());
       return false;
     }
 
@@ -590,17 +604,17 @@ export class CRCProposalTracking extends Payload {
             )
           )
         ) {
-          // SPVLOG_ERROR("verify new owner sign fail");
+          Log.error("verify new owner sign fail");
           return false;
         }
       } catch (e) {
-        // SPVLOG_ERROR("verify new owner sign exception: {}", e.what());
+        Log.error("verify new owner sign exception: {}", e.what());
         return false;
       }
     }
 
     if (this._type >= CRCProposalTrackingType.unknowTrackingType) {
-      // SPVLOG_ERROR("unknow type: {}", _type);
+      Log.error("unknow type: {}", this._type);
       return false;
     }
 
@@ -611,7 +625,7 @@ export class CRCProposalTracking extends Payload {
     if (!this.isValidSecretaryUnsigned(version)) return false;
 
     if (!this._secretaryGeneralSignature) {
-      // SPVLOG_ERROR("secretary signature is empty");
+      Log.error("secretary signature is empty");
       return false;
     }
 
@@ -623,7 +637,7 @@ export class CRCProposalTracking extends Payload {
       const tracking = payload as CRCProposalTracking;
       this.copyCRCProposalTracking(tracking);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposalTracking");
+      Log.error("payload is not instance of CRCProposalTracking");
     }
     return this;
   }
@@ -648,26 +662,24 @@ export class CRCProposalTracking extends Payload {
     try {
       const p = payload as CRCProposalTracking;
       let equal: boolean =
-        this._proposalHash.isEqualTo(p._proposalHash) &&
-        this._messageHash.isEqualTo(p._messageHash) &&
+        this._proposalHash.eq(p._proposalHash) &&
+        this._messageHash.eq(p._messageHash) &&
         this._stage == p._stage &&
-        this._ownerPubKey.toString() == p._ownerPubKey.toString() &&
-        this._newOwnerPubKey.toString() == p._newOwnerPubKey.toString() &&
-        this._ownerSign.toString() == p._ownerSign.toString() &&
-        this._newOwnerSign.toString() == p._newOwnerSign.toString() &&
+        this._ownerPubKey.equals(p._ownerPubKey) &&
+        this._newOwnerPubKey.equals(p._newOwnerPubKey) &&
+        this._ownerSign.equals(p._ownerSign) &&
+        this._newOwnerSign.equals(p._newOwnerSign) &&
         this._type == p._type &&
-        this._secretaryGeneralOpinionHash.isEqualTo(
-          p._secretaryGeneralOpinionHash
-        ) &&
-        this._secretaryGeneralSignature.toString() ==
-          p._secretaryGeneralSignature.toString();
+        this._secretaryGeneralOpinionHash.eq(p._secretaryGeneralOpinionHash) &&
+        this._secretaryGeneralSignature.equals(p._secretaryGeneralSignature);
 
       if (version >= CRCProposalTrackingVersion01) {
         equal =
           equal &&
-          this._messageData.toString() == p._messageData.toString() &&
-          this._secretaryGeneralOpinionData.toString() ==
-            p._secretaryGeneralOpinionData.toString();
+          this._messageData.equals(p._messageData) &&
+          this._secretaryGeneralOpinionData.equals(
+            p._secretaryGeneralOpinionData
+          );
       }
 
       return equal;

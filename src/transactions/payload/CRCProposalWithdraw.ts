@@ -46,6 +46,14 @@ const JsonKeySignature = "Signature";
 export const CRCProposalWithdrawVersion = 0;
 export const CRCProposalWithdrawVersion_01 = 0x01;
 
+export type CRCProposalWithdrawInfo = {
+  ProposalHash: string;
+  OwnerPubkey: string;
+  Recipient?: string;
+  Amount?: string;
+  Signature?: string;
+};
+
 export class CRCProposalWithdraw extends Payload {
   private _proposalHash: uint256;
   private _ownerPubkey: Buffer;
@@ -127,7 +135,7 @@ export class CRCProposalWithdraw extends Payload {
   deserializeUnsigned(stream: ByteStream, version: uint8_t) {
     let proposalHash = stream.readUIntOfBytesAsBN(32);
     if (!proposalHash) {
-      // SPVLOG_ERROR("deserialize proposal hash");
+      Log.error("deserialize proposal hash");
       return false;
     }
     this._proposalHash = proposalHash;
@@ -135,7 +143,7 @@ export class CRCProposalWithdraw extends Payload {
     let ownerPubkey: bytes_t;
     ownerPubkey = stream.readVarBytes(ownerPubkey);
     if (!ownerPubkey) {
-      // SPVLOG_ERROR("deserialize owner pubkey");
+      Log.error("deserialize owner pubkey");
       return false;
     }
     this._ownerPubkey = ownerPubkey;
@@ -144,14 +152,14 @@ export class CRCProposalWithdraw extends Payload {
       let programHash: bytes_t;
       programHash = stream.readBytes(programHash, 21);
       if (!programHash) {
-        // SPVLOG_ERROR("deserialize recipient");
+        Log.error("deserialize recipient");
         return false;
       }
       this._recipient = Address.newFromAddressString(programHash.toString());
 
       let amount = stream.readUIntOfBytesAsBN(8);
       if (!amount) {
-        // SPVLOG_ERROR("deserialize amount");
+        Log.error("deserialize amount");
         return false;
       }
       this._amount = amount;
@@ -166,7 +174,7 @@ export class CRCProposalWithdraw extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize sign");
+      Log.error("deserialize sign");
       return false;
     }
     this._signature = signature;
@@ -174,8 +182,8 @@ export class CRCProposalWithdraw extends Payload {
     return true;
   }
 
-  toJsonUnsigned(version: uint8_t) {
-    let j = {};
+  toJsonUnsigned(version: uint8_t): CRCProposalWithdrawInfo {
+    let j = <CRCProposalWithdrawInfo>{};
     j[JsonKeyProposalHash] = this._proposalHash.toString(16);
     j[JsonKeyOwnerPubkey] = this._ownerPubkey.toString("hex");
     if (version == CRCProposalWithdrawVersion_01) {
@@ -185,45 +193,43 @@ export class CRCProposalWithdraw extends Payload {
     return j;
   }
 
-  toJson(version: uint8_t) {
+  toJson(version: uint8_t): CRCProposalWithdrawInfo {
     let j = this.toJsonUnsigned(version);
 
     j[JsonKeySignature] = this._signature.toString("hex");
     return j;
   }
 
-  fromJsonUnsigned(j: json, version: uint8_t) {
-    this._proposalHash = new BigNumber(j[JsonKeyProposalHash] as string, 16);
-    this._ownerPubkey = Buffer.from(j[JsonKeyOwnerPubkey] as string, "hex");
+  fromJsonUnsigned(j: CRCProposalWithdrawInfo, version: uint8_t) {
+    this._proposalHash = new BigNumber(j[JsonKeyProposalHash], 16);
+    this._ownerPubkey = Buffer.from(j[JsonKeyOwnerPubkey], "hex");
     if (version == CRCProposalWithdrawVersion_01) {
-      this._recipient = Address.newFromAddressString(
-        j[JsonKeyRecipient] as string
-      );
-      this._amount = new BigNumber(j[JsonKeyAmount] as string);
+      this._recipient = Address.newFromAddressString(j[JsonKeyRecipient]);
+      this._amount = new BigNumber(j[JsonKeyAmount]);
     }
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CRCProposalWithdrawInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string);
+    this._signature = Buffer.from(j[JsonKeySignature]);
   }
 
   isValidUnsigned(version: uint8_t): boolean {
     try {
       EcdsaSigner.getKeyFromPublic(this._ownerPubkey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid owner pubkey");
+      Log.error("invalid owner pubkey");
       return false;
     }
 
     if (version == CRCProposalWithdrawVersion_01) {
       if (!this._recipient.valid()) {
-        // SPVLOG_ERROR("invalid recipient");
+        Log.error("invalid recipient");
         return false;
       }
 
       if (this._amount.isLessThan(0)) {
-        // SPVLOG_ERROR("invalid amount");
+        Log.error("invalid amount");
         return false;
       }
     }
@@ -242,11 +248,11 @@ export class CRCProposalWithdraw extends Payload {
           Buffer.from(this.digestUnsigned(version).toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify signature fail");
+        Log.error("verify signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature excpetion: {}", e.what());
+      Log.error("verify signature excpetion: {}", e.what());
       return false;
     }
 
@@ -258,7 +264,7 @@ export class CRCProposalWithdraw extends Payload {
       const tracking = payload as CRCProposalWithdraw;
       this.copyCRCProposalWithdraw(tracking);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposalWithdraw");
+      Log.error("payload is not instance of CRCProposalWithdraw");
     }
     return this;
   }

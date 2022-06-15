@@ -54,19 +54,22 @@ import {
 import {
   CRCProposalReview,
   CRCProposalReviewDefaultVersion,
+  CRCProposalReviewInfo,
   CRCProposalReviewVersion01,
   JsonKeyOpinionData
 } from "../transactions/payload/CRCProposalReview";
 import {
   CRCProposalTracking,
   CRCProposalTrackingDefaultVersion,
+  CRCProposalTrackingInfo,
   CRCProposalTrackingVersion01,
   JsonKeyMessageData,
   JsonKeySecretaryGeneralOpinionData
 } from "../transactions/payload/CRCProposalTracking";
 import {
   CRCProposalWithdrawVersion_01,
-  CRCProposalWithdraw
+  CRCProposalWithdraw,
+  CRCProposalWithdrawInfo
 } from "../transactions/payload/CRCProposalWithdraw";
 import {
   CRInfo,
@@ -111,7 +114,7 @@ import {
   TransactionOutput,
   Type
 } from "../transactions/TransactionOutput";
-import { bytes_t, json, size_t, uint64_t, uint8_t } from "../types";
+import { bytes_t, size_t, uint64_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
@@ -1771,7 +1774,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalReviewDigest(payload: json): string {
+  proposalReviewDigest(payload: CRCProposalReviewInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -1834,7 +1837,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createProposalReviewTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalReviewInfo,
     fee: string,
     memo: string
   ): EncodedTx {
@@ -1905,7 +1908,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload
    */
-  proposalTrackingOwnerDigest(payload: json): string {
+  proposalTrackingOwnerDigest(payload: CRCProposalTrackingInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
@@ -1953,7 +1956,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalTrackingNewOwnerDigest(payload: json): string {
+  proposalTrackingNewOwnerDigest(payload: CRCProposalTrackingInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
@@ -2007,7 +2010,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload
    */
-  proposalTrackingSecretaryDigest(payload: json): string {
+  proposalTrackingSecretaryDigest(payload: CRCProposalTrackingInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
@@ -2080,7 +2083,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createProposalTrackingTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalTrackingInfo,
     fee: string,
     memo: string
   ): EncodedTx {
@@ -2796,7 +2799,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -3218,7 +3221,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalWithdrawDigest(payload: json) {
+  proposalWithdrawDigest(payload: CRCProposalWithdrawInfo) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -3272,7 +3275,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createProposalWithdrawTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalWithdrawInfo,
     fee: string,
     memo: string
   ): EncodedTx {
