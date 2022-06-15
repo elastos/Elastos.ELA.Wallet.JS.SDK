@@ -35,22 +35,34 @@ import {
   CRCouncilMemberClaimNodeVersion
 } from "../transactions/payload/CRCouncilMemberClaimNode";
 import {
+  ChangeCustomIDFeeOwnerInfo,
+  ChangeProposalOwnerInfo,
   CRCProposal,
   CRCProposalDefaultVersion,
+  CRCProposalInfo,
   CRCProposalType,
   CRCProposalVersion01,
   JsonKeyDraftData,
-  JsonKeyType
+  JsonKeyType,
+  NormalOwnerInfo,
+  ReceiveCustomIDOwnerInfo,
+  RegisterSidechainProposalInfo,
+  ReserveCustomIDOwnerInfo,
+  SecretaryElectionInfo,
+  TerminateProposalOwnerInfo
 } from "../transactions/payload/CRCProposal";
 import {
   CRCProposalReview,
   CRCProposalReviewDefaultVersion,
-  CRCProposalReviewVersion01
+  CRCProposalReviewVersion01,
+  JsonKeyOpinionData
 } from "../transactions/payload/CRCProposalReview";
 import {
   CRCProposalTracking,
   CRCProposalTrackingDefaultVersion,
-  CRCProposalTrackingVersion01
+  CRCProposalTrackingVersion01,
+  JsonKeyMessageData,
+  JsonKeySecretaryGeneralOpinionData
 } from "../transactions/payload/CRCProposalTracking";
 import {
   CRCProposalWithdrawVersion_01,
@@ -99,7 +111,7 @@ import {
   TransactionOutput,
   Type
 } from "../transactions/TransactionOutput";
-import { bytes_t, json, JSONObject, size_t, uint64_t, uint8_t } from "../types";
+import { bytes_t, json, size_t, uint64_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
@@ -1518,14 +1530,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalOwnerDigest(payload: json): string {
+  proposalOwnerDigest(payload: NormalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
     let proposal: CRCProposal = new CRCProposal();
     let version: uint8_t = CRCProposalDefaultVersion;
     try {
-      if (payload["JsonKeyDraftData"]) {
+      if (payload[JsonKeyDraftData]) {
         version = CRCProposalVersion01;
       } else {
         version = CRCProposalDefaultVersion;
@@ -1574,14 +1586,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalCRCouncilMemberDigest(payload: json): string {
+  proposalCRCouncilMemberDigest(payload: NormalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let proposal: CRCProposal = new CRCProposal();
     let version: uint8_t = CRCProposalDefaultVersion;
     try {
-      if (payload["JsonKeyDraftData"]) {
+      if (payload[JsonKeyDraftData]) {
         version = CRCProposalVersion01;
       } else {
         version = CRCProposalDefaultVersion;
@@ -1615,14 +1627,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param memo Remarks string. Can be empty string.
    * @return The transaction in JSON format to be signed and published.
    */
-  calculateProposalHash(payload: json): string {
+  calculateProposalHash(payload: CRCProposalInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let p = new CRCProposal();
     let version: uint8_t = CRCProposalDefaultVersion;
     try {
-      if (payload["JsonKeyDraftData"]) {
+      if (payload[JsonKeyDraftData]) {
         version = CRCProposalVersion01;
       } else {
         version = CRCProposalDefaultVersion;
@@ -1687,10 +1699,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createProposalTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet: Wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -1704,7 +1716,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let p = new CRCProposal();
     let version: uint8_t = CRCProposalDefaultVersion;
     try {
-      if (payload["JsonKeyDraftData"]) {
+      if (payload[JsonKeyDraftData]) {
         version = CRCProposalVersion01;
       } else {
         version = CRCProposalDefaultVersion;
@@ -1766,7 +1778,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let proposalReview = new CRCProposalReview();
     let version: uint8_t = CRCProposalReviewDefaultVersion;
     try {
-      if (payload["JsonKeyOpinionData"]) {
+      if (payload[JsonKeyOpinionData]) {
         version = CRCProposalReviewVersion01;
       } else {
         version = CRCProposalReviewDefaultVersion;
@@ -1825,7 +1837,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payload: json,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", this.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -1839,7 +1851,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let p = new CRCProposalReview();
     let version: uint8_t = CRCProposalReviewDefaultVersion;
     try {
-      if (payload["JsonKeyOpinionData"]) version = CRCProposalReviewVersion01;
+      if (payload[JsonKeyOpinionData]) version = CRCProposalReviewVersion01;
       else version = CRCProposalReviewDefaultVersion;
       p.fromJson(payload, version);
     } catch (e) {
@@ -1900,7 +1912,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalTrackingDefaultVersion;
     let proposalTracking = new CRCProposalTracking();
     try {
-      if (payload["JsonKeyMessageData"]) version = CRCProposalTrackingVersion01;
+      if (payload[JsonKeyMessageData]) version = CRCProposalTrackingVersion01;
       else version = CRCProposalTrackingDefaultVersion;
       proposalTracking.fromJsonOwnerUnsigned(payload, version);
     } catch (e) {
@@ -1948,7 +1960,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalTrackingDefaultVersion;
     let proposalTracking = new CRCProposalTracking();
     try {
-      if (payload["JsonKeyMessageData"]) version = CRCProposalTrackingVersion01;
+      if (payload[JsonKeyMessageData]) version = CRCProposalTrackingVersion01;
       else version = CRCProposalTrackingDefaultVersion;
       proposalTracking.fromJsonNewOwnerUnsigned(payload, version);
     } catch (e) {
@@ -2003,8 +2015,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let proposalTracking = new CRCProposalTracking();
     try {
       if (
-        payload["JsonKeyMessageData"] &&
-        payload["JsonKeySecretaryGeneralOpinionData"]
+        payload[JsonKeyMessageData] &&
+        payload[JsonKeySecretaryGeneralOpinionData]
       )
         version = CRCProposalTrackingVersion01;
       else version = CRCProposalTrackingDefaultVersion;
@@ -2071,7 +2083,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     payload: json,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -2086,8 +2098,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let p = new CRCProposalTracking();
     try {
       if (
-        payload["JsonKeyMessageData"] &&
-        payload["JsonKeySecretaryGeneralOpinionData"]
+        payload[JsonKeyMessageData] &&
+        payload[JsonKeySecretaryGeneralOpinionData]
       )
         version = CRCProposalTrackingVersion01;
       else version = CRCProposalTrackingDefaultVersion;
@@ -2139,17 +2151,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  proposalSecretaryGeneralElectionDigest(payload: json): string {
+  proposalSecretaryGeneralElectionDigest(
+    payload: SecretaryElectionInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
       let payloadFixed = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.secretaryGeneralElection;
+      payloadFixed[JsonKeyType] = CRCProposalType.secretaryGeneralElection;
       proposal.fromJsonSecretaryElectionUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2183,17 +2197,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  proposalSecretaryGeneralElectionCRCouncilMemberDigest(payload: json): string {
+  proposalSecretaryGeneralElectionCRCouncilMemberDigest(
+    payload: SecretaryElectionInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
       let payloadFixed = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.secretaryGeneralElection;
+      payloadFixed[JsonKeyType] = CRCProposalType.secretaryGeneralElection;
       proposal.fromJsonSecretaryElectionCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -2247,10 +2263,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createSecretaryGeneralElectionTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -2264,10 +2280,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
       let payloadFixed = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.secretaryGeneralElection;
+      payloadFixed[JsonKeyType] = CRCProposalType.secretaryGeneralElection;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2315,17 +2331,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  proposalChangeOwnerDigest(payload: json): string {
+  proposalChangeOwnerDigest(payload: ChangeProposalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeProposalOwner;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeProposalOwner;
       proposal.fromJsonChangeOwnerUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2362,17 +2378,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  proposalChangeOwnerCRCouncilMemberDigest(payload: json): string {
+  proposalChangeOwnerCRCouncilMemberDigest(
+    payload: ChangeProposalOwnerInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeProposalOwner;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeProposalOwner;
       proposal.fromJsonChangeOwnerCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -2428,10 +2446,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createProposalChangeOwnerTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -2445,10 +2463,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeProposalOwner;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeProposalOwner;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2494,17 +2512,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  terminateProposalOwnerDigest(payload: json): string {
+  terminateProposalOwnerDigest(payload: TerminateProposalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.terminateProposal;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.terminateProposal;
       proposal.fromJsonTerminateProposalOwnerUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2538,17 +2556,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  terminateProposalCRCouncilMemberDigest(payload: json): string {
+  terminateProposalCRCouncilMemberDigest(
+    payload: TerminateProposalOwnerInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.terminateProposal;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.terminateProposal;
       proposal.fromJsonTerminateProposalCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -2600,10 +2620,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createTerminateProposalTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -2617,10 +2637,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.terminateProposal;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.terminateProposal;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2665,17 +2685,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  reserveCustomIDOwnerDigest(payload: json): string {
+  reserveCustomIDOwnerDigest(payload: ReserveCustomIDOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.reserveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.reserveCustomID;
       proposal.fromJsonReserveCustomIDOwnerUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2709,17 +2729,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  reserveCustomIDCRCouncilMemberDigest(payload): string {
+  reserveCustomIDCRCouncilMemberDigest(
+    payload: ReserveCustomIDOwnerInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.reserveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.reserveCustomID;
       proposal.fromJsonReserveCustomIDCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -2771,7 +2793,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createReserveCustomIDTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): json {
@@ -2788,10 +2810,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.reserveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.reserveCustomID;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2837,17 +2859,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  receiveCustomIDOwnerDigest(payload): string {
+  receiveCustomIDOwnerDigest(payload: ReceiveCustomIDOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dum);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.receiveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.receiveCustomID;
       proposal.fromJsonReceiveCustomIDOwnerUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -2882,17 +2904,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  rceiveCustomIDCRCouncilMemberDigest(payload): string {
+  rceiveCustomIDCRCouncilMemberDigest(
+    payload: ReceiveCustomIDOwnerInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.receiveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.receiveCustomID;
       proposal.fromJsonReceiveCustomIDCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -2945,10 +2969,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createReceiveCustomIDTransaction(
     inputsJson: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
-  ): json {
+  ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", this.getWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputsJson);
@@ -2962,10 +2986,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.receiveCustomID;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.receiveCustomID;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -3013,17 +3037,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  changeCustomIDFeeOwnerDigest(payload): string {
+  changeCustomIDFeeOwnerDigest(payload: ChangeCustomIDFeeOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
       let payloadFixed = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeCustomIDFee;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeCustomIDFee;
       proposal.fromJsonChangeCustomIDFeeOwnerUnsigned(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -3060,17 +3084,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  changeCustomIDFeeCRCouncilMemberDigest(payload): string {
+  changeCustomIDFeeCRCouncilMemberDigest(
+    payload: ChangeCustomIDFeeOwnerInfo
+  ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let proposal = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeCustomIDFee;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeCustomIDFee;
       proposal.fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(
         payloadFixed,
         version
@@ -3125,7 +3151,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createChangeCustomIDFeeTransaction(
     inputs: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
@@ -3142,10 +3168,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
     try {
-      if (payload["JsonKeyDraftData"]) version = CRCProposalVersion01;
+      if (payload[JsonKeyDraftData]) version = CRCProposalVersion01;
       else version = CRCProposalDefaultVersion;
-      let payloadFixed: json = payload;
-      payloadFixed["JsonKeyType"] = CRCProposalType.changeCustomIDFee;
+      let payloadFixed = payload;
+      payloadFixed[JsonKeyType] = CRCProposalType.changeCustomIDFee;
       p.fromJson(payloadFixed, version);
     } catch (e) {
       ErrorChecker.throwParamException(Error.Code.InvalidArgument, "from json");
@@ -3314,7 +3340,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  registerSidechainOwnerDigest(payload: json): string {
+  registerSidechainOwnerDigest(payload: RegisterSidechainProposalInfo): string {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -3363,7 +3389,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  registerSidechainCRCouncilMemberDigest(payload: json): string {
+  registerSidechainCRCouncilMemberDigest(
+    payload: RegisterSidechainProposalInfo
+  ): string {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -3432,7 +3460,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    */
   createRegisterSidechainTransaction(
     inputs: UTXOInput[],
-    payload: json,
+    payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {

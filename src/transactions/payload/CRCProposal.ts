@@ -23,10 +23,9 @@ import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
+import { Log } from "../../common/Log";
 import {
   bytes_t,
-  json,
-  JSONArray,
   sizeof_uint16_t,
   sizeof_uint256_t,
   size_t,
@@ -81,6 +80,12 @@ export enum BudgetType {
 
 const DRAFT_DATA_MAX_SIZE = 1024 * 1024;
 
+export type BudgetInfo = {
+  Type: number;
+  Stage: number;
+  Amount: string;
+};
+
 export class Budget {
   private _type: BudgetType;
   private _stage: uint8_t;
@@ -115,21 +120,21 @@ export class Budget {
   deserialize(istream: ByteStream): boolean {
     let type: uint8_t = istream.readUInt8();
     if (!type) {
-      // SPVLOG_ERROR("Budget::Deserialize: read type key");
+      Log.error("Budget::Deserialize: read type key");
       return false;
     }
     this._type = type;
 
     let stage: uint8_t = istream.readUInt8();
     if (!stage) {
-      // SPVLOG_ERROR("Budget::Deserialize: read stage key");
+      Log.error("Budget::Deserialize: read stage key");
       return false;
     }
     this._stage = stage;
 
     let amount = istream.readUIntOfBytesAsBN(8);
     if (!amount) {
-      // SPVLOG_ERROR("Budget::Deserialize: read amount key");
+      Log.error("Budget::Deserialize: read amount key");
       return false;
     }
     this._amount = amount;
@@ -139,30 +144,30 @@ export class Budget {
 
   isValid(): boolean {
     if (this._type >= BudgetType.maxType) {
-      // SPVLOG_ERROR("invalid budget type: {}", _type);
+      Log.error("invalid budget type: {}", this._type);
       return false;
     }
 
     if (this._stage > 127) {
-      // SPVLOG_ERROR("invalid budget stage", _stage);
+      Log.error("invalid budget stage", this._stage);
       return false;
     }
 
     return true;
   }
 
-  toJson(): json {
-    let j: json = {};
+  toJson(): BudgetInfo {
+    let j = <BudgetInfo>{};
     j[JsonKeyType] = this._type;
     j[JsonKeyStage] = this._stage;
     j[JsonKeyAmount] = this._amount.toString(16);
     return j;
   }
 
-  fromJson(j: json) {
-    this._type = j[JsonKeyType] as BudgetType;
-    this._stage = j[JsonKeyStage] as uint8_t;
-    this._amount = new BigNumber(j[JsonKeyAmount] as string, 16);
+  fromJson(j: BudgetInfo) {
+    this._type = j[JsonKeyType];
+    this._stage = j[JsonKeyStage];
+    this._amount = new BigNumber(j[JsonKeyAmount], 16);
   }
 
   equals(budget: Budget): boolean {
@@ -173,6 +178,14 @@ export class Budget {
     );
   }
 }
+
+export type UpgradeCodeInfoJson = {
+  WorkingHeight: number;
+  NodeVersion: string;
+  NodeDownloadUrl: string;
+  NodeBinHash: string;
+  Force: boolean;
+};
 
 export class UpgradeCodeInfo {
   private _workingHeight: uint32_t;
@@ -192,25 +205,29 @@ export class UpgradeCodeInfo {
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let workingHeight = stream.readUInt32();
     if (!workingHeight) {
-      // SPVLOG_ERROR("deserialize workingHeight failed");
+      Log.error("deserialize workingHeight failed");
       return false;
     }
     this._workingHeight = workingHeight;
+
     const nodeVersion = stream.readVarString();
     if (!nodeVersion) {
-      // SPVLOG_ERROR("deserialize nodeVersion failed");
+      Log.error("deserialize nodeVersion failed");
       return false;
     }
+    this._nodeVersion = nodeVersion;
+
     const nodeDownloadUrl = stream.readVarString();
     if (!nodeDownloadUrl) {
-      // SPVLOG_ERROR("deserialize nodeDownloadUrl failed");
+      Log.error("deserialize nodeDownloadUrl failed");
       return false;
     }
+    this._nodeDownloadUrl = nodeDownloadUrl;
 
-    let nodeBinHash = Buffer.alloc(0);
+    let nodeBinHash: bytes_t;
     nodeBinHash = stream.readBytes(nodeBinHash, 32);
     if (!nodeBinHash) {
-      // SPVLOG_ERROR("deserialize nodeBinHash failed");
+      Log.error("deserialize nodeBinHash failed");
       return false;
     }
     this._nodeBinHash = new BigNumber(nodeBinHash.toString("hex"), 16);
@@ -218,7 +235,7 @@ export class UpgradeCodeInfo {
     let force: uint8_t = 0;
     force = stream.readUInt8();
     if (!force) {
-      // SPVLOG_ERROR("deserialize force failed");
+      Log.error("deserialize force failed");
       return false;
     }
     this._force = force == 0 ? false : true;
@@ -226,8 +243,8 @@ export class UpgradeCodeInfo {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): UpgradeCodeInfoJson {
+    let j = <UpgradeCodeInfoJson>{};
     j["WorkingHeight"] = this._workingHeight;
     j["NodeVersion"] = this._nodeVersion;
     j["NodeDownloadUrl"] = this._nodeDownloadUrl;
@@ -236,18 +253,27 @@ export class UpgradeCodeInfo {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._workingHeight = j["WorkingHeight"] as number;
-    this._nodeVersion = j["NodeVersion"] as string;
-    this._nodeDownloadUrl = j["NodeDownloadUrl"] as string;
-    this._nodeBinHash = new BigNumber(j["NodeBinHash"] as string, 16);
-    this._force = j["Force"] as boolean;
+  fromJson(j: UpgradeCodeInfoJson, version: uint8_t) {
+    this._workingHeight = j["WorkingHeight"];
+    this._nodeVersion = j["NodeVersion"];
+    this._nodeDownloadUrl = j["NodeDownloadUrl"];
+    this._nodeBinHash = new BigNumber(j["NodeBinHash"], 16);
+    this._force = j["Force"];
   }
 
   isValid(version: uint8_t): boolean {
     return true;
   }
 }
+
+export type SideChainInfoJson = {
+  SideChainName: string;
+  MagicNumber: number;
+  GenesisHash: string;
+  ExchangeRate: string;
+  EffectiveHeight: number;
+  ResourcePath: string;
+};
 
 export class SideChainInfo {
   private _sideChainName: string;
@@ -271,50 +297,50 @@ export class SideChainInfo {
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let sideChainName = stream.readVarString();
     if (!sideChainName) {
-      // SPVLOG_ERROR("deserialize side-chain name failed");
+      Log.error("deserialize side-chain name failed");
       return false;
     }
     this._sideChainName = sideChainName;
 
     let magicNumber = stream.readUInt32();
     if (!magicNumber) {
-      // SPVLOG_ERROR("deserialize magic number failed");
+      Log.error("deserialize magic number failed");
       return false;
     }
     this._magicNumber = magicNumber;
 
     let genesisHash = stream.readUIntOfBytesAsBN(32);
     if (!genesisHash) {
-      // SPVLOG_ERROR("deserialize genesis hash failed");
+      Log.error("deserialize genesis hash failed");
       return false;
     }
     this._genesisHash = genesisHash;
 
     let exchangeRate = stream.readUIntOfBytesAsBN(8);
     if (!exchangeRate) {
-      // SPVLOG_ERROR("deserialize exchange rate failed");
+      Log.error("deserialize exchange rate failed");
       return false;
     }
     this._exchangeRate = exchangeRate;
 
     let effectiveHeight = stream.readUInt32();
     if (!effectiveHeight) {
-      // SPVLOG_ERROR("deserialize effective height failed");
+      Log.error("deserialize effective height failed");
       return false;
     }
     this._effectiveHeight = effectiveHeight;
 
     let resourcePath = stream.readVarString();
     if (!resourcePath) {
-      // SPVLOG_ERROR("deserialize resource path failed");
+      Log.error("deserialize resource path failed");
       return false;
     }
     this._resourcePath = resourcePath;
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j: json = {};
+  toJson(version: uint8_t): SideChainInfoJson {
+    let j = <SideChainInfoJson>{};
     j["SideChainName"] = this._sideChainName;
     j["MagicNumber"] = this._magicNumber;
     j["GenesisHash"] = this._genesisHash.toString(16);
@@ -324,13 +350,13 @@ export class SideChainInfo {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._sideChainName = j["SideChainName"] as string;
-    this._magicNumber = j["MagicNumber"] as number;
-    this._genesisHash = new BigNumber(j["GenesisHash"] as string, 16);
-    this._exchangeRate = new BigNumber(j["ExchangeRate"] as string, 16);
-    this._effectiveHeight = j["EffectiveHeight"] as number;
-    this._resourcePath = j["ResourcePath"] as string;
+  fromJson(j: SideChainInfoJson, version: uint8_t) {
+    this._sideChainName = j["SideChainName"];
+    this._magicNumber = j["MagicNumber"];
+    this._genesisHash = new BigNumber(j["GenesisHash"], 16);
+    this._exchangeRate = new BigNumber(j["ExchangeRate"], 16);
+    this._effectiveHeight = j["EffectiveHeight"];
+    this._resourcePath = j["ResourcePath"];
   }
 
   isValid(version: uint8_t): boolean {
@@ -359,6 +385,11 @@ export class SideChainInfo {
   }
 }
 
+export type CustomIDFeeRateInfoJson = {
+  RateOfCustomIDFee: string;
+  EIDEffectiveHeight: number;
+};
+
 export class CustomIDFeeRateInfo {
   // The rate of custom DID fee.
   private _rateOfCustomIDFee: uint64_t;
@@ -373,14 +404,14 @@ export class CustomIDFeeRateInfo {
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let rateOfCustomIDFee = stream.readUIntOfBytesAsBN(8);
     if (!rateOfCustomIDFee) {
-      // SPVLOG_ERROR("deserialize rateOfCustomIDFee failed");
+      Log.error("deserialize rateOfCustomIDFee failed");
       return false;
     }
     this._rateOfCustomIDFee = rateOfCustomIDFee;
 
     let eIDEffectiveHeight = stream.readUInt32();
     if (!eIDEffectiveHeight) {
-      // SPVLOG_ERROR("deserialize eIDEffectiveHeight failed");
+      Log.error("deserialize eIDEffectiveHeight failed");
       return false;
     }
     this._eIDEffectiveHeight = eIDEffectiveHeight;
@@ -388,19 +419,16 @@ export class CustomIDFeeRateInfo {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): CustomIDFeeRateInfoJson {
+    let j = <CustomIDFeeRateInfoJson>{};
     j["RateOfCustomIDFee"] = this._rateOfCustomIDFee.toString(16);
     j["EIDEffectiveHeight"] = this._eIDEffectiveHeight;
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._rateOfCustomIDFee = new BigNumber(
-      j["RateOfCustomIDFee"] as string,
-      16
-    );
-    this._eIDEffectiveHeight = j["EIDEffectiveHeight"] as number;
+  fromJson(j: CustomIDFeeRateInfoJson, version: uint8_t) {
+    this._rateOfCustomIDFee = new BigNumber(j["RateOfCustomIDFee"], 16);
+    this._eIDEffectiveHeight = j["EIDEffectiveHeight"];
   }
 
   equals(info: CustomIDFeeRateInfo): boolean {
@@ -438,6 +466,131 @@ export enum CRCProposalType {
   changeCustomIDFee = 0x0502,
   maxType
 }
+
+export type ChangeProposalOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  TargetProposalHash: string;
+  NewRecipient: string;
+  NewOwnerPublicKey: string;
+  Signature?: string;
+  NewOwnerSignature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type TerminateProposalOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  TargetProposalHash: string;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type SecretaryElectionInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  SecretaryGeneralPublicKey: string;
+  SecretaryGeneralDID: string;
+  Signature?: string;
+  SecretaryGeneralSignature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type ReserveCustomIDOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  ReservedCustomIDList: string[];
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type ReceiveCustomIDOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  ReceivedCustomIDList: string[];
+  ReceiverDID: string;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type ChangeCustomIDFeeOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  CustomIDFeeRateInfo: CustomIDFeeRateInfoJson;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type RegisterSidechainProposalInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  SidechainInfo: SideChainInfoJson;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type UpgradeCodeProposalInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  UpgradeCodeInfo: UpgradeCodeInfoJson;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type NormalOwnerInfo = {
+  Type: number;
+  CategoryData: string;
+  OwnerPublicKey: string;
+  DraftHash: string;
+  DraftData: string;
+  Budgets: BudgetInfo[];
+  Recipient: string;
+  Signature?: string;
+  CRCouncilMemberDID?: string;
+  CRCouncilMemberSignature?: string;
+};
+
+export type CRCProposalInfo =
+  | ChangeProposalOwnerInfo
+  | TerminateProposalOwnerInfo
+  | SecretaryElectionInfo
+  | ReserveCustomIDOwnerInfo
+  | ReceiveCustomIDOwnerInfo
+  | ChangeCustomIDFeeOwnerInfo
+  | RegisterSidechainProposalInfo
+  | UpgradeCodeProposalInfo
+  | NormalOwnerInfo;
 
 export class CRCProposal extends Payload {
   private _type: CRCProposalType;
@@ -624,22 +777,22 @@ export class CRCProposal extends Payload {
     let byteStream = new ByteStream();
     let size: size_t = 0;
 
-    size += sizeof_uint16_t();
-    size += stream.writeVarUInt(this._categoryData.length);
-    size += this._categoryData.length;
+    size += sizeof_uint16_t(); // this._type
+    let categoryData = Buffer.from(this._categoryData, "utf8");
+    size += stream.writeVarUInt(categoryData.length);
+    size += categoryData.length;
     size += stream.writeVarUInt(this._ownerPublicKey.length);
     size += this._ownerPublicKey.length;
     if (version >= CRCProposalVersion01) {
       size += stream.writeVarUInt(this._draftData.length);
       size += this._draftData.length;
     }
-    size += sizeof_uint256_t();
+    size += sizeof_uint256_t(); // this._draftHash
 
     switch (this._type) {
       case CRCProposalType.elip:
       case CRCProposalType.normal:
         size += stream.writeVarUInt(this._budgets.length);
-
         for (let i = 0; i < this._budgets.length; ++i) {
           this._budgets[i].serialize(byteStream);
         }
@@ -660,7 +813,7 @@ export class CRCProposal extends Payload {
         break;
 
       case CRCProposalType.changeProposalOwner:
-        size += sizeof_uint256_t();
+        size += sizeof_uint256_t(); // this._targetProposalHash
         size += this._newRecipient.programHash().bytes().length;
         size += stream.writeVarUInt(this._newOwnerPublicKey.length);
         size += this._newOwnerPublicKey.length;
@@ -673,7 +826,7 @@ export class CRCProposal extends Payload {
       case CRCProposalType.terminateProposal:
         size += stream.writeVarUInt(this._signature.length);
         size += this._signature.length;
-        size += sizeof_uint256_t();
+        size += sizeof_uint256_t(); // this._targetProposalHash
         break;
 
       default:
@@ -694,7 +847,9 @@ export class CRCProposal extends Payload {
     stream.writeVarBytes(this._ownerPublicKey);
     // stream.writeBytes(this._draftHash);
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
-    if (version >= CRCProposalVersion01) stream.writeVarBytes(this._draftData);
+    if (version >= CRCProposalVersion01) {
+      stream.writeVarBytes(this._draftData);
+    }
     stream.writeVarUInt(this._budgets.length);
     for (let i = 0; i < this._budgets.length; ++i) {
       this._budgets[i].serialize(stream);
@@ -705,7 +860,7 @@ export class CRCProposal extends Payload {
   deserializeOwnerUnsigned(stream: ByteStream, version: uint8_t): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize categoryData");
+      Log.error("deserialize categoryData");
       return false;
     }
     this._categoryData = categoryData;
@@ -713,14 +868,14 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize owner PublicKey");
+      Log.error("deserialize owner PublicKey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
 
     let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize draftHash");
+      Log.error("deserialize draftHash");
       return false;
     }
     this._draftHash = draftHash;
@@ -729,7 +884,7 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize draftdata");
+        Log.error("deserialize draftdata");
         return false;
       }
       this._draftData = draftData;
@@ -737,21 +892,24 @@ export class CRCProposal extends Payload {
 
     let count: uint64_t = stream.readVarUInt();
     if (!count) {
-      // SPVLOG_ERROR("deserialize budgets size");
+      Log.error("deserialize budgets size");
       return false;
     }
 
+    this._budgets = [];
     for (let i = 0; i < count.toNumber(); ++i) {
-      if (!this._budgets[i].deserialize(stream)) {
-        // SPVLOG_ERROR("deserialize bugets");
+      const budget = new Budget();
+      if (!budget.deserialize(stream)) {
+        Log.error("deserialize bugets");
         return false;
       }
+      this._budgets.push(budget);
     }
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize recipient");
+      Log.error("deserialize recipient");
       return false;
     }
     this._recipient = Address.newFromAddressString(programHash.toString("hex"));
@@ -772,19 +930,22 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     if (!this.deserializeOwnerUnsigned(istream, version)) {
-      // SPVLOG_ERROR("deserialize unsigned");
+      Log.error("deserialize unsigned");
       return false;
     }
 
-    if (!istream.readVarBytes(this._signature)) {
-      // SPVLOG_ERROR("deserialize signature");
+    let signature: bytes_t;
+    signature = istream.readVarBytes(signature);
+    if (!signature) {
+      Log.error("deserialize signature");
       return false;
     }
+    this._signature = signature;
 
     let programHash: bytes_t;
     programHash = istream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize sponsor did");
+      Log.error("deserialize sponsor did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -802,14 +963,17 @@ export class CRCProposal extends Payload {
 
   deserializeNormalOrELIP(stream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeCRCouncilMemberUnsigned(stream, version)) {
-      // SPVLOG_ERROR("CRCProposal deserialize crc unsigned");
+      Log.error("CRCProposal deserialize crc unsigned");
       return false;
     }
 
-    if (!stream.readVarBytes(this._crCouncilMemberSignature)) {
-      // SPVLOG_ERROR("CRCProposal deserialize crc signature");
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
+      Log.error("CRCProposal deserialize crc signature");
       return false;
     }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
 
     return true;
   }
@@ -838,7 +1002,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize categoryData");
+      Log.error("deserialize categoryData");
       return false;
     }
     this._categoryData = categoryData;
@@ -846,14 +1010,14 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize owner PublicKey");
+      Log.error("deserialize owner PublicKey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
 
     let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize draftHash");
+      Log.error("deserialize draftHash");
       return false;
     }
     this._draftHash = draftHash;
@@ -862,7 +1026,7 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!stream.readVarBytes(draftData)) {
-        // SPVLOG_ERROR("deserialize draftData");
+        Log.error("deserialize draftData");
         return false;
       }
       this._draftData = draftData;
@@ -870,7 +1034,7 @@ export class CRCProposal extends Payload {
 
     let targetProposalHash = stream.readUIntOfBytesAsBN(32);
     if (!targetProposalHash) {
-      // SPVLOG_ERROR("deserialize target proposal hash");
+      Log.error("deserialize target proposal hash");
       return false;
     }
     this._targetProposalHash = targetProposalHash;
@@ -878,7 +1042,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize new recipient");
+      Log.error("deserialize new recipient");
       return false;
     }
     this._newRecipient = Address.newFromAddressString(
@@ -886,7 +1050,7 @@ export class CRCProposal extends Payload {
     );
 
     if (!stream.readVarBytes(this._newOwnerPublicKey)) {
-      // SPVLOG_ERROR("deserialize new owner PublicKey");
+      Log.error("deserialize new owner PublicKey");
       return false;
     }
 
@@ -909,14 +1073,14 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     if (!this.deserializeChangeOwnerUnsigned(stream, version)) {
-      // SPVLOG_ERROR("deserialize change owner unsigned");
+      Log.error("deserialize change owner unsigned");
       return false;
     }
 
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize change owner signature");
+      Log.error("deserialize change owner signature");
       return false;
     }
     this._signature = signature;
@@ -924,7 +1088,7 @@ export class CRCProposal extends Payload {
     let newOwnerSignature: bytes_t;
     newOwnerSignature = stream.readVarBytes(newOwnerSignature);
     if (!newOwnerSignature) {
-      // SPVLOG_ERROR("deserialize change owner new owner signature");
+      Log.error("deserialize change owner new owner signature");
       return false;
     }
     this._newOwnerSignature = newOwnerSignature;
@@ -932,7 +1096,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize sponsor did");
+      Log.error("deserialize sponsor did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -950,14 +1114,14 @@ export class CRCProposal extends Payload {
 
   deserializeChangeOwner(stream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeChangeOwnerCRCouncilMemberUnsigned(stream, version)) {
-      // SPVLOG_ERROR("deserialize change owner cr council member unsigned");
+      Log.error("deserialize change owner cr council member unsigned");
       return false;
     }
 
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize change owner cr council member signature");
+      Log.error("deserialize change owner cr council member signature");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -965,8 +1129,8 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  toJsonChangeOwnerUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonChangeOwnerUnsigned(version: uint8_t): ChangeProposalOwnerInfo {
+    let j = <ChangeProposalOwnerInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -983,35 +1147,26 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonChangeOwnerUnsigned(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+  fromJsonChangeOwnerUnsigned(j: ChangeProposalOwnerInfo, version: uint8_t) {
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData = j[JsonKeyDraftData] as string;
+      let draftData = j[JsonKeyDraftData];
       this._draftData = this.checkAndDecodeDraftData(
         draftData,
         this._draftHash
       );
     }
-    this._targetProposalHash = new BigNumber(
-      j[JsonKeyTargetProposalHash] as string,
-      16
-    );
-    this._newRecipient = Address.newFromAddressString(
-      j[JsonKeyNewRecipient] as string
-    );
-    this._newOwnerPublicKey = Buffer.from(
-      j[JsonKeyNewOwnerPublicKey] as string,
-      "hex"
-    );
+    this._targetProposalHash = new BigNumber(j[JsonKeyTargetProposalHash], 16);
+    this._newRecipient = Address.newFromAddressString(j[JsonKeyNewRecipient]);
+    this._newOwnerPublicKey = Buffer.from(j[JsonKeyNewOwnerPublicKey], "hex");
   }
 
-  toJsonChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): json {
+  toJsonChangeOwnerCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): ChangeProposalOwnerInfo {
     let j = this.toJsonChangeOwnerUnsigned(version);
 
     j[JsonKeySignature] = this._signature.toString("hex");
@@ -1021,7 +1176,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonChangeOwnerCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonChangeOwnerCRCouncilMemberUnsigned(
+    j: ChangeProposalOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonChangeOwnerUnsigned(j, version);
 
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
@@ -1036,12 +1194,12 @@ export class CRCProposal extends Payload {
 
   isValidChangeOwnerUnsigned(version: uint8_t): boolean {
     if (this._type != CRCProposalType.changeProposalOwner) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
@@ -1049,17 +1207,17 @@ export class CRCProposal extends Payload {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
       let key1 = EcdsaSigner.getKeyFromPublic(this._newOwnerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid pubkey");
+      Log.error("invalid publick keys");
       return false;
     }
 
     if (this._draftHash.isZero() || this._targetProposalHash.isZero()) {
-      // SPVLOG_ERROR("invalid hash");
+      Log.error("invalid hash");
       return false;
     }
 
     if (!this._newRecipient.valid()) {
-      // SPVLOG_ERROR("invalid new recipient");
+      Log.error("invalid new recipient");
       return false;
     }
 
@@ -1081,7 +1239,7 @@ export class CRCProposal extends Payload {
           Buffer.from(data, "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify signature fail");
+        Log.error("verify signature fail");
         return false;
       }
 
@@ -1092,16 +1250,16 @@ export class CRCProposal extends Payload {
           Buffer.from(data, "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify new owner signature fail");
+        Log.error("verify new owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr council member did");
+      Log.error("invalid cr council member did");
       return false;
     }
 
@@ -1144,7 +1302,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize terminate proposal category data");
+      Log.error("deserialize terminate proposal category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -1152,7 +1310,7 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize terminate proposal owner pubkey");
+      Log.error("deserialize terminate proposal owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
@@ -1160,7 +1318,7 @@ export class CRCProposal extends Payload {
     let draftHash: bytes_t;
     draftHash = stream.readBytes(draftHash, 32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize terminate proposal draft hash");
+      Log.error("deserialize terminate proposal draft hash");
       return false;
     }
     this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
@@ -1169,7 +1327,7 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize terminate proposal draftData");
+        Log.error("deserialize terminate proposal draftData");
         return false;
       }
       this._draftData = draftData;
@@ -1178,7 +1336,7 @@ export class CRCProposal extends Payload {
     let targetProposalHash: bytes_t;
     targetProposalHash = stream.readBytes(draftHash, 32);
     if (!targetProposalHash) {
-      // SPVLOG_ERROR("deserialize terminate proposal target proposal hash");
+      Log.error("deserialize terminate proposal target proposal hash");
       return false;
     }
     this._targetProposalHash = new BigNumber(
@@ -1204,21 +1362,21 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     if (!this.deserializeTerminateProposalUnsigned(stream, version)) {
-      // SPVLOG_ERROR("deserialize terminate proposal unsigned");
+      Log.error("deserialize terminate proposal unsigned");
       return false;
     }
 
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize terminate proposal signature");
+      Log.error("deserialize terminate proposal signature");
       return false;
     }
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize sponsor did");
+      Log.error("deserialize sponsor did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -1238,14 +1396,14 @@ export class CRCProposal extends Payload {
     if (
       !this.deserializeTerminateProposalCRCouncilMemberUnsigned(stream, version)
     ) {
-      // SPVLOG_ERROR("deserialize terminate proposal cr council member unsigned");
+      Log.error("deserialize terminate proposal cr council member unsigned");
       return false;
     }
 
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize change owner cr council member signature");
+      Log.error("deserialize change owner cr council member signature");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -1253,21 +1411,27 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  toJsonTerminateProposalOwnerUnsigned(version: uint8_t) {
-    let j: json = {};
+  toJsonTerminateProposalOwnerUnsigned(
+    version: uint8_t
+  ): TerminateProposalOwnerInfo {
+    let j = <TerminateProposalOwnerInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
     j[JsonKeyDraftHash] = this._draftHash.toString(16);
-    if (version >= CRCProposalVersion01)
+    if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
-    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
+    }
 
+    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
     return j;
   }
 
-  fromJsonTerminateProposalOwnerUnsigned(j: json, version: uint8_t) {
+  fromJsonTerminateProposalOwnerUnsigned(
+    j: TerminateProposalOwnerInfo,
+    version: uint8_t
+  ) {
     this._type = j[JsonKeyType] as CRCProposalType;
     this._categoryData = j[JsonKeyCategoryData] as string;
     this._ownerPublicKey = Buffer.from(
@@ -1297,7 +1461,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonTerminateProposalCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonTerminateProposalCRCouncilMemberUnsigned(
+    j: TerminateProposalOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonTerminateProposalOwnerUnsigned(j, version);
 
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
@@ -1308,12 +1475,12 @@ export class CRCProposal extends Payload {
 
   isValidTerminateProposalOwnerUnsigned(version: uint8_t) {
     if (this._type != CRCProposalType.terminateProposal) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
@@ -1321,12 +1488,12 @@ export class CRCProposal extends Payload {
       // Key key(CTElastos, _ownerPublicKey);
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid pubkey");
+      Log.error("invalid public keys");
       return false;
     }
 
     if (this._draftHash.eq(0) || this._targetProposalHash.eq(0)) {
-      // SPVLOG_ERROR("invalid hash");
+      Log.error("invalid hash");
       return false;
     }
 
@@ -1335,7 +1502,7 @@ export class CRCProposal extends Payload {
 
   isValidTerminateProposalCRCouncilMemberUnsigned(version: uint8_t) {
     if (!this.isValidTerminateProposalOwnerUnsigned(version)) {
-      // SPVLOG_ERROR("terminate proposal unsigned is not valid");
+      Log.error("terminate proposal unsigned is not valid");
       return false;
     }
 
@@ -1348,16 +1515,16 @@ export class CRCProposal extends Payload {
           Buffer.from(data.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify signature fail");
+        Log.error("verify signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr council member did");
+      Log.error("invalid cr council member did");
       return false;
     }
 
@@ -1399,7 +1566,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize category data");
+      Log.error("deserialize category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -1407,14 +1574,14 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize owner pubkey");
+      Log.error("deserialize owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
 
     let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize draft hash");
+      Log.error("deserialize draft hash");
       return false;
     }
     this._draftHash = draftHash;
@@ -1423,7 +1590,7 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize draft data");
+        Log.error("deserialize draft data");
         return false;
       }
       this._draftData = draftData;
@@ -1432,7 +1599,7 @@ export class CRCProposal extends Payload {
     let secretaryPublicKey: bytes_t;
     secretaryPublicKey = stream.readVarBytes(secretaryPublicKey);
     if (!secretaryPublicKey) {
-      // SPVLOG_ERROR("deserialize secretary pubkey");
+      Log.error("deserialize secretary pubkey");
       return false;
     }
     this._secretaryPublicKey = secretaryPublicKey;
@@ -1440,7 +1607,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize sponsor did");
+      Log.error("deserialize sponsor did");
       return false;
     }
     this._secretaryDID = Address.newFromAddressString(
@@ -1466,24 +1633,24 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     if (!this.deserializeSecretaryElectionUnsigned(stream, version)) {
-      // SPVLOG_ERROR("deserialize change secretary secretary unsigned");
+      Log.error("deserialize change secretary secretary unsigned");
       return false;
     }
 
     if (!stream.readVarBytes(this._signature)) {
-      // SPVLOG_ERROR("deserialize signature");
+      Log.error("deserialize signature");
       return false;
     }
 
     if (!stream.readVarBytes(this._secretarySignature)) {
-      // SPVLOG_ERROR("deserialize secretary signature");
+      Log.error("deserialize secretary signature");
       return false;
     }
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize cr council mem did");
+      Log.error("deserialize cr council mem did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -1507,15 +1674,15 @@ export class CRCProposal extends Payload {
     }
 
     if (!stream.readVarBytes(this._crCouncilMemberSignature)) {
-      // SPVLOG_ERROR("deserialize change secretary cr council member signature");
+      Log.error("deserialize change secretary cr council member signature");
       return false;
     }
 
     return true;
   }
 
-  toJsonSecretaryElectionUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonSecretaryElectionUnsigned(version: uint8_t): SecretaryElectionInfo {
+    let j = <SecretaryElectionInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -1530,32 +1697,28 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonSecretaryElectionUnsigned(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+  fromJsonSecretaryElectionUnsigned(
+    j: SecretaryElectionInfo,
+    version: uint8_t
+  ) {
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._secretaryPublicKey = Buffer.from(
-      j[JsonKeySecretaryPublicKey] as string,
-      "hex"
-    );
-    this._secretaryDID = Address.newFromAddressString(
-      j[JsonKeySecretaryDID] as string
-    );
+    this._secretaryPublicKey = Buffer.from(j[JsonKeySecretaryPublicKey], "hex");
+    this._secretaryDID = Address.newFromAddressString(j[JsonKeySecretaryDID]);
   }
 
-  toJsonSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonSecretaryElectionCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): SecretaryElectionInfo {
+    let j = <SecretaryElectionInfo>{};
 
     j = this.toJsonSecretaryElectionUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
@@ -1565,7 +1728,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonSecretaryElectionCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonSecretaryElectionCRCouncilMemberUnsigned(
+    j: SecretaryElectionInfo,
+    version: uint8_t
+  ) {
     this.fromJsonSecretaryElectionUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string);
     this._secretarySignature = Buffer.from(
@@ -1578,12 +1744,12 @@ export class CRCProposal extends Payload {
 
   isValidSecretaryElectionUnsigned(version: uint8_t): boolean {
     if (this._type != CRCProposalType.secretaryGeneralElection) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
@@ -1591,12 +1757,12 @@ export class CRCProposal extends Payload {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
       let key1 = EcdsaSigner.getKeyFromPublic(this._secretaryPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid ...");
+      Log.error("invalid public keys");
       return false;
     }
 
     if (!this._secretaryDID.valid()) {
-      // SPVLOG_ERROR("invalid secretary did");
+      Log.error("invalid secretary did");
       return false;
     }
 
@@ -1605,7 +1771,7 @@ export class CRCProposal extends Payload {
 
   isValidSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): boolean {
     if (!this.isValidSecretaryElectionUnsigned(version)) {
-      // SPVLOG_ERROR("secretary election secretary unsigned not valid");
+      Log.error("secretary election secretary unsigned not valid");
       return false;
     }
 
@@ -1618,7 +1784,7 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify owner signature fail");
+        Log.error("verify owner signature fail");
         return false;
       }
       if (
@@ -1628,16 +1794,16 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("verify secretary signature fail");
+        Log.error("verify secretary signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -1681,7 +1847,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize reserved custom id category data");
+      Log.error("deserialize reserved custom id category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -1689,7 +1855,7 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize reserved custom id owner pubkey");
+      Log.error("deserialize reserved custom id owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
@@ -1697,29 +1863,31 @@ export class CRCProposal extends Payload {
     let draftHash: bytes_t;
     draftHash = stream.readBytes(draftHash, 32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize reserved custom id draft hash");
+      Log.error("deserialize reserved custom id draft hash");
       return false;
     }
+    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
 
     if (version >= CRCProposalVersion01) {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize reserved custom id draft data");
+        Log.error("deserialize reserved custom id draft data");
         return false;
       }
+      this._draftData = draftData;
     }
 
     let size: uint64_t = new BigNumber(0);
     size = stream.readVarUInt();
     if (!size) {
-      // SPVLOG_ERROR("deserialize reserved custom id list size");
+      Log.error("deserialize reserved custom id list size");
       return false;
     }
     for (let i = 0; i < size.toNumber(); ++i) {
       let reservedCustomID: string = stream.readVarString();
       if (!reservedCustomID) {
-        // SPVLOG_ERROR("deserialize reserved custom id list[{}]", i);
+        Log.error("deserialize reserved custom id list[{}]", i);
         return false;
       }
       this._reservedCustomIDList.push(reservedCustomID);
@@ -1748,14 +1916,15 @@ export class CRCProposal extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize reserved custom id signature");
+      Log.error("deserialize reserved custom id signature");
       return false;
     }
+    this._signature = signature;
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize cr council mem did");
+      Log.error("deserialize cr council mem did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -1780,15 +1949,17 @@ export class CRCProposal extends Payload {
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize reserved custom id council member sign");
+      Log.error("deserialize reserved custom id council member sign");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
     return true;
   }
 
-  toJsonReserveCustomIDOwnerUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonReserveCustomIDOwnerUnsigned(
+    version: uint8_t
+  ): ReserveCustomIDOwnerInfo {
+    let j = <ReserveCustomIDOwnerInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -1802,22 +1973,21 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonReserveCustomIDOwnerUnsigned(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+  fromJsonReserveCustomIDOwnerUnsigned(
+    j: ReserveCustomIDOwnerInfo,
+    version: uint8_t
+  ) {
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._reservedCustomIDList = j[JsonKeyReservedCustomIDList] as string[];
+    this._reservedCustomIDList = j[JsonKeyReservedCustomIDList];
   }
 
   toJsonReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t) {
@@ -1827,7 +1997,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonReserveCustomIDCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonReserveCustomIDCRCouncilMemberUnsigned(
+    j: ReserveCustomIDOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonReserveCustomIDOwnerUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -1837,19 +2010,19 @@ export class CRCProposal extends Payload {
 
   isValidReserveCustomIDOwnerUnsigned(version: uint8_t): boolean {
     if (this._type != CRCProposalType.reserveCustomID) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
     try {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      Log.error("invalid reserve custom id pubkey");
       return false;
     }
 
@@ -1869,16 +2042,16 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("reserve custom id verify owner signature fail");
+        Log.error("reserve custom id verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -1925,7 +2098,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize receive custom category data");
+      Log.error("deserialize receive custom category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -1933,7 +2106,7 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize receive custom owner pubkey");
+      Log.error("deserialize receive custom owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
@@ -1941,7 +2114,7 @@ export class CRCProposal extends Payload {
     let draftHash: BigNumber;
     draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize receive custom draft hash");
+      Log.error("deserialize receive custom draft hash");
       return false;
     }
     this._draftHash = draftHash;
@@ -1950,7 +2123,7 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize receive custom draft data");
+        Log.error("deserialize receive custom draft data");
         return false;
       }
       this._draftData = draftData;
@@ -1958,13 +2131,13 @@ export class CRCProposal extends Payload {
 
     let size = stream.readVarUInt();
     if (!size) {
-      // SPVLOG_ERROR("deserialize receive custom id list size");
+      Log.error("deserialize receive custom id list size");
       return false;
     }
     for (let i = 0; i < size.toNumber(); ++i) {
       let receivedCustomID = stream.readVarString();
       if (!receivedCustomID) {
-        // SPVLOG_ERROR("deserialize receive custom id list[{}]", i);
+        Log.error("deserialize receive custom id list[{}]", i);
         return false;
       }
       this._receivedCustomIDList.push(receivedCustomID);
@@ -1973,7 +2146,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize receiver did");
+      Log.error("deserialize receiver did");
       return false;
     }
     this._receiverDID = Address.newFromAddressString(
@@ -2003,7 +2176,7 @@ export class CRCProposal extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize reserved custom id signature");
+      Log.error("deserialize reserved custom id signature");
       return false;
     }
     this._signature = signature;
@@ -2011,7 +2184,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize cr council mem did");
+      Log.error("deserialize cr council mem did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2036,7 +2209,7 @@ export class CRCProposal extends Payload {
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize receive custom id council member sign");
+      Log.error("deserialize receive custom id council member sign");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -2045,7 +2218,7 @@ export class CRCProposal extends Payload {
   }
 
   toJsonReceiveCustomIDOwnerUnsigned(version: uint8_t) {
-    let j: json = {};
+    let j = <ReceiveCustomIDOwnerInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -2061,7 +2234,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonReceiveCustomIDOwnerUnsigned(j: json, version: uint8_t) {
+  fromJsonReceiveCustomIDOwnerUnsigned(
+    j: ReceiveCustomIDOwnerInfo,
+    version: uint8_t
+  ) {
     this._type = j[JsonKeyType] as CRCProposalType;
     this._categoryData = j[JsonKeyCategoryData] as string;
     this._ownerPublicKey = Buffer.from(
@@ -2082,14 +2258,19 @@ export class CRCProposal extends Payload {
     );
   }
 
-  toJsonReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): json {
+  toJsonReceiveCustomIDCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): ReceiveCustomIDOwnerInfo {
     let j = this.toJsonReceiveCustomIDOwnerUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
     return j;
   }
 
-  fromJsonReceiveCustomIDCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonReceiveCustomIDCRCouncilMemberUnsigned(
+    j: ReceiveCustomIDOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonReceiveCustomIDOwnerUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2099,12 +2280,12 @@ export class CRCProposal extends Payload {
 
   isValidReceiveCustomIDOwnerUnsigned(version: uint8_t): boolean {
     if (this._type != CRCProposalType.receiveCustomID) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
@@ -2112,7 +2293,7 @@ export class CRCProposal extends Payload {
       // Key key(CTElastos, _ownerPublicKey);
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      Log.error("invalid reserve custom id pubkey");
       return false;
     }
 
@@ -2131,16 +2312,16 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("receive custom id verify owner signature fail");
+        Log.error("receive custom id verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -2182,7 +2363,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize change custom id category data");
+      Log.error("deserialize change custom id category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -2190,7 +2371,7 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize change custom id owner pubkey");
+      Log.error("deserialize change custom id owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
@@ -2198,7 +2379,7 @@ export class CRCProposal extends Payload {
     let draftHash = new BigNumber(0);
     draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize change custom id draft hash");
+      Log.error("deserialize change custom id draft hash");
       return false;
     }
     this._draftHash = draftHash;
@@ -2207,17 +2388,18 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize change custom id draft data");
+        Log.error("deserialize change custom id draft data");
         return false;
       }
       this._draftData = draftData;
     }
 
-    if (!this._customIDFeeRateInfo.deserialize(stream, version)) {
-      // SPVLOG_ERROR("deserialize change custom id fee");
+    let customIDFeeRateInfo = new CustomIDFeeRateInfo();
+    if (!customIDFeeRateInfo.deserialize(stream, version)) {
+      Log.error("deserialize change custom id fee");
       return false;
     }
-
+    this._customIDFeeRateInfo = customIDFeeRateInfo;
     return true;
   }
 
@@ -2241,7 +2423,7 @@ export class CRCProposal extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize change custom id fee signature");
+      Log.error("deserialize change custom id fee signature");
       return false;
     }
     this._signature = signature;
@@ -2249,7 +2431,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize change custom id fee cr council mem did");
+      Log.error("deserialize change custom id fee cr council mem did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2277,7 +2459,7 @@ export class CRCProposal extends Payload {
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize change custom id fee council mem sign");
+      Log.error("deserialize change custom id fee council mem sign");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -2286,7 +2468,7 @@ export class CRCProposal extends Payload {
   }
 
   toJsonChangeCustomIDFeeOwnerUnsigned(version: uint8_t) {
-    let j: json = {};
+    let j = <ChangeCustomIDFeeOwnerInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -2301,25 +2483,21 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonChangeCustomIDFeeOwnerUnsigned(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+  fromJsonChangeCustomIDFeeOwnerUnsigned(
+    j: ChangeCustomIDFeeOwnerInfo,
+    version: uint8_t
+  ) {
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._customIDFeeRateInfo.fromJson(
-      j[JsonKeyCustomIDFeeRateInfo] as json,
-      version
-    );
+    this._customIDFeeRateInfo.fromJson(j[JsonKeyCustomIDFeeRateInfo], version);
   }
 
   toJsonChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t) {
@@ -2329,7 +2507,10 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(
+    j: ChangeCustomIDFeeOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonChangeCustomIDFeeOwnerUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2339,19 +2520,19 @@ export class CRCProposal extends Payload {
 
   isValidChangeCustomIDFeeOwnerUnsigned(version: uint8_t) {
     if (this._type != CRCProposalType.changeCustomIDFee) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
     try {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      Log.error("invalid reserve custom id pubkey");
       return false;
     }
 
@@ -2370,16 +2551,16 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("change custom id fee verify owner signature fail");
+        Log.error("change custom id fee verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -2420,7 +2601,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize change custom id category data");
+      Log.error("deserialize change custom id category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -2428,7 +2609,7 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize change custom id owner pubkey");
+      Log.error("deserialize change custom id owner pubkey");
       return false;
     }
 
@@ -2436,7 +2617,7 @@ export class CRCProposal extends Payload {
     draftHash = stream.readBytes(draftHash, 32);
 
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize change custom id draft hash");
+      Log.error("deserialize change custom id draft hash");
       return false;
     }
     this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
@@ -2445,17 +2626,18 @@ export class CRCProposal extends Payload {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
       if (!draftData) {
-        // SPVLOG_ERROR("deserialize change custom id draft data");
+        Log.error("deserialize change custom id draft data");
         return false;
       }
       this._draftData = draftData;
     }
 
-    if (!this._sidechainInfo.deserialize(stream, version)) {
-      // SPVLOG_ERROR("deserialize change custom id fee");
+    let sidechainInfo = new SideChainInfo();
+    if (!sidechainInfo.deserialize(stream, version)) {
+      Log.error("deserialize change custom id fee");
       return false;
     }
-
+    this._sidechainInfo = sidechainInfo;
     return true;
   }
 
@@ -2478,7 +2660,7 @@ export class CRCProposal extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize id signature");
+      Log.error("deserialize id signature");
       return false;
     }
     this._signature = signature;
@@ -2486,7 +2668,7 @@ export class CRCProposal extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize cr council mem did");
+      Log.error("deserialize cr council mem did");
       return false;
     }
 
@@ -2511,15 +2693,17 @@ export class CRCProposal extends Payload {
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize register side-chain council member sign");
+      Log.error("deserialize register side-chain council member sign");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
     return true;
   }
 
-  toJsonRegisterSidechainUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonRegisterSidechainUnsigned(
+    version: uint8_t
+  ): RegisterSidechainProposalInfo {
+    let j = <RegisterSidechainProposalInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -2534,31 +2718,35 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonRegisterSidechainUnsigned(j: json, version: uint8_t) {
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber((j[JsonKeyDraftHash] as string, 16));
+  fromJsonRegisterSidechainUnsigned(
+    j: RegisterSidechainProposalInfo,
+    version: uint8_t
+  ) {
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber((j[JsonKeyDraftHash], 16));
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._sidechainInfo.fromJson(j[JsonKeySidechainInfo] as json, version);
+    this._sidechainInfo.fromJson(j[JsonKeySidechainInfo], version);
   }
 
-  toJsonRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): json {
+  toJsonRegisterSidechainCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): RegisterSidechainProposalInfo {
     let j = this.toJsonRegisterSidechainUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
     return j;
   }
 
-  fromJsonRegisterSidechainCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonRegisterSidechainCRCouncilMemberUnsigned(
+    j: RegisterSidechainProposalInfo,
+    version: uint8_t
+  ) {
     this.fromJsonRegisterSidechainUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2568,19 +2756,19 @@ export class CRCProposal extends Payload {
 
   isValidRegisterSidechainUnsigned(version: uint8_t): boolean {
     if (this._type != CRCProposalType.registerSideChain) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
     try {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid reserve custom id pubkey");
+      Log.error("invalid reserve custom id pubkey");
       return false;
     }
 
@@ -2605,16 +2793,16 @@ export class CRCProposal extends Payload {
           Buffer.from(rs.toString(16), "hex")
         )
       ) {
-        // SPVLOG_ERROR("change register side-chain verify owner signature fail");
+        Log.error("change register side-chain verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -2652,7 +2840,7 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      // SPVLOG_ERROR("deserialize upgrade code category data");
+      Log.error("deserialize upgrade code category data");
       return false;
     }
     this._categoryData = categoryData;
@@ -2660,22 +2848,23 @@ export class CRCProposal extends Payload {
     let ownerPublicKey: bytes_t;
     ownerPublicKey = stream.readVarBytes(ownerPublicKey);
     if (!ownerPublicKey) {
-      // SPVLOG_ERROR("deserialize upgrade code owner pubkey");
+      Log.error("deserialize upgrade code owner pubkey");
       return false;
     }
     this._ownerPublicKey = ownerPublicKey;
 
     let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
-      // SPVLOG_ERROR("deserialize upgrade code draft hash");
+      Log.error("deserialize upgrade code draft hash");
       return false;
     }
 
-    if (!this._upgradeCodeInfo.deserialize(stream, version)) {
-      // SPVLOG_ERROR("deserialize upgrade code");
+    let upgradeCodeInfo = new UpgradeCodeInfo();
+    if (!upgradeCodeInfo.deserialize(stream, version)) {
+      Log.error("deserialize upgrade code");
       return false;
     }
-
+    this._upgradeCodeInfo = upgradeCodeInfo;
     return true;
   }
 
@@ -2699,14 +2888,14 @@ export class CRCProposal extends Payload {
     let signature: bytes_t;
     signature = stream.readVarBytes(signature);
     if (!signature) {
-      // SPVLOG_ERROR("deserialize upgrade code signature failed");
+      Log.error("deserialize upgrade code signature failed");
       return false;
     }
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize upgrade code cr council did");
+      Log.error("deserialize upgrade code cr council did");
       return false;
     }
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -2729,7 +2918,7 @@ export class CRCProposal extends Payload {
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize cr council mem sign failed");
+      Log.error("deserialize cr council mem sign failed");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -2737,8 +2926,8 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  toJsonUpgradeCodeUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonUpgradeCodeUnsigned(version: uint8_t): UpgradeCodeProposalInfo {
+    let j = <UpgradeCodeProposalInfo>{};
 
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
@@ -2749,30 +2938,32 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonUpgradeCode(j: json, version: uint8_t) {
-    let type = j[JsonKeyType] as CRCProposalType;
+  fromJsonUpgradeCode(j: UpgradeCodeProposalInfo, version: uint8_t) {
+    let type = j[JsonKeyType];
     this._type = type;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
-    this._upgradeCodeInfo.fromJson(j[JsonKeyUpgradeCodeInfo] as json, version);
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
+    this._upgradeCodeInfo.fromJson(j[JsonKeyUpgradeCodeInfo], version);
   }
 
-  toJsonUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): json {
-    let j: json = this.toJsonUpgradeCodeUnsigned(version);
+  toJsonUpgradeCodeCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): UpgradeCodeProposalInfo {
+    let j = this.toJsonUpgradeCodeUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
     return j;
   }
 
-  fromJsonUpgradeCodeCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonUpgradeCodeCRCouncilMemberUnsigned(
+    j: UpgradeCodeProposalInfo,
+    version: uint8_t
+  ) {
     this.fromJsonUpgradeCode(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -2782,19 +2973,19 @@ export class CRCProposal extends Payload {
       this._type != CRCProposalType.ethUpdateCode &&
       this._type != CRCProposalType.didUpdateCode
     ) {
-      // SPVLOG_ERROR("invalid type: {}", _type);
+      Log.error("invalid type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
     try {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid owner pubkey");
+      Log.error("invalid owner pubkey");
       return false;
     }
 
@@ -2821,16 +3012,16 @@ export class CRCProposal extends Payload {
           )
         )
       ) {
-        // SPVLOG_ERROR("change upgrade code verify owner signature fail");
+        Log.error("change upgrade code verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -2888,7 +3079,7 @@ export class CRCProposal extends Payload {
         break;
 
       default:
-        // SPVLOG_ERROR("serialize cr proposal unknown type");
+        Log.error("serialize cr proposal unknown type");
         break;
     }
   }
@@ -2896,7 +3087,7 @@ export class CRCProposal extends Payload {
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let type = stream.readUInt16();
     if (!type) {
-      // SPVLOG_ERROR("deserialize type");
+      Log.error("deserialize type");
       return false;
     }
     this._type = type as CRCProposalType;
@@ -2943,7 +3134,7 @@ export class CRCProposal extends Payload {
         break;
 
       default:
-        // SPVLOG_ERROR("unknow type: {}", _type);
+        Log.error("unknow type: {}", this._type);
         r = false;
         break;
     }
@@ -2951,8 +3142,8 @@ export class CRCProposal extends Payload {
     return r;
   }
 
-  toJsonNormalOwnerUnsigned(version: uint8_t): json {
-    let j: json = {};
+  toJsonNormalOwnerUnsigned(version: uint8_t): NormalOwnerInfo {
+    let j = <NormalOwnerInfo>{};
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
@@ -2960,7 +3151,7 @@ export class CRCProposal extends Payload {
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
-    let budgets = [];
+    let budgets: BudgetInfo[] = [];
     for (let i = 0; i < this._budgets.length; ++i) {
       budgets.push(this._budgets[i].toJson());
     }
@@ -2969,50 +3160,45 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonNormalOwnerUnsigned(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+  fromJsonNormalOwnerUnsigned(j: NormalOwnerInfo, version: uint8_t) {
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    let budgets = j[JsonKeyBudgets] as JSONArray;
+    let budgets = j[JsonKeyBudgets];
+    this._budgets = [];
     for (let i = 0; i < budgets.length; ++i) {
       let budget = new Budget();
-      budget.fromJson(budgets[i] as json);
+      budget.fromJson(budgets[i]);
       this._budgets.push(budget);
     }
 
-    this._recipient = Address.newFromAddressString(
-      j[JsonKeyRecipient] as string
-    );
+    this._recipient = Address.newFromAddressString(j[JsonKeyRecipient]);
   }
 
-  toJsonNormalCRCouncilMemberUnsigned(version: uint8_t): json {
-    let j: json = this.toJsonNormalOwnerUnsigned(version);
+  toJsonNormalCRCouncilMemberUnsigned(version: uint8_t): NormalOwnerInfo {
+    let j = this.toJsonNormalOwnerUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
     return j;
   }
 
-  fromJsonNormalCRCouncilMemberUnsigned(j: json, version: uint8_t) {
+  fromJsonNormalCRCouncilMemberUnsigned(j: NormalOwnerInfo, version: uint8_t) {
     this.fromJsonNormalOwnerUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
   toJson(version: uint8_t) {
-    let j: json = {};
+    let j = <CRCProposalInfo>{};
     switch (this._type) {
       case CRCProposalType.normal:
       case CRCProposalType.elip:
@@ -3040,7 +3226,7 @@ export class CRCProposal extends Payload {
         j = this.toJsonRegisterSidechainCRCouncilMemberUnsigned(version);
         break;
       default:
-        // SPVLOG_ERROR("unknow type: {}", _type);
+        Log.error("unknow type: {}", this._type);
         return j;
     }
     j[JsonKeyCRCouncilMemberSignature] =
@@ -3048,36 +3234,60 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._type = j[JsonKeyType] as CRCProposalType;
+  fromJson(j: CRCProposalInfo, version: uint8_t) {
+    this._type = j[JsonKeyType];
     switch (this._type) {
       case CRCProposalType.normal:
       case CRCProposalType.elip:
-        this.fromJsonNormalCRCouncilMemberUnsigned(j, version);
+        this.fromJsonNormalCRCouncilMemberUnsigned(
+          j as NormalOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.secretaryGeneralElection:
-        this.fromJsonSecretaryElectionCRCouncilMemberUnsigned(j, version);
+        this.fromJsonSecretaryElectionCRCouncilMemberUnsigned(
+          j as SecretaryElectionInfo,
+          version
+        );
         break;
       case CRCProposalType.changeProposalOwner:
-        this.fromJsonChangeOwnerCRCouncilMemberUnsigned(j, version);
+        this.fromJsonChangeOwnerCRCouncilMemberUnsigned(
+          j as ChangeProposalOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.terminateProposal:
-        this.fromJsonTerminateProposalCRCouncilMemberUnsigned(j, version);
+        this.fromJsonTerminateProposalCRCouncilMemberUnsigned(
+          j as TerminateProposalOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.reserveCustomID:
-        this.fromJsonReserveCustomIDCRCouncilMemberUnsigned(j, version);
+        this.fromJsonReserveCustomIDCRCouncilMemberUnsigned(
+          j as ReserveCustomIDOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.receiveCustomID:
-        this.fromJsonReceiveCustomIDCRCouncilMemberUnsigned(j, version);
+        this.fromJsonReceiveCustomIDCRCouncilMemberUnsigned(
+          j as ReceiveCustomIDOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.changeCustomIDFee:
-        this.fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(j, version);
+        this.fromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(
+          j as ChangeCustomIDFeeOwnerInfo,
+          version
+        );
         break;
       case CRCProposalType.registerSideChain:
-        this.fromJsonRegisterSidechainCRCouncilMemberUnsigned(j, version);
+        this.fromJsonRegisterSidechainCRCouncilMemberUnsigned(
+          j as RegisterSidechainProposalInfo,
+          version
+        );
         break;
       default:
-        // SPVLOG_ERROR("unknow type: {}", _type);
+        Log.error("unknow type: {}", this._type);
         return;
     }
     this._crCouncilMemberSignature = Buffer.from(
@@ -3088,31 +3298,31 @@ export class CRCProposal extends Payload {
 
   isValidNormalOwnerUnsigned(version: uint8_t): boolean {
     if (this._type >= CRCProposalType.maxType) {
-      // SPVLOG_ERROR("invalid proposal type: {}", _type);
+      Log.error("invalid proposal type: {}", this._type);
       return false;
     }
 
     if (this._categoryData.length > 4096) {
-      // SPVLOG_ERROR("category data exceed 4096 bytes");
+      Log.error("category data exceed 4096 bytes");
       return false;
     }
 
     try {
       let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid proposal owner pubkey");
+      Log.error("invalid proposal owner pubkey");
       return false;
     }
 
     for (let budget of this._budgets) {
       if (!budget.isValid()) {
-        // SPVLOG_ERROR("invalid budget");
+        Log.error("invalid budget");
         return false;
       }
     }
 
     if (!this._recipient.valid()) {
-      // SPVLOG_ERROR("invalid recipient");
+      Log.error("invalid recipient");
       return false;
     }
 
@@ -3133,16 +3343,16 @@ export class CRCProposal extends Payload {
           )
         )
       ) {
-        // SPVLOG_ERROR("verify owner signature fail");
+        Log.error("verify owner signature fail");
         return false;
       }
     } catch (e) {
-      // SPVLOG_ERROR("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e.what());
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr committee did");
+      Log.error("invalid cr committee did");
       return false;
     }
 
@@ -3181,7 +3391,7 @@ export class CRCProposal extends Payload {
         break;
     }
     if (!this._crCouncilMemberSignature) {
-      // SPVLOG_ERROR("cr committee not signed");
+      Log.error("cr committee not signed");
       isValid = false;
     }
     return isValid;
@@ -3324,11 +3534,11 @@ export class CRCProposal extends Payload {
           break;
       }
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposal");
+      Log.error("payload is not instance of CRCProposal");
       equal = false;
     }
     if (version >= CRCProposalVersion01)
-      equal = equal && this._draftData.toString() == p._draftData.toString();
+      equal = equal && this._draftData.equals(p._draftData);
     return equal;
   }
 
@@ -3337,7 +3547,7 @@ export class CRCProposal extends Payload {
       const crcProposal = payload as CRCProposal;
       this.copyCRCProposal(crcProposal);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposal");
+      Log.error("payload is not instance of CRCProposal");
     }
     return this;
   }
