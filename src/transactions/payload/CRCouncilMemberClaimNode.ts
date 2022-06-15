@@ -22,6 +22,8 @@
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
+import { Log } from "../../common/Log";
+import { uint168 } from "../../common/uint168";
 import { bytes_t, size_t, uint256, uint8_t } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
@@ -65,13 +67,13 @@ export class CRCouncilMemberClaimNode extends Payload {
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeUnsigned(stream, version)) {
-      // SPVLOG_ERROR("deserialize unsigned fail");
+      Log.error("deserialize unsigned fail");
       return false;
     }
     let crCouncilMemberSignature: bytes_t;
     crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
     if (!crCouncilMemberSignature) {
-      // SPVLOG_ERROR("deserialize signature fail");
+      Log.error("deserialize signature fail");
       return false;
     }
     this._crCouncilMemberSignature = crCouncilMemberSignature;
@@ -95,12 +97,12 @@ export class CRCouncilMemberClaimNode extends Payload {
 
   isValid(version: uint8_t) {
     if (!this.isValidUnsigned(version)) {
-      // SPVLOG_ERROR("unsigned is not valid");
+      Log.error("unsigned is not valid");
       return false;
     }
 
     if (!this._crCouncilMemberSignature.length) {
-      // SPVLOG_ERROR("invalid signature");
+      Log.error("invalid signature");
       return false;
     }
 
@@ -112,7 +114,7 @@ export class CRCouncilMemberClaimNode extends Payload {
       const realPayload = payload as CRCouncilMemberClaimNode;
       this.copyCRCouncilMemberClaimNode(realPayload);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCouncilMemberClaimNode");
+      Log.error("payload is not instance of CRCouncilMemberClaimNode");
     }
     return this;
   }
@@ -137,7 +139,7 @@ export class CRCouncilMemberClaimNode extends Payload {
           realPayload._crCouncilMemberSignature
         );
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCouncilMemberClaimNode");
+      Log.error("payload is not instance of CRCouncilMemberClaimNode");
       equal = false;
     }
 
@@ -153,7 +155,7 @@ export class CRCouncilMemberClaimNode extends Payload {
     let nodePublicKey: bytes_t;
     nodePublicKey = stream.readVarBytes(nodePublicKey);
     if (!nodePublicKey) {
-      // SPVLOG_ERROR("deserialize node pubkey");
+      Log.error("deserialize node pubkey");
       return false;
     }
     this._nodePublicKey = nodePublicKey;
@@ -161,11 +163,12 @@ export class CRCouncilMemberClaimNode extends Payload {
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
     if (!programHash) {
-      // SPVLOG_ERROR("deserialize cr council member did");
+      Log.error("deserialize cr council member did");
       return false;
     }
-    this._crCouncilMemberDID = Address.newFromAddressString(
-      programHash.toString()
+
+    this._crCouncilMemberDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -192,12 +195,12 @@ export class CRCouncilMemberClaimNode extends Payload {
       // Key key(CTElastos, _nodePublicKey);
       let key = EcdsaSigner.getKeyFromPublic(this._nodePublicKey);
     } catch (e) {
-      // SPVLOG_ERROR("invalid node pubkey");
+      Log.error("invalid node pubkey");
       return false;
     }
 
     if (!this._crCouncilMemberDID.valid()) {
-      // SPVLOG_ERROR("invalid cr council member did");
+      Log.error("invalid cr council member did");
       return false;
     }
 
@@ -205,7 +208,7 @@ export class CRCouncilMemberClaimNode extends Payload {
   }
 
   digestUnsigned(version: uint8_t): uint256 {
-    if (this._digestUnsigned.isZero()) {
+    if (!this._digestUnsigned) {
       let stream = new ByteStream();
       this.serializeUnsigned(stream, version);
       let digest = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
