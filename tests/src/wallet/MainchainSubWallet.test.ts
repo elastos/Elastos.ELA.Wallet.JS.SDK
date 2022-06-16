@@ -28,7 +28,8 @@ import {
   MainchainSubWallet,
   VoteContentInfo,
   CRInfoPayload,
-  CRInfoJson
+  CRInfoJson,
+  CRCouncilMemberClaimNodeInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -48,7 +49,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
   });
 
-  test("create vote transaction", async () => {
+  test("test createVoteTransaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -133,7 +134,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("create register producer transaction", async () => {
+  test("test createRegisterProducerTransaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -203,7 +204,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("create register CR transaction", async () => {
+  test("test createRegisterCRTransaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -289,7 +290,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("create retrieve CR deposit transaction", async () => {
+  test("test createRetrieveCRDepositTransaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -336,6 +337,69 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(info[0].Signers.length).toEqual(1);
     expect(info[0].Signers[0]).toEqual(
       "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test CRCouncilMemberClaimNodeTransaction", async () => {
+    // the wallet of CR12 on private blockchain
+    const mnemonic = `joke coil tag chapter auto fold leave rather primary mobile battle tool`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-22";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    const addresses = subWallet.getAddresses(0, 1, false);
+
+    const nodePublicKey =
+      "03b5d90257ad24caf22fa8a11ce270ea57f3c2597e52322b453d4919ebec4e6300";
+
+    const councilMemberClaimNodeInfo: CRCouncilMemberClaimNodeInfo = {
+      NodePublicKey: nodePublicKey,
+      CRCouncilMemberDID: "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy"
+    };
+
+    const digest = subWallet.CRCouncilMemberClaimNodeDigest(
+      councilMemberClaimNodeInfo
+    );
+    let signature = await subWallet.signDigest(addresses[0], digest, passwd);
+    councilMemberClaimNodeInfo.CRCouncilMemberSignature = signature;
+
+    const inputs = [
+      {
+        Address: addresses[0],
+        Amount: "49999999900",
+        TxHash:
+          "f0412f67766a8dfb662e2264808a594906db6e99f1078464862c2646811bed9b",
+        Index: 1
+      }
+    ];
+    const fee = "10000";
+    const memo = "test the CR council member claim node transaction";
+
+    const tx: EncodedTx = subWallet.createCRCouncilMemberClaimNodeTransaction(
+      inputs,
+      councilMemberClaimNodeInfo,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
     );
   });
 });

@@ -7,13 +7,14 @@ import { SubWallet } from "./wallet/SubWallet";
 import { HDKey, KeySpec } from "./walletcore/hdkey";
 import { Mnemonic } from "./walletcore/mnemonic";
 import { WalletErrorException } from "./common/exceptions/walleterror.exception";
-import type { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
-import type { SignedInfo } from "./transactions/Program";
-import type { EncodedTx } from "./wallet/IElastosBaseSubWallet";
-import type { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
-import type { LocalStoreInfo } from "./persistence/LocalStore";
-import type { VoteContentInfo } from "./transactions/payload/OutputPayload/PayloadVote";
-import type { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
+import { AccountBasicInfo, AccountPubKeyInfo } from "./account/Account";
+import { SignedInfo } from "./transactions/Program";
+import { EncodedTx } from "./wallet/IElastosBaseSubWallet";
+import { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
+import { LocalStoreInfo } from "./persistence/LocalStore";
+import { VoteContentInfo } from "./transactions/payload/OutputPayload/PayloadVote";
+import { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
+import { CRCouncilMemberClaimNodeInfo } from "./transactions/payload/CRCouncilMemberClaimNode";
 
 export {
   BrowserLocalStorage,
@@ -36,5 +37,6 @@ export type {
   LocalStoreInfo,
   VoteContentInfo,
   CRInfoPayload,
-  CRInfoJson
+  CRInfoJson,
+  CRCouncilMemberClaimNodeInfo
 };
