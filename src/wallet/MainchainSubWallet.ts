@@ -44,7 +44,7 @@ import {
   CRCProposalVersion01,
   JsonKeyDraftData,
   JsonKeyType,
-  NormalOwnerInfo,
+  NormalProposalOwnerInfo,
   ReceiveCustomIDOwnerInfo,
   RegisterSidechainProposalInfo,
   ReserveCustomIDOwnerInfo,
@@ -1533,7 +1533,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalOwnerDigest(payload: NormalOwnerInfo): string {
+  proposalOwnerDigest(payload: NormalProposalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
@@ -1589,7 +1589,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *
    * @return Digest of payload.
    */
-  proposalCRCouncilMemberDigest(payload: NormalOwnerInfo): string {
+  proposalCRCouncilMemberDigest(payload: NormalProposalOwnerInfo): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload);
 

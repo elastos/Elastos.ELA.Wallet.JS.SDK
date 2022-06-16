@@ -120,14 +120,16 @@ export class Budget {
 
   deserialize(istream: ByteStream): boolean {
     let type: uint8_t = istream.readUInt8();
-    if (!type) {
+    // ignore the imprest budget type
+    if (!type && type !== 0) {
       Log.error("Budget::Deserialize: read type key");
       return false;
     }
     this._type = type;
 
     let stage: uint8_t = istream.readUInt8();
-    if (!stage) {
+    // ignore the stage 0
+    if (!stage && stage !== 0) {
       Log.error("Budget::Deserialize: read stage key");
       return false;
     }
@@ -473,7 +475,7 @@ export type ChangeProposalOwnerInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   TargetProposalHash: string;
   NewRecipient: string;
   NewOwnerPublicKey: string;
@@ -488,7 +490,7 @@ export type TerminateProposalOwnerInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   TargetProposalHash: string;
   Signature?: string;
   CRCouncilMemberDID?: string;
@@ -500,7 +502,7 @@ export type SecretaryElectionInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   SecretaryGeneralPublicKey: string;
   SecretaryGeneralDID: string;
   Signature?: string;
@@ -514,7 +516,7 @@ export type ReserveCustomIDOwnerInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   ReservedCustomIDList: string[];
   Signature?: string;
   CRCouncilMemberDID?: string;
@@ -526,7 +528,7 @@ export type ReceiveCustomIDOwnerInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   ReceivedCustomIDList: string[];
   ReceiverDID: string;
   Signature?: string;
@@ -539,7 +541,7 @@ export type ChangeCustomIDFeeOwnerInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   CustomIDFeeRateInfo: CustomIDFeeRateInfoJson;
   Signature?: string;
   CRCouncilMemberDID?: string;
@@ -551,7 +553,7 @@ export type RegisterSidechainProposalInfo = {
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   SidechainInfo: SideChainInfoJson;
   Signature?: string;
   CRCouncilMemberDID?: string;
@@ -569,12 +571,12 @@ export type UpgradeCodeProposalInfo = {
   CRCouncilMemberSignature?: string;
 };
 
-export type NormalOwnerInfo = {
+export type NormalProposalOwnerInfo = {
   Type: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
-  DraftData: string;
+  DraftData?: string;
   Budgets: BudgetInfo[];
   Recipient: string;
   Signature?: string;
@@ -591,7 +593,7 @@ export type CRCProposalInfo =
   | ChangeCustomIDFeeOwnerInfo
   | RegisterSidechainProposalInfo
   | UpgradeCodeProposalInfo
-  | NormalOwnerInfo;
+  | NormalProposalOwnerInfo;
 
 export class CRCProposal extends Payload {
   private _type: CRCProposalType;
@@ -913,7 +915,10 @@ export class CRCProposal extends Payload {
       Log.error("deserialize recipient");
       return false;
     }
-    this._recipient = Address.newFromAddressString(programHash.toString("hex"));
+
+    this._recipient = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
+    );
 
     return true;
   }
@@ -1047,8 +1052,9 @@ export class CRCProposal extends Payload {
       Log.error("deserialize new recipient");
       return false;
     }
-    this._newRecipient = Address.newFromAddressString(
-      programHash.toString("hex")
+
+    this._newRecipient = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     if (!stream.readVarBytes(this._newOwnerPublicKey)) {
@@ -1613,9 +1619,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize sponsor did");
       return false;
     }
-    this._secretaryDID = Address.newFromAddressString(
-      programHash.toString("hex")
-    );
+
+    this._secretaryDID = Address.newFromProgramHash(uint168.newFrom21BytesBuffer(programHash))
 
     return true;
   }
@@ -2152,8 +2157,8 @@ export class CRCProposal extends Payload {
       Log.error("deserialize receiver did");
       return false;
     }
-    this._receiverDID = Address.newFromAddressString(
-      programHash.toString("hex")
+    this._receiverDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
     );
 
     return true;
@@ -3089,7 +3094,8 @@ export class CRCProposal extends Payload {
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let type = stream.readUInt16();
-    if (!type) {
+    // ignore normal proposal
+    if (!type && type !== 0) {
       Log.error("deserialize type");
       return false;
     }
@@ -3145,8 +3151,8 @@ export class CRCProposal extends Payload {
     return r;
   }
 
-  toJsonNormalOwnerUnsigned(version: uint8_t): NormalOwnerInfo {
-    let j = <NormalOwnerInfo>{};
+  toJsonNormalOwnerUnsigned(version: uint8_t): NormalProposalOwnerInfo {
+    let j = <NormalProposalOwnerInfo>{};
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
@@ -3163,7 +3169,7 @@ export class CRCProposal extends Payload {
     return j;
   }
 
-  fromJsonNormalOwnerUnsigned(j: NormalOwnerInfo, version: uint8_t) {
+  fromJsonNormalOwnerUnsigned(j: NormalProposalOwnerInfo, version: uint8_t) {
     this._type = j[JsonKeyType];
     this._categoryData = j[JsonKeyCategoryData];
     this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
@@ -3185,14 +3191,19 @@ export class CRCProposal extends Payload {
     this._recipient = Address.newFromAddressString(j[JsonKeyRecipient]);
   }
 
-  toJsonNormalCRCouncilMemberUnsigned(version: uint8_t): NormalOwnerInfo {
+  toJsonNormalCRCouncilMemberUnsigned(
+    version: uint8_t
+  ): NormalProposalOwnerInfo {
     let j = this.toJsonNormalOwnerUnsigned(version);
     j[JsonKeySignature] = this._signature.toString("hex");
     j[JsonKeyCRCouncilMemberDID] = this._crCouncilMemberDID.string();
     return j;
   }
 
-  fromJsonNormalCRCouncilMemberUnsigned(j: NormalOwnerInfo, version: uint8_t) {
+  fromJsonNormalCRCouncilMemberUnsigned(
+    j: NormalProposalOwnerInfo,
+    version: uint8_t
+  ) {
     this.fromJsonNormalOwnerUnsigned(j, version);
     this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
@@ -3243,7 +3254,7 @@ export class CRCProposal extends Payload {
       case CRCProposalType.normal:
       case CRCProposalType.elip:
         this.fromJsonNormalCRCouncilMemberUnsigned(
-          j as NormalOwnerInfo,
+          j as NormalProposalOwnerInfo,
           version
         );
         break;

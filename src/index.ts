@@ -15,6 +15,10 @@ import { LocalStoreInfo } from "./persistence/LocalStore";
 import { VoteContentInfo } from "./transactions/payload/OutputPayload/PayloadVote";
 import { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
 import { CRCouncilMemberClaimNodeInfo } from "./transactions/payload/CRCouncilMemberClaimNode";
+import {
+  NormalProposalOwnerInfo,
+  CRCProposalInfo
+} from "./transactions/payload/CRCProposal";
 
 export {
   BrowserLocalStorage,
@@ -27,6 +31,7 @@ export {
   MainchainSubWallet,
   WalletErrorException
 };
+
 export type {
   WalletStorage,
   AccountBasicInfo,
@@ -38,5 +43,7 @@ export type {
   VoteContentInfo,
   CRInfoPayload,
   CRInfoJson,
-  CRCouncilMemberClaimNodeInfo
+  CRCouncilMemberClaimNodeInfo,
+  CRCProposalInfo,
+  NormalProposalOwnerInfo
 };
