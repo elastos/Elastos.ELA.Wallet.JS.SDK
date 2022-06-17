@@ -27,13 +27,19 @@ import {
   uint8_t,
   bytes_t,
   sizeof_uint8_t,
-  sizeof_uint64_t,
-  json
+  sizeof_uint64_t
 } from "../../../types";
 import { ByteStream } from "../../../common/bytestream";
 import BigNumber from "bignumber.js";
 
 export const CrossChainOutputVersion = 0x0;
+
+export type PayloadCrossChainInfo = {
+  Version: number;
+  TargetAddress: string;
+  TargetAmount: string;
+  TargetData: string;
+};
 
 export class PayloadCrossChain extends OutputPayload {
   private _version: uint8_t;
@@ -80,8 +86,9 @@ export class PayloadCrossChain extends OutputPayload {
     let stream = new ByteStream();
 
     size += sizeof_uint8_t();
-    size += stream.writeVarUInt(this._targetAddress.length);
-    size += this._targetAddress.length;
+    let targetAddress = Buffer.from(this._targetAddress, "utf8");
+    size += stream.writeVarUInt(targetAddress.length);
+    size += targetAddress.length;
     size += sizeof_uint64_t();
     size += stream.writeVarUInt(this._targetData.length);
     size += this._targetData.length;
@@ -92,7 +99,7 @@ export class PayloadCrossChain extends OutputPayload {
   serialize(stream: ByteStream) {
     stream.writeUInt8(this._version);
     stream.writeVarString(this._targetAddress);
-    stream.writeBigNumber(this._targetAmount);
+    stream.writeBNAsUIntOfSize(this._targetAmount, 8);
     stream.writeVarBytes(this._targetData);
   }
 
@@ -110,35 +117,38 @@ export class PayloadCrossChain extends OutputPayload {
     }
 
     // not sure
-    let amount = stream.readUInt64();
+    let amount = stream.readUIntOfBytesAsBN(8);
     if (!amount) {
       Log.error("deser op amount");
       return false;
     }
-    this._targetAmount = new BigNumber(amount);
+    this._targetAmount = amount;
 
-    if (!stream.readVarBytes(this._targetData)) {
+    let targetData: bytes_t;
+    targetData = stream.readVarBytes(targetData);
+
+    if (!targetData) {
       Log.error("deser op data");
       return false;
     }
-
+    this._targetData = targetData;
     return true;
   }
 
-  toJson() {
-    let j: json;
+  toJson(): PayloadCrossChainInfo {
+    let j = <PayloadCrossChainInfo>{};
     j["Version"] = this._version;
     j["TargetAddress"] = this._targetAddress;
-    j["TargetAmount"] = this._targetAmount.toNumber();
+    j["TargetAmount"] = this._targetAmount.toString();
     j["TargetData"] = this._targetData.toString("hex");
     return j;
   }
 
-  fromJson(j: json) {
-    this._version = j["Version"] as uint8_t;
-    this._targetAddress = j["TargetAddress"] as string;
-    this._targetAmount = new BigNumber(j["TargetAmount"] as number);
-    this._targetData = Buffer.from(j["TargetData"] as string, "hex");
+  fromJson(j: PayloadCrossChainInfo) {
+    this._version = j["Version"];
+    this._targetAddress = j["TargetAddress"];
+    this._targetAmount = new BigNumber(j["TargetAmount"]);
+    this._targetData = Buffer.from(j["TargetData"], "hex");
   }
 
   copyPayloadCrossChain(payload: PayloadCrossChain) {
@@ -160,7 +170,7 @@ export class PayloadCrossChain extends OutputPayload {
         this._version == p._version &&
         this._targetAddress == p._targetAddress &&
         this._targetAmount.isEqualTo(p._targetAmount) &&
-        this._targetData.toString() == p._targetData.toString()
+        this._targetData.equals(p._targetData)
       );
     } catch (error) {
       Log.error("payload is not instance of PayloadCrossChain");
