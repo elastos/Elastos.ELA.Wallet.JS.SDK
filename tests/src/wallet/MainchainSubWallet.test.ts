@@ -29,7 +29,8 @@ import {
   VoteContentInfo,
   CRInfoPayload,
   CRInfoJson,
-  CRCouncilMemberClaimNodeInfo
+  CRCouncilMemberClaimNodeInfo,
+  NormalProposalOwnerInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -394,6 +395,121 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
     const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
+    );
+  });
+
+  test("test createProposalTransaction", async () => {
+    // convert the suggestion #1109 on CR website to a proposal
+    // the wallet of a proposal owner on private blockchain
+    const mnemonic = `decline proud hero asthma drop involve drama borrow decrease buddy chalk raw`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-23",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    const addresses = subWallet.getAddresses(0, 1, false);
+    console.log("addresses...", addresses);
+
+    let publicKey = "";
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    if (pubKeys instanceof Array) {
+      publicKey = pubKeys[0];
+    }
+    console.log("publicKey...", publicKey);
+
+    // draft hash of the suggestion #1109
+    // use api-3 of the CR website to get a suggesiton's details
+    let draftHash = `ee5f375a91f04be31718df04f6d4cdc1d366c71179de602ef4a23e6f1ae16742`;
+
+    // draft data of the suggestion #1109
+    // use api-8 of the CR website to get a suggestion's draft data
+    let draftData = `504b03041400000808002638d154b92bd6745c010000e40300000d00000070726f706f73616c2e6a736f6e8d534b4ec33010ddf71451d62dcaaf6e61cb11608750e5145359f2277206a4aaaa84106b9650362c3840bb618b380ca2945be049fa2389ac6e6c4fdebce7f19bcca4e5793e7010cc3fb10796c3406923a9180424ec0d42bf8d0934cdc1d02160cef65c205203bfa5c0b5426c171d95707a733562905becc2869e3729560be440477865d0de7cc9e8583205a78603339ca25ce817e0b4ddcc0d5ddcc8cd8d5cdcd8cd8d5ddc64cdb5eb65e91017d655ad58dd04e0d2425466f818d24d024248bfb7551f692a0a57370a9db21dff0d6c2cb5a24c48b7ef568eeacae121cac771dc0b9cca715d393a40994441d84d9cca495d39ae98cf652618b6a8f829cf1995f52e48265366507a68823d878d2e8702f74e056279a655ce532e388c31691fe5ea5a97d360988741c9ae94b6790feeeb69c9045567b6d4a262c4569f2fcbd9e27bfeba7cfa582dde97b3c7afbbfbfdc96ac8fe7d7bf8993fefb25bd33f504b010214031400000808002638d154b92bd6745c010000e40300000d0000000000000000000000a4810000000070726f706f73616c2e6a736f6e504b050600000000010001003b000000870100000000`;
+
+    // signature of the suggestion #1109
+    let signature =
+      "1876996df6f9f470b05b81f93087d57d1256efb43cad877f3b7f05499090f5e0a63d2c508608526047ee59954a3783358d1efbae55f0d6df0ad10d2d4a1c9cec";
+
+    let payload: NormalProposalOwnerInfo = {
+      Type: 0,
+      CategoryData: "",
+      OwnerPublicKey: publicKey,
+      DraftHash: draftHash,
+      DraftData: draftData,
+      Budgets: [
+        { Type: 0, Stage: 0, Amount: "100000000000" },
+        { Type: 1, Stage: 1, Amount: "100200000000" },
+        { Type: 1, Stage: 2, Amount: "100300000000" },
+        { Type: 2, Stage: 3, Amount: "100400000000" }
+      ],
+      Recipient: addresses[0]
+    };
+
+    // council member wallet
+    const crMnemonic = `joke coil tag chapter auto fold leave rather primary mobile battle tool`;
+
+    const crMasterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-24",
+      crMnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const crSubWallet: MainchainSubWallet =
+      await crMasterWallet.createSubWallet("ELA");
+
+    const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
+    console.log("councilMemberAddresses", councilMemberAddresses);
+
+    payload.Signature = signature;
+    payload.CRCouncilMemberDID = "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy";
+    console.log("payload...", payload);
+
+    const crDigest = crSubWallet.proposalCRCouncilMemberDigest(payload);
+
+    let councilMemberSignature = await crSubWallet.signDigest(
+      councilMemberAddresses[0],
+      crDigest,
+      passwd
+    );
+    payload.CRCouncilMemberSignature = councilMemberSignature;
+
+    const inputs = [
+      {
+        Address: councilMemberAddresses[0],
+        Amount: "49999989900",
+        TxHash:
+          "a90b92c2abff9ab4a0968d9a6de405a819f7915e64093ed94db86d2e12608d84",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "create a normal proposal transaction";
+
+    const tx: EncodedTx = crSubWallet.createProposalTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
 
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");

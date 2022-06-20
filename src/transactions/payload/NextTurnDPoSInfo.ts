@@ -23,7 +23,6 @@
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import {
-  json,
   size_t,
   uint8_t,
   uint32_t,
@@ -31,6 +30,12 @@ import {
   sizeof_uint32_t
 } from "../../types";
 import { Payload } from "./Payload";
+
+export type NextTurnDPoSInfoJson = {
+  WorkingHeight: number;
+  CRPublicKeys: string[];
+  DPoSPublicKeys: string[];
+};
 
 export class NextTurnDPoSInfo extends Payload {
   private _workingHeight: uint32_t;
@@ -49,8 +54,8 @@ export class NextTurnDPoSInfo extends Payload {
   ) {
     const nextTurnDPOSInfo = new NextTurnDPoSInfo();
     nextTurnDPOSInfo._workingHeight = blockHeight;
-    (nextTurnDPOSInfo._crPublicKeys = crPubkeys),
-      (nextTurnDPOSInfo._dposPublicKeys = dposPubkeys);
+    nextTurnDPOSInfo._crPublicKeys = crPubkeys;
+    nextTurnDPOSInfo._dposPublicKeys = dposPubkeys;
     return nextTurnDPOSInfo;
   }
 
@@ -155,7 +160,7 @@ export class NextTurnDPoSInfo extends Payload {
   }
 
   toJson(version: uint8_t) {
-    let j = {};
+    let j = <NextTurnDPoSInfoJson>{};
     let crPubKeys = [];
     let dposPubKeys = [];
 
@@ -174,7 +179,7 @@ export class NextTurnDPoSInfo extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: NextTurnDPoSInfoJson, version: uint8_t) {
     this._workingHeight = j["WorkingHeight"] as number;
 
     let crPubKeys = j["CRPublicKeys"] as [];

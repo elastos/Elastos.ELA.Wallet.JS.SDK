@@ -22,11 +22,14 @@
 import BigNumber from "bignumber.js";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
-import { json, size_t, uint8_t, uint256, sizeof_uint16_t } from "../../types";
+import { size_t, uint8_t, uint256, sizeof_uint16_t } from "../../types";
 import { Payload } from "./Payload";
+
+export type CRCProposalRealWithdrawInfo = { WithdrawTxHashes: string[] };
 
 export class CRCProposalRealWithdraw extends Payload {
   private _withdrawTxHashes: uint256[];
+
   estimateSize(version: uint8_t): size_t {
     let stream = new ByteStream();
     let size = 0;
@@ -49,7 +52,7 @@ export class CRCProposalRealWithdraw extends Payload {
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let size = stream.readVarUInt();
     if (!size) {
-      // SPVLOG_ERROR("deserialize proposal real withdraw size");
+      Log.error("deserialize proposal real withdraw size");
       return false;
     }
 
@@ -57,7 +60,7 @@ export class CRCProposalRealWithdraw extends Payload {
     for (let i = 0; i < size.toNumber(); ++i) {
       hash = stream.readUIntOfBytesAsBN(32);
       if (!hash) {
-        // SPVLOG_ERROR("deserialize proposal real withdraw hash");
+        Log.error("deserialize proposal real withdraw hash");
         return false;
       }
       this._withdrawTxHashes.push(hash);
@@ -66,9 +69,9 @@ export class CRCProposalRealWithdraw extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
+  toJson(version: uint8_t): CRCProposalRealWithdrawInfo {
     let jarray = [];
-    let j = {};
+    let j = <CRCProposalRealWithdrawInfo>{};
 
     for (let u of this._withdrawTxHashes) {
       jarray.push(u.toString(16));
@@ -78,17 +81,14 @@ export class CRCProposalRealWithdraw extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CRCProposalRealWithdrawInfo, version: uint8_t) {
     let jarray = j["WithdrawTxHashes"];
     if (!Array.isArray(jarray)) {
-      // SPVLOG_DEBUG("json is not array");
+      Log.error("json is not array");
       return;
     }
-
-    let u: uint256;
     for (let i = 0; i < jarray.length; ++i) {
-      u = new BigNumber(jarray[i] as string, 16);
-      this._withdrawTxHashes.push(u);
+      this._withdrawTxHashes.push(new BigNumber(jarray[i], 16));
     }
   }
 
@@ -101,7 +101,7 @@ export class CRCProposalRealWithdraw extends Payload {
       const crcProposal = payload as CRCProposalRealWithdraw;
       this.copyCRCProposalRealWithdraw(crcProposal);
     } catch (e) {
-      // SPVLOG_ERROR("payload is not instance of CRCProposalRealWithdraw");
+      Log.error("payload is not instance of CRCProposalRealWithdraw");
     }
     return this;
   }

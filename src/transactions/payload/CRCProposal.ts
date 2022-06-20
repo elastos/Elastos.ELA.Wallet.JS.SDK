@@ -163,14 +163,14 @@ export class Budget {
     let j = <BudgetInfo>{};
     j[JsonKeyType] = this._type;
     j[JsonKeyStage] = this._stage;
-    j[JsonKeyAmount] = this._amount.toString(16);
+    j[JsonKeyAmount] = this._amount.toString();
     return j;
   }
 
   fromJson(j: BudgetInfo) {
     this._type = j[JsonKeyType];
     this._stage = j[JsonKeyStage];
-    this._amount = new BigNumber(j[JsonKeyAmount], 16);
+    this._amount = new BigNumber(j[JsonKeyAmount]);
   }
 
   equals(budget: Budget): boolean {

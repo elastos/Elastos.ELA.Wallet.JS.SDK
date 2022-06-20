@@ -17,7 +17,15 @@ import { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
 import { CRCouncilMemberClaimNodeInfo } from "./transactions/payload/CRCouncilMemberClaimNode";
 import {
   NormalProposalOwnerInfo,
-  CRCProposalInfo
+  CRCProposalInfo,
+  ChangeProposalOwnerInfo,
+  TerminateProposalOwnerInfo,
+  SecretaryElectionInfo,
+  ReserveCustomIDOwnerInfo,
+  ReceiveCustomIDOwnerInfo,
+  ChangeCustomIDFeeOwnerInfo,
+  RegisterSidechainProposalInfo,
+  UpgradeCodeProposalInfo
 } from "./transactions/payload/CRCProposal";
 
 export {
@@ -45,5 +53,13 @@ export type {
   CRInfoJson,
   CRCouncilMemberClaimNodeInfo,
   CRCProposalInfo,
-  NormalProposalOwnerInfo
+  NormalProposalOwnerInfo,
+  ChangeProposalOwnerInfo,
+  TerminateProposalOwnerInfo,
+  SecretaryElectionInfo,
+  ReserveCustomIDOwnerInfo,
+  ReceiveCustomIDOwnerInfo,
+  ChangeCustomIDFeeOwnerInfo,
+  RegisterSidechainProposalInfo,
+  UpgradeCodeProposalInfo
 };
