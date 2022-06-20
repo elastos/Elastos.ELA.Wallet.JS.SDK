@@ -863,8 +863,8 @@ export class CRCProposal extends Payload {
   deserializeOwnerUnsigned(stream: ByteStream, version: uint8_t): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize categoryData");
-      return false;
+      Log.warn("deserialize categoryData");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -1620,7 +1620,9 @@ export class CRCProposal extends Payload {
       return false;
     }
 
-    this._secretaryDID = Address.newFromProgramHash(uint168.newFrom21BytesBuffer(programHash))
+    this._secretaryDID = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
+    );
 
     return true;
   }
@@ -3576,6 +3578,14 @@ export class CRCProposal extends Payload {
     }
   }
 
+  // returns the draft hash in the same byte order representation as cyber republic website proposal's draft hash
+  private reverseDraftHash(draftHash: uint256) {
+    let hashStr = draftHash.toString(16).match(/[a-fA-F0-9]{2}/g);
+    if (hashStr) {
+      return hashStr.reverse().join("");
+    }
+  }
+
   private checkAndDecodeDraftData(
     draftData: string,
     draftHash: uint256,
@@ -3594,8 +3604,9 @@ export class CRCProposal extends Payload {
     );
     let draftHashDecoded = SHA256.hashTwice(draftDataDecoded);
 
+    let reverseDraftHash = this.reverseDraftHash(draftHash);
     ErrorChecker.checkParam(
-      draftHash.toString(16) != draftHashDecoded.toString("hex"),
+      reverseDraftHash != draftHashDecoded.toString("hex"),
       Error.Code.ProposalHashNotMatch,
       "proposal hash not match"
     );
