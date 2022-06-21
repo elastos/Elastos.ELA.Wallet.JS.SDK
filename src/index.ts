@@ -25,7 +25,8 @@ import {
   ReceiveCustomIDOwnerInfo,
   ChangeCustomIDFeeOwnerInfo,
   RegisterSidechainProposalInfo,
-  UpgradeCodeProposalInfo
+  UpgradeCodeProposalInfo,
+  CRCProposalType
 } from "./transactions/payload/CRCProposal";
 
 export {
@@ -37,7 +38,8 @@ export {
   MasterWalletManager,
   SubWallet,
   MainchainSubWallet,
-  WalletErrorException
+  WalletErrorException,
+  CRCProposalType
 };
 
 export type {

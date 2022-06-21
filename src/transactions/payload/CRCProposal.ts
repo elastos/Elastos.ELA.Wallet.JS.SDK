@@ -471,7 +471,7 @@ export enum CRCProposalType {
 }
 
 export type ChangeProposalOwnerInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -486,7 +486,7 @@ export type ChangeProposalOwnerInfo = {
 };
 
 export type TerminateProposalOwnerInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -991,13 +991,11 @@ export class CRCProposal extends Payload {
 
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
-    // stream.writeBytes(this._draftHash);
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
     if (version >= CRCProposalVersion01) {
       stream.writeVarBytes(this._draftData);
     }
 
-    // stream.writeBytes(this._targetProposalHash);
     stream.writeBNAsUIntOfSize(this._targetProposalHash, 32);
     stream.writeBytes(this._newRecipient.programHash().bytes());
     stream.writeVarBytes(this._newOwnerPublicKey);
@@ -1009,8 +1007,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize categoryData");
-      return false;
+      Log.warn("deserialize categoryData");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -1032,7 +1030,7 @@ export class CRCProposal extends Payload {
     if (version >= CRCProposalVersion01) {
       let draftData: bytes_t;
       draftData = stream.readVarBytes(draftData);
-      if (!stream.readVarBytes(draftData)) {
+      if (!draftData) {
         Log.error("deserialize draftData");
         return false;
       }
@@ -1057,10 +1055,13 @@ export class CRCProposal extends Payload {
       uint168.newFrom21BytesBuffer(programHash)
     );
 
-    if (!stream.readVarBytes(this._newOwnerPublicKey)) {
+    let newOwnerPublicKey: bytes_t;
+    newOwnerPublicKey = stream.readVarBytes(newOwnerPublicKey);
+    if (!newOwnerPublicKey) {
       Log.error("deserialize new owner PublicKey");
       return false;
     }
+    this._newOwnerPublicKey = newOwnerPublicKey;
 
     return true;
   }
@@ -1191,13 +1192,10 @@ export class CRCProposal extends Payload {
   ) {
     this.fromJsonChangeOwnerUnsigned(j, version);
 
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
-    this._newOwnerSignature = Buffer.from(
-      j[JsonKeyNewOwnerSignature] as string,
-      "hex"
-    );
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
+    this._newOwnerSignature = Buffer.from(j[JsonKeyNewOwnerSignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -1239,7 +1237,6 @@ export class CRCProposal extends Payload {
     }
 
     try {
-      // _ownerPublicKey
       const data = this.digestChangeOwnerUnsigned(version).toString(16);
       if (
         !EcdsaSigner.verify(
@@ -1295,13 +1292,11 @@ export class CRCProposal extends Payload {
     stream.writeUInt16(type);
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
-    // stream.writeBytes(this._draftHash);
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
     if (version >= CRCProposalVersion01) {
       stream.writeVarBytes(this._draftData);
     }
 
-    // stream.writeBytes(this._targetProposalHash);
     stream.writeBNAsUIntOfSize(this._targetProposalHash, 32);
   }
 
@@ -1311,8 +1306,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize terminate proposal category data");
-      return false;
+      Log.warn("deserialize terminate proposal category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -1324,13 +1319,12 @@ export class CRCProposal extends Payload {
     }
     this._ownerPublicKey = ownerPublicKey;
 
-    let draftHash: bytes_t;
-    draftHash = stream.readBytes(draftHash, 32);
+    let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
       Log.error("deserialize terminate proposal draft hash");
       return false;
     }
-    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
+    this._draftHash = draftHash;
 
     if (version >= CRCProposalVersion01) {
       let draftData: bytes_t;
@@ -1342,16 +1336,12 @@ export class CRCProposal extends Payload {
       this._draftData = draftData;
     }
 
-    let targetProposalHash: bytes_t;
-    targetProposalHash = stream.readBytes(draftHash, 32);
+    let targetProposalHash = stream.readUIntOfBytesAsBN(32);
     if (!targetProposalHash) {
       Log.error("deserialize terminate proposal target proposal hash");
       return false;
     }
-    this._targetProposalHash = new BigNumber(
-      targetProposalHash.toString("hex"),
-      16
-    );
+    this._targetProposalHash = targetProposalHash;
 
     return true;
   }

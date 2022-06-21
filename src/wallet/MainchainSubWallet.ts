@@ -1848,7 +1848,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let p = new CRCProposalReview();
@@ -2094,7 +2094,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalTrackingDefaultVersion;
@@ -2277,7 +2277,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -2460,7 +2460,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -2634,7 +2634,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -2807,7 +2807,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -2983,7 +2983,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputsJson);
 
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -3165,7 +3165,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
-    let utxo: UTXOSet;
+    let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;

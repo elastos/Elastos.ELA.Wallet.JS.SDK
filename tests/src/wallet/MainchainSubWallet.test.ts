@@ -30,7 +30,8 @@ import {
   CRInfoPayload,
   CRInfoJson,
   CRCouncilMemberClaimNodeInfo,
-  NormalProposalOwnerInfo
+  NormalProposalOwnerInfo,
+  ChangeProposalOwnerInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -452,7 +453,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       DraftHash: draftHash,
       DraftData: draftData,
       Budgets: [
-        { Type: 0, Stage: 0, Amount: "100000000000" },
+        { Type: 0, Stage: 0, Amount: "100000000000" }, // Amount unit is sela
         { Type: 1, Stage: 1, Amount: "100200000000" },
         { Type: 1, Stage: 2, Amount: "100300000000" },
         { Type: 2, Stage: 3, Amount: "100400000000" }
@@ -511,6 +512,118 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
     const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
 
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
+    );
+  });
+
+  test("test createProposalChangeOwnerTransaction", async () => {
+    // get the suggestion #1111 on CR website into a proposal
+    const mnemonic = `decline proud hero asthma drop involve drama borrow decrease buddy chalk raw`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-25";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    const addresses = subWallet.getAddresses(0, 1, false);
+    console.log("addresses...", addresses);
+
+    let publicKey = "";
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    if (pubKeys instanceof Array) {
+      publicKey = pubKeys[0];
+    }
+
+    let draftHash =
+      "99283a47e2f70923633ad274aa791e07534deb7906a7cd6268b75c9fb8174ec7";
+    let draftData =
+      "504b0304140000080800813ad554885d1ead48000000500000000d00000070726f706f73616c2e6a736f6eabe65250502ac92cc94955b252507ada3fe3d9ec2dcffa273c5bd8f174ce86a7731b740dcc8c0c957440aa12938a4b8a12934b400aa142b9f9259965892599f97920412325ae5a00504b01021403140000080800813ad554885d1ead48000000500000000d0000000000000000000000a4810000000070726f706f73616c2e6a736f6e504b050600000000010001003b000000730000000000";
+
+    let payload: ChangeProposalOwnerInfo = {
+      CategoryData: "",
+      OwnerPublicKey: publicKey,
+      DraftHash: draftHash,
+      DraftData: draftData,
+      TargetProposalHash:
+        "89f676ceb1b1abb1a2dcf53e386048df2742ef57b209af3d51daf586820b9c6d",
+      NewOwnerPublicKey:
+        "0287de855c87579ee3821ff4a3a3dc9072ca727cb53316d54f6d2f1709e821c5af",
+      NewRecipient: "EWZVWjqoZaaiHpR18nLzDA5sZ63FUrhGXh"
+    };
+
+    let signature =
+      "4fdddff276d0cb6e394990afe60d67b73cf83605b77f3bbb80c636345ae017a3bfabfeab43dac6f34e15e744f90fe02224f7092807f735ac3617a405a1b2ad6d";
+
+    let newOwnerSignature =
+      "e63a2e09384d95bc92333ba48d0469e8004a9e7d31084fe806833a9749f819e398e3c80f550444f32359f34e6c1d43cc13f7f01e520d177483fed4c34b36503e";
+
+    // council member wallet
+    const mnemonic1 = `joke coil tag chapter auto fold leave rather primary mobile battle tool`;
+
+    const masterWalletID1 = "master-wallet-id-26";
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      masterWalletID1,
+      mnemonic1,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+      "ELA"
+    );
+
+    const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
+
+    payload.Signature = signature;
+    payload.NewOwnerSignature = newOwnerSignature;
+    payload.CRCouncilMemberDID = "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy";
+
+    const crDigest =
+      crSubWallet.proposalChangeOwnerCRCouncilMemberDigest(payload);
+
+    let councilMemberSignature = await crSubWallet.signDigest(
+      councilMemberAddresses[0],
+      crDigest,
+      passwd
+    );
+
+    payload.CRCouncilMemberSignature = councilMemberSignature;
+    console.log("payload...", payload);
+
+    const inputs = [
+      {
+        Address: councilMemberAddresses[0],
+        Amount: "49999979900",
+        TxHash:
+          "5845f53c7fa710c944b6c1d0aff8ebacea36467e59afa69edcc2cf5617a1e2b1",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "test the change owner proposal transaction";
+
+    const tx: EncodedTx = crSubWallet.createProposalChangeOwnerTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");
     expect(info[0].Signers.length).toEqual(1);
