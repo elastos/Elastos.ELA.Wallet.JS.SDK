@@ -2907,7 +2907,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * }
    * @return
    */
-  rceiveCustomIDCRCouncilMemberDigest(
+  receiveCustomIDCRCouncilMemberDigest(
     payload: ReceiveCustomIDOwnerInfo
   ): string {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());

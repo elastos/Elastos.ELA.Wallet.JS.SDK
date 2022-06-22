@@ -498,7 +498,7 @@ export type TerminateProposalOwnerInfo = {
 };
 
 export type SecretaryElectionInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -512,7 +512,7 @@ export type SecretaryElectionInfo = {
 };
 
 export type ReserveCustomIDOwnerInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -524,7 +524,7 @@ export type ReserveCustomIDOwnerInfo = {
 };
 
 export type ReceiveCustomIDOwnerInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -537,7 +537,7 @@ export type ReceiveCustomIDOwnerInfo = {
 };
 
 export type ChangeCustomIDFeeOwnerInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -549,7 +549,7 @@ export type ChangeCustomIDFeeOwnerInfo = {
 };
 
 export type RegisterSidechainProposalInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -561,7 +561,7 @@ export type RegisterSidechainProposalInfo = {
 };
 
 export type UpgradeCodeProposalInfo = {
-  Type: number;
+  Type?: number;
   CategoryData: string;
   OwnerPublicKey: string;
   DraftHash: string;
@@ -1260,7 +1260,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -1791,7 +1791,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -1818,12 +1818,10 @@ export class CRCProposal extends Payload {
   }
 
   serializeReserveCustomIDUnsigned(stream: ByteStream, version: uint8_t) {
-    let type: uint16_t = this._type;
-    stream.writeUInt16(type);
+    stream.writeUInt16(this._type);
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
-    // stream.writeBytes(this._draftHash);
-    stream.writeBNAsUIntOfSize(this._draftHash, 21);
+    stream.writeBNAsUIntOfSize(this._draftHash, 32);
     if (version >= CRCProposalVersion01) {
       stream.writeVarBytes(this._draftData);
     }
@@ -1840,8 +1838,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize reserved custom id category data");
-      return false;
+      Log.warn("deserialize reserved custom id category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -1853,13 +1851,12 @@ export class CRCProposal extends Payload {
     }
     this._ownerPublicKey = ownerPublicKey;
 
-    let draftHash: bytes_t;
-    draftHash = stream.readBytes(draftHash, 32);
+    let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
       Log.error("deserialize reserved custom id draft hash");
       return false;
     }
-    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
+    this._draftHash = draftHash;
 
     if (version >= CRCProposalVersion01) {
       let draftData: bytes_t;
@@ -1871,14 +1868,13 @@ export class CRCProposal extends Payload {
       this._draftData = draftData;
     }
 
-    let size: uint64_t = new BigNumber(0);
-    size = stream.readVarUInt();
-    if (!size) {
+    let size = stream.readVarUInt();
+    if (size.isZero()) {
       Log.error("deserialize reserved custom id list size");
       return false;
     }
     for (let i = 0; i < size.toNumber(); ++i) {
-      let reservedCustomID: string = stream.readVarString();
+      let reservedCustomID = stream.readVarString();
       if (!reservedCustomID) {
         Log.error("deserialize reserved custom id list[{}]", i);
         return false;
@@ -1995,9 +1991,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     this.fromJsonReserveCustomIDOwnerUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -2039,7 +2035,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -2067,11 +2063,9 @@ export class CRCProposal extends Payload {
 
   // ReceiveCustomID
   serializeReceiveCustomIDUnsigned(stream: ByteStream, version: uint8_t) {
-    let type: uint16_t = this._type;
-    stream.writeUInt16(type);
+    stream.writeUInt16(this._type);
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
-    // stream.writeBytes(_draftHash);
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
     if (version >= CRCProposalVersion01) {
       stream.writeVarBytes(this._draftData);
@@ -2091,8 +2085,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize receive custom category data");
-      return false;
+      Log.warn("deserialize receive custom category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -2104,8 +2098,7 @@ export class CRCProposal extends Payload {
     }
     this._ownerPublicKey = ownerPublicKey;
 
-    let draftHash: BigNumber;
-    draftHash = stream.readUIntOfBytesAsBN(32);
+    let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
       Log.error("deserialize receive custom draft hash");
       return false;
@@ -2127,6 +2120,7 @@ export class CRCProposal extends Payload {
       Log.error("deserialize receive custom id list size");
       return false;
     }
+    this._receivedCustomIDList = [];
     for (let i = 0; i < size.toNumber(); ++i) {
       let receivedCustomID = stream.readVarString();
       if (!receivedCustomID) {
@@ -2231,24 +2225,18 @@ export class CRCProposal extends Payload {
     j: ReceiveCustomIDOwnerInfo,
     version: uint8_t
   ) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._receivedCustomIDList = j[JsonKeyReservedCustomIDList] as string[];
-    this._receiverDID = Address.newFromAddressString(
-      j[JsonKeyReceiverDID] as string
-    );
+    this._receivedCustomIDList = j[JsonKeyReceivedCustomIDList];
+    this._receiverDID = Address.newFromAddressString(j[JsonKeyReceiverDID]);
   }
 
   toJsonReceiveCustomIDCRCouncilMemberUnsigned(
@@ -2265,9 +2253,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     this.fromJsonReceiveCustomIDOwnerUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -2309,7 +2297,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -2356,8 +2344,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize change custom id category data");
-      return false;
+      Log.warn("deserialize change custom id category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -2369,8 +2357,7 @@ export class CRCProposal extends Payload {
     }
     this._ownerPublicKey = ownerPublicKey;
 
-    let draftHash = new BigNumber(0);
-    draftHash = stream.readUIntOfBytesAsBN(32);
+    let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
       Log.error("deserialize change custom id draft hash");
       return false;
@@ -2548,7 +2535,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -2594,8 +2581,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize change custom id category data");
-      return false;
+      Log.warn("deserialize change custom id category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -2790,7 +2777,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
@@ -3346,7 +3333,7 @@ export class CRCProposal extends Payload {
         return false;
       }
     } catch (e) {
-      Log.error("verify signature exception: {}", e.what());
+      Log.error("verify signature exception: {}", e);
       return false;
     }
 
