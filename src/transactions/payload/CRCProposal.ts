@@ -1288,8 +1288,7 @@ export class CRCProposal extends Payload {
 
   // terminate proposal
   serializeTerminateProposalUnsigned(stream: ByteStream, version: uint8_t) {
-    let type: uint16_t = this._type;
-    stream.writeUInt16(type);
+    stream.writeUInt16(this._type);
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
     stream.writeBNAsUIntOfSize(this._draftHash, 32);
@@ -1371,6 +1370,7 @@ export class CRCProposal extends Payload {
       Log.error("deserialize terminate proposal signature");
       return false;
     }
+    this._signature = signature;
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
@@ -1431,24 +1431,17 @@ export class CRCProposal extends Payload {
     j: TerminateProposalOwnerInfo,
     version: uint8_t
   ) {
-    this._type = j[JsonKeyType] as CRCProposalType;
-    this._categoryData = j[JsonKeyCategoryData] as string;
-    this._ownerPublicKey = Buffer.from(
-      j[JsonKeyOwnerPublicKey] as string,
-      "hex"
-    );
-    this._draftHash = new BigNumber(j[JsonKeyDraftHash] as string, 16);
+    this._type = j[JsonKeyType];
+    this._categoryData = j[JsonKeyCategoryData];
+    this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
-      let draftData: string = j[JsonKeyDraftData] as string;
       this._draftData = this.checkAndDecodeDraftData(
-        draftData,
+        j[JsonKeyDraftData],
         this._draftHash
       );
     }
-    this._targetProposalHash = new BigNumber(
-      j[JsonKeyTargetProposalHash] as string,
-      16
-    );
+    this._targetProposalHash = new BigNumber(j[JsonKeyTargetProposalHash], 16);
   }
 
   toJsonTerminateProposalCRCouncilMemberUnsigned(version: uint8_t) {
@@ -1466,9 +1459,9 @@ export class CRCProposal extends Payload {
   ) {
     this.fromJsonTerminateProposalOwnerUnsigned(j, version);
 
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 

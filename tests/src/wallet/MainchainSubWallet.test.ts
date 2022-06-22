@@ -31,7 +31,8 @@ import {
   CRInfoJson,
   CRCouncilMemberClaimNodeInfo,
   NormalProposalOwnerInfo,
-  ChangeProposalOwnerInfo
+  ChangeProposalOwnerInfo,
+  TerminateProposalOwnerInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -624,6 +625,109 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
     const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
     const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
+    );
+  });
+
+  test("test createTerminateProposalTransaction", async () => {
+    // get the suggestion #1112 on CR website into a proposal
+    const mnemonic = `decline proud hero asthma drop involve drama borrow decrease buddy chalk raw`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-27";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+
+    let publicKey = "";
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    if (pubKeys instanceof Array) {
+      publicKey = pubKeys[0];
+    }
+
+    let draftHash =
+      "76c3b3b60973d15e13ac86a14fb13eccf58eacb0d71b64c29ed19ae3891822a7";
+
+    let draftData = `504b03041400000808003674d554239582415e0000006c0000000d00000070726f706f73616c2e6a736f6eabe65250502ac92cc94955b252507ad63fe16967eff3dd1dcfd62e02b29f2decd03530333254d201a94a4c2a2e294a4c2e01297cb17fe6b319eb9f4d9cf16259e3e386268882dcfc92ccb2c492ccfc3c8492a75d2b9ecdd90552c2550b00504b010214031400000808003674d554239582415e0000006c0000000d0000000000000000000000a4810000000070726f706f73616c2e6a736f6e504b050600000000010001003b000000890000000000`;
+
+    let payload: TerminateProposalOwnerInfo = {
+      CategoryData: "",
+      OwnerPublicKey: publicKey,
+      DraftHash: draftHash,
+      DraftData: draftData,
+      TargetProposalHash:
+        "14b44b68f99e414c35396b8d267e2434d7ae0c3d6a761c062fe782d08bea389d"
+    };
+
+    let signature =
+      "404f66eec8b6476a7590399e6d147c0c60c0b3948ebd19f7af0b7f3a43eb7d901c05838e6297046ece38f907e7373c296d7e0630cce4b8927399dd25062242e8";
+
+    // council member wallet
+    const mnemonic1 = `joke coil tag chapter auto fold leave rather primary mobile battle tool`;
+
+    const masterWalletID1 = "master-wallet-id-28";
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      masterWalletID1,
+      mnemonic1,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+      "ELA"
+    );
+
+    const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
+    payload.Signature = signature;
+    payload.CRCouncilMemberDID = "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy";
+
+    const crDigest =
+      crSubWallet.terminateProposalCRCouncilMemberDigest(payload);
+
+    let councilMemberSignature = await crSubWallet.signDigest(
+      councilMemberAddresses[0],
+      crDigest,
+      passwd
+    );
+    payload.CRCouncilMemberSignature = councilMemberSignature;
+    console.log("payload...", payload);
+
+    const inputs = [
+      {
+        Address: councilMemberAddresses[0],
+        Amount: "49999969900",
+        TxHash:
+          "73fe990d794099273d005cf16c61e975543f012356c97077cdae65a4766ab7c9",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "test the change owner proposal transaction";
+
+    const tx: EncodedTx = crSubWallet.createTerminateProposalTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
+
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");
     expect(info[0].Signers.length).toEqual(1);
