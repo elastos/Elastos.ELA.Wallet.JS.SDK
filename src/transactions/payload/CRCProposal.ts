@@ -21,6 +21,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
+import { getBNHexStr } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
@@ -273,7 +274,7 @@ export type SideChainInfoJson = {
   SideChainName: string;
   MagicNumber: number;
   GenesisHash: string;
-  ExchangeRate: string;
+  ExchangeRate: number;
   EffectiveHeight: number;
   ResourcePath: string;
 };
@@ -347,7 +348,7 @@ export class SideChainInfo {
     j["SideChainName"] = this._sideChainName;
     j["MagicNumber"] = this._magicNumber;
     j["GenesisHash"] = this._genesisHash.toString(16);
-    j["ExchangeRate"] = this._exchangeRate.toString(16);
+    j["ExchangeRate"] = this._exchangeRate.toNumber();
     j["EffectiveHeight"] = this._effectiveHeight;
     j["ResourcePath"] = this._resourcePath;
     return j;
@@ -357,7 +358,7 @@ export class SideChainInfo {
     this._sideChainName = j["SideChainName"];
     this._magicNumber = j["MagicNumber"];
     this._genesisHash = new BigNumber(j["GenesisHash"], 16);
-    this._exchangeRate = new BigNumber(j["ExchangeRate"], 16);
+    this._exchangeRate = new BigNumber(j["ExchangeRate"]);
     this._effectiveHeight = j["EffectiveHeight"];
     this._resourcePath = j["ResourcePath"];
   }
@@ -389,7 +390,7 @@ export class SideChainInfo {
 }
 
 export type CustomIDFeeRateInfoJson = {
-  RateOfCustomIDFee: string;
+  RateOfCustomIDFee: number;
   EIDEffectiveHeight: number;
 };
 
@@ -424,13 +425,13 @@ export class CustomIDFeeRateInfo {
 
   toJson(version: uint8_t): CustomIDFeeRateInfoJson {
     let j = <CustomIDFeeRateInfoJson>{};
-    j["RateOfCustomIDFee"] = this._rateOfCustomIDFee.toString(16);
+    j["RateOfCustomIDFee"] = this._rateOfCustomIDFee.toNumber();
     j["EIDEffectiveHeight"] = this._eIDEffectiveHeight;
     return j;
   }
 
   fromJson(j: CustomIDFeeRateInfoJson, version: uint8_t) {
-    this._rateOfCustomIDFee = new BigNumber(j["RateOfCustomIDFee"], 16);
+    this._rateOfCustomIDFee = new BigNumber(j["RateOfCustomIDFee"]);
     this._eIDEffectiveHeight = j["EIDEffectiveHeight"];
   }
 
@@ -1873,6 +1874,7 @@ export class CRCProposal extends Payload {
       Log.error("deserialize reserved custom id list size");
       return false;
     }
+    this._reservedCustomIDList = [];
     for (let i = 0; i < size.toNumber(); ++i) {
       let reservedCustomID = stream.readVarString();
       if (!reservedCustomID) {
@@ -2028,7 +2030,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("reserve custom id verify owner signature fail");
@@ -2047,18 +2049,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestReserveCustomIDOwnerUnsigned(version: uint8_t): uint256 {
+  digestReserveCustomIDOwnerUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeReserveCustomIDUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestReserveCustomIDCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeReserveCustomIDCRCouncilMemberUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // ReceiveCustomID
@@ -2290,7 +2290,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("receive custom id verify owner signature fail");
@@ -2309,18 +2309,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestReceiveCustomIDOwnerUnsigned(version: uint8_t): uint256 {
+  digestReceiveCustomIDOwnerUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeReceiveCustomIDUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestReceiveCustomIDCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // ChangeCustomIDFee
@@ -2453,7 +2451,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = this.reverseHashString(getBNHexStr(this._draftHash));
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -2477,6 +2475,7 @@ export class CRCProposal extends Payload {
         this._draftHash
       );
     }
+    this._customIDFeeRateInfo = new CustomIDFeeRateInfo();
     this._customIDFeeRateInfo.fromJson(j[JsonKeyCustomIDFeeRateInfo], version);
   }
 
@@ -2492,10 +2491,12 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     this.fromJsonChangeCustomIDFeeOwnerUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
+    let json = this.toJsonChangeCustomIDFeeCRCouncilMemberUnsigned(1);
+    console.log("json...", json);
   }
 
   isValidChangeCustomIDFeeOwnerUnsigned(version: uint8_t) {
@@ -2562,8 +2563,7 @@ export class CRCProposal extends Payload {
   }
 
   serializeRegisterSidechainUnsigned(stream: ByteStream, version: uint8_t) {
-    let type: uint16_t = this._type;
-    stream.writeUInt16(type);
+    stream.writeUInt16(this._type);
     stream.writeVarString(this._categoryData);
     stream.writeVarBytes(this._ownerPublicKey);
 
@@ -2702,15 +2702,17 @@ export class CRCProposal extends Payload {
     j: RegisterSidechainProposalInfo,
     version: uint8_t
   ) {
+    this._type = j[JsonKeyType];
     this._categoryData = j[JsonKeyCategoryData];
     this._ownerPublicKey = Buffer.from(j[JsonKeyOwnerPublicKey], "hex");
-    this._draftHash = new BigNumber((j[JsonKeyDraftHash], 16));
+    this._draftHash = new BigNumber(j[JsonKeyDraftHash], 16);
     if (version >= CRCProposalVersion01) {
       this._draftData = this.checkAndDecodeDraftData(
         j[JsonKeyDraftData],
         this._draftHash
       );
     }
+    this._sidechainInfo = new SideChainInfo();
     this._sidechainInfo.fromJson(j[JsonKeySidechainInfo], version);
   }
 
@@ -2728,9 +2730,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     this.fromJsonRegisterSidechainUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string, "hex");
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -2770,7 +2772,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("change register side-chain verify owner signature fail");
@@ -2789,18 +2791,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestRegisterSidechainUnsigned(version: uint8_t): uint256 {
+  digestRegisterSidechainUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeRegisterSidechainUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestRegisterSidechainCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeRegisterSidechainCRCouncilMemberUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // upgrade code
@@ -3549,8 +3549,8 @@ export class CRCProposal extends Payload {
   }
 
   // returns the draft hash in the same byte order representation as cyber republic website proposal's draft hash
-  private reverseDraftHash(draftHash: uint256) {
-    let hashStr = draftHash.toString(16).match(/[a-fA-F0-9]{2}/g);
+  private reverseHashString(draftHash: string) {
+    let hashStr = draftHash.match(/[a-fA-F0-9]{2}/g);
     if (hashStr) {
       return hashStr.reverse().join("");
     }
@@ -3573,8 +3573,7 @@ export class CRCProposal extends Payload {
       "proposal origin content too large"
     );
     let draftHashDecoded = SHA256.hashTwice(draftDataDecoded);
-
-    let reverseDraftHash = this.reverseDraftHash(draftHash);
+    let reverseDraftHash = getBNHexStr(draftHash);
     ErrorChecker.checkParam(
       reverseDraftHash != draftHashDecoded.toString("hex"),
       Error.Code.ProposalHashNotMatch,

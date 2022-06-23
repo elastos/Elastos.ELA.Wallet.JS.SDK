@@ -2711,9 +2711,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestReserveCustomIDOwnerUnsigned(version)
-      .toString(16);
+    let digest = proposal.digestReserveCustomIDOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2760,9 +2758,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestReserveCustomIDCRCouncilMemberUnsigned(version)
-      .toString(16);
+    let digest = proposal.digestReserveCustomIDCRCouncilMemberUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2885,9 +2881,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestReceiveCustomIDOwnerUnsigned(version)
-      .toString(16);
+    let digest = proposal.digestReceiveCustomIDOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2935,9 +2929,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestReceiveCustomIDCRCouncilMemberUnsigned(version)
-      .toString(16);
+    let digest = proposal.digestReceiveCustomIDCRCouncilMemberUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -3366,10 +3358,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal.digestRegisterSidechainUnsigned(version).toString(16);
-
-    // ArgInfo("r => {}", digest);
-    return digest;
+    return proposal.digestRegisterSidechainUnsigned(version);
   }
 
   /**
@@ -3420,12 +3409,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal
-      .digestRegisterSidechainCRCouncilMemberUnsigned(version)
-      .toString(16);
-
-    // ArgInfo("r => {}", digest);
-    return digest;
+    return proposal.digestRegisterSidechainCRCouncilMemberUnsigned(version);
   }
 
   /**
