@@ -1701,7 +1701,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published
    */
   createProposalTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
@@ -1714,7 +1714,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let p = new CRCProposal();
     let version: uint8_t = CRCProposalDefaultVersion;
@@ -1836,20 +1836,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createProposalReviewTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalReviewInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", this.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let p = new CRCProposalReview();
     let version: uint8_t = CRCProposalReviewDefaultVersion;
@@ -2082,7 +2082,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return The transaction in JSON format to be signed and published.
    */
   createProposalTrackingTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalTrackingInfo,
     fee: string,
     memo: string
@@ -2095,7 +2095,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalTrackingDefaultVersion;
     let p = new CRCProposalTracking();
@@ -2179,10 +2179,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal.digestSecretaryElectionUnsigned(version).toString(16);
-
-    // ArgInfo("r => {}", digest);
-    return digest;
+    return proposal.digestSecretaryElectionUnsigned(version);
   }
 
   /**
@@ -2228,12 +2225,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal
-      .digestSecretaryElectionCRCouncilMemberUnsigned(version)
-      .toString(16);
-
-    // ArgInfo("r => {}", digest);
-    return digest;
+    return proposal.digestSecretaryElectionCRCouncilMemberUnsigned(version);
   }
 
   /**
@@ -2265,20 +2257,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createSecretaryGeneralElectionTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
@@ -2448,20 +2440,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createProposalChangeOwnerTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
@@ -2622,20 +2614,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createTerminateProposalTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
@@ -2791,20 +2783,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createReserveCustomIDTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();
@@ -2963,20 +2955,20 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createReceiveCustomIDTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payload: CRCProposalInfo,
     fee: string,
     memo: string
   ): EncodedTx {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", this.getWalletID(), GetFunName());
-    // ArgInfo("inputs: {}", inputsJson);
+    // ArgInfo("inputs: {}", inputs);
     // ArgInfo("payload: {}", payload);
     // ArgInfo("fee: {}", fee);
     // ArgInfo("memo: {}", memo);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let version: uint8_t = CRCProposalDefaultVersion;
     let p = new CRCProposal();

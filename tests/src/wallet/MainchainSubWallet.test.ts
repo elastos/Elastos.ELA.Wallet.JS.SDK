@@ -33,7 +33,8 @@ import {
   NormalProposalOwnerInfo,
   ChangeProposalOwnerInfo,
   TerminateProposalOwnerInfo,
-  ReceiveCustomIDOwnerInfo
+  ReceiveCustomIDOwnerInfo,
+  SecretaryElectionInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -823,6 +824,109 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const memo = "test the change owner proposal transaction";
 
     const tx: EncodedTx = crSubWallet.createReceiveCustomIDTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
+    );
+  });
+
+  test("test createSecretaryGeneralElectionTransaction", async () => {
+    // get the suggestion #1113 on CR website into a proposal
+    const mnemonic = `decline proud hero asthma drop involve drama borrow decrease buddy chalk raw`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-31",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+
+    let publicKey = "";
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    if (pubKeys instanceof Array) {
+      publicKey = pubKeys[0];
+    }
+
+    let draftHash =
+      "14805094730f50f9a45421fc75c08033bf9c50594384fa9f5b8054e45d564d11";
+
+    let draftData =
+      "504b03041400000808007174d5544ff466134d000000540000000d00000070726f706f73616c2e6a736f6eabe65250502ac92cc94955b252507ada3fe3d9ec2dcf97cf78b273d9cba9fb9fecd8e51c6460a86b606664a8a403529998545c5294985c02520c15cacd2fc92c4b2cc9cccf03091a2971d50200504b010214031400000808007174d5544ff466134d000000540000000d0000000000000000000000a4810000000070726f706f73616c2e6a736f6e504b050600000000010001003b000000780000000000";
+
+    let payload: SecretaryElectionInfo = {
+      CategoryData: "",
+      OwnerPublicKey: publicKey,
+      DraftHash: draftHash,
+      DraftData: draftData,
+      SecretaryGeneralPublicKey:
+        "0287de855c87579ee3821ff4a3a3dc9072ca727cb53316d54f6d2f1709e821c5af",
+      Signature:
+        "efdd633ae9ec2973bb1066f37403feef0039a2935677ad7ad86f073491f9a4b6b141166e6800935f3b0d1543e2eeb6ed342424fca86f26b65f8a803a072a9df6",
+      SecretaryGeneralDID: "iakWWbvg76NrJkQ8mERGHDYyposdT7ivjN",
+      SecretaryGeneralSignature:
+        "0089608ba5b1e4beded3a8ac96f0c49cfab6b6330f9e86427be9d6fe596d49d1b2fdd6ac8f6753dd29439f333baff46b70c59eeed3522d8766d5fcd410f808ac",
+      CRCouncilMemberDID: "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy"
+    };
+
+    // council member wallet
+    const mnemonic1 = `joke coil tag chapter auto fold leave rather primary mobile battle tool`;
+
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-32",
+      mnemonic1,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+      "ELA"
+    );
+
+    const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
+
+    const crDigest =
+      crSubWallet.proposalSecretaryGeneralElectionCRCouncilMemberDigest(
+        payload
+      );
+
+    let councilMemberSignature = await crSubWallet.signDigest(
+      councilMemberAddresses[0],
+      crDigest,
+      passwd
+    );
+    payload.CRCouncilMemberSignature = councilMemberSignature;
+
+    const inputs = [
+      {
+        Address: councilMemberAddresses[0],
+        Amount: "49999969900",
+        TxHash:
+          "73fe990d794099273d005cf16c61e975543f012356c97077cdae65a4766ab7c9",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "test the change owner proposal transaction";
+
+    const tx: EncodedTx = crSubWallet.createSecretaryGeneralElectionTransaction(
       inputs,
       payload,
       fee,

@@ -1559,8 +1559,8 @@ export class CRCProposal extends Payload {
   ): boolean {
     let categoryData = stream.readVarString();
     if (!categoryData) {
-      Log.error("deserialize category data");
-      return false;
+      Log.warn("deserialize category data");
+      // return false;
     }
     this._categoryData = categoryData;
 
@@ -1631,15 +1631,21 @@ export class CRCProposal extends Payload {
       return false;
     }
 
-    if (!stream.readVarBytes(this._signature)) {
+    let signature: bytes_t;
+    signature = stream.readVarBytes(this._signature);
+    if (!signature) {
       Log.error("deserialize signature");
       return false;
     }
+    this._signature = signature;
 
-    if (!stream.readVarBytes(this._secretarySignature)) {
+    let secretarySignature: bytes_t;
+    secretarySignature = stream.readVarBytes(secretarySignature);
+    if (!secretarySignature) {
       Log.error("deserialize secretary signature");
       return false;
     }
+    this._secretarySignature = secretarySignature;
 
     let programHash: bytes_t;
     programHash = stream.readBytes(programHash, 21);
@@ -1667,10 +1673,13 @@ export class CRCProposal extends Payload {
       return false;
     }
 
-    if (!stream.readVarBytes(this._crCouncilMemberSignature)) {
+    let crCouncilMemberSignature: bytes_t;
+    crCouncilMemberSignature = stream.readVarBytes(crCouncilMemberSignature);
+    if (!crCouncilMemberSignature) {
       Log.error("deserialize change secretary cr council member signature");
       return false;
     }
+    this._crCouncilMemberSignature = crCouncilMemberSignature;
 
     return true;
   }
@@ -1727,12 +1736,10 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ) {
     this.fromJsonSecretaryElectionUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string);
-    this._secretarySignature = Buffer.from(
-      j[JsonKeySecretarySignature] as string
-    );
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
+    this._secretarySignature = Buffer.from(j[JsonKeySecretarySignature], "hex");
     this._crCouncilMemberDID = Address.newFromAddressString(
-      j[JsonKeyCRCouncilMemberDID] as string
+      j[JsonKeyCRCouncilMemberDID]
     );
   }
 
@@ -1748,8 +1755,8 @@ export class CRCProposal extends Payload {
     }
 
     try {
-      let key = EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
-      let key1 = EcdsaSigner.getKeyFromPublic(this._secretaryPublicKey);
+      EcdsaSigner.getKeyFromPublic(this._ownerPublicKey);
+      EcdsaSigner.getKeyFromPublic(this._secretaryPublicKey);
     } catch (e) {
       Log.error("invalid public keys");
       return false;
@@ -1775,7 +1782,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("verify owner signature fail");
@@ -1785,7 +1792,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._secretaryPublicKey,
           this._secretarySignature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("verify secretary signature fail");
@@ -1804,18 +1811,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestSecretaryElectionUnsigned(version: uint8_t): uint256 {
+  digestSecretaryElectionUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeSecretaryElectionUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestSecretaryElectionCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeSecretaryElectionCRCouncilMemberUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   serializeReserveCustomIDUnsigned(stream: ByteStream, version: uint8_t) {
@@ -2592,15 +2597,14 @@ export class CRCProposal extends Payload {
       Log.error("deserialize change custom id owner pubkey");
       return false;
     }
+    this._ownerPublicKey = ownerPublicKey;
 
-    let draftHash: bytes_t;
-    draftHash = stream.readBytes(draftHash, 32);
-
+    let draftHash = stream.readUIntOfBytesAsBN(32);
     if (!draftHash) {
       Log.error("deserialize change custom id draft hash");
       return false;
     }
-    this._draftHash = new BigNumber(draftHash.toString("hex"), 16);
+    this._draftHash = draftHash;
 
     if (version >= CRCProposalVersion01) {
       let draftData: bytes_t;

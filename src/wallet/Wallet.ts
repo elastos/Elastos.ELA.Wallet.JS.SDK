@@ -259,7 +259,7 @@ export class Wallet extends Lockable {
 
   async signDigestWithAddress(
     addr: Address,
-    digest: uint256,
+    digest: string,
     payPasswd: string
   ): Promise<string> {
     // boost::mutex::scoped_lock scopedLock(lock);
@@ -271,7 +271,7 @@ export class Wallet extends Lockable {
     if (privateKey) {
       const signature = EcdsaSigner.sign(
         privateKey,
-        Buffer.from(digest.toString(16), "hex")
+        Buffer.from(digest, "hex")
       );
       return signature.toString("hex");
     }
