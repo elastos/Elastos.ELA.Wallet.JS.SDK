@@ -35,7 +35,9 @@ import {
   TerminateProposalOwnerInfo,
   ReceiveCustomIDOwnerInfo,
   SecretaryElectionInfo,
-  RegisterSidechainProposalInfo
+  RegisterSidechainProposalInfo,
+  CRCProposalReviewInfo,
+  VoteResult
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -618,7 +620,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       }
     ];
     const fee = "10000";
-    const memo = "test the change owner proposal transaction";
+    const memo = "change owner proposal transaction";
 
     const tx: EncodedTx = crSubWallet.createProposalChangeOwnerTransaction(
       inputs,
@@ -719,7 +721,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       }
     ];
     const fee = "10000";
-    const memo = "test the change owner proposal transaction";
+    const memo = "terminate proposal transaction";
 
     const tx: EncodedTx = crSubWallet.createTerminateProposalTransaction(
       inputs,
@@ -822,7 +824,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       }
     ];
     const fee = "10000";
-    const memo = "test the change owner proposal transaction";
+    const memo = "receive custom ID transaction";
 
     const tx: EncodedTx = crSubWallet.createReceiveCustomIDTransaction(
       inputs,
@@ -925,7 +927,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       }
     ];
     const fee = "10000";
-    const memo = "test the change owner proposal transaction";
+    const memo = "secretary general election transaction";
 
     const tx: EncodedTx = crSubWallet.createSecretaryGeneralElectionTransaction(
       inputs,
@@ -1032,7 +1034,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       }
     ];
     const fee = "10000";
-    const memo = "test the change owner proposal transaction";
+    const memo = "register sidechain transaction";
 
     const tx: EncodedTx = crSubWallet.createRegisterSidechainTransaction(
       inputs,
@@ -1048,6 +1050,82 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(info[0].Signers.length).toEqual(1);
     expect(info[0].Signers[0]).toEqual(
       "02175944ed43bb7ec70a80e1856fb0324562502af36ba63e7f35fcbc2c712955f8"
+    );
+  });
+
+  test("test createProposalReviewTransaction", async () => {
+    // the council member cr05 reviews the proposal #435
+    let proposalHash =
+      "8a37d9f3409924dc6d722dc0e40b0cd2a274fa9c25ae8bb169c84eaa72b39419";
+
+    let opinionHash =
+      "9e411a9b2c956ed4e9c76d31e9341c82bbd5612d71979bbdd50ecf5cec154c1b";
+
+    let opinionData =
+      "504b03041400000808002073db5467742fa91c0000001a0000000c0000006f70696e696f6e2e6a736f6eabe65250504acecf2b49cd2b51b252504a4c2a2e49cccc53e2aa0500504b010214031400000808002073db5467742fa91c0000001a0000000c0000000000000000000000a481000000006f70696e696f6e2e6a736f6e504b050600000000010001003a000000460000000000";
+
+    let payload: CRCProposalReviewInfo = {
+      ProposalHash: proposalHash,
+      VoteResult: VoteResult.abstain,
+      OpinionHash: opinionHash,
+      OpinionData: opinionData,
+      DID: "iVpXxdgCPtw685XTVGmHBMzhC3FdrGJqy5"
+    };
+
+    // council member cr05
+    const mnemonic1 = `coyote pair armed view place pipe error birth elevator theory snow domain`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-35",
+      mnemonic1,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+      "ELA"
+    );
+
+    const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
+
+    const crDigest = crSubWallet.proposalReviewDigest(payload);
+    let councilMemberSignature = await crSubWallet.signDigest(
+      councilMemberAddresses[0],
+      crDigest,
+      passwd
+    );
+    payload.Signature = councilMemberSignature;
+
+    const inputs = [
+      {
+        Address: councilMemberAddresses[0],
+        Amount: "60218581970",
+        TxHash:
+          "c354e26fb2759c8c9242cfaad0d49ba134144531c596e999f97e492d9c1956fd",
+        Index: 1
+      }
+    ];
+    const fee = "10000";
+    const memo = "proposal review transaction";
+
+    const tx: EncodedTx = crSubWallet.createProposalReviewTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await crSubWallet.signTransaction(tx, passwd);
+
+    const info: SignedInfo[] = crSubWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "03a30bffc27d2fd5fd0b48bd6dc70a54acc2d0261439f58e8e3467d973690c7334"
     );
   });
 });

@@ -35,9 +35,9 @@ import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
-import { BASE64 as Base64 } from "../../walletcore/base64";
 import { uint168 } from "../../common/uint168";
 import { reverseHashString } from "../../common/utils";
+import { getBNHexStr } from "../../common/bnutils";
 
 export const CRCProposalReviewDefaultVersion = 0;
 export const CRCProposalReviewVersion01 = 0x01;
@@ -176,7 +176,7 @@ export class CRCProposalReview extends Payload {
     this._proposalHash = proposalHash;
 
     let opinion = stream.readUInt8();
-    if (!opinion) {
+    if (!opinion && opinion !== VoteResult.approve) {
       Log.error("deserialize opinion");
       return false;
     }
@@ -236,9 +236,9 @@ export class CRCProposalReview extends Payload {
 
   toJsonUnsigned(version: uint8_t) {
     let j = <CRCProposalReviewInfo>{};
-    j[JsonKeyProposalHash] = this._proposalHash.toString(16);
+    j[JsonKeyProposalHash] = reverseHashString(getBNHexStr(this._proposalHash));
     j[JsonKeyVoteResult] = this._voteResult;
-    j[JsonKeyOpinionHash] = this._opinionHash.toString(16);
+    j[JsonKeyOpinionHash] = reverseHashString(getBNHexStr(this._opinionHash));
     if (version >= CRCProposalReviewVersion01) {
       // j[JsonKeyOpinionData] = Base64.encode(this._opinionData.toString("hex"));
       j[JsonKeyOpinionData] = this._opinionData.toString("hex");

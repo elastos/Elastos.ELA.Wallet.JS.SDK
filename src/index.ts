@@ -29,6 +29,7 @@ import {
   CRCProposalType
 } from "./transactions/payload/CRCProposal";
 import { CRCProposalReviewInfo } from "./transactions/payload/CRCProposalReview";
+import { VoteResult } from "./transactions/payload/CRCProposalReview";
 
 export {
   BrowserLocalStorage,
@@ -40,7 +41,8 @@ export {
   SubWallet,
   MainchainSubWallet,
   WalletErrorException,
-  CRCProposalType
+  CRCProposalType,
+  VoteResult
 };
 
 export type {

@@ -43,6 +43,7 @@ import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
 import { Payload } from "./Payload";
 import { SELA_PER_ELA } from "../../wallet/SubWallet";
+import { reverseHashString } from "../../common/utils";
 
 export const CRCProposalDefaultVersion = 0;
 export const CRCProposalVersion01 = 0x01;
@@ -2459,7 +2460,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this.reverseHashString(getBNHexStr(this._draftHash));
+    j[JsonKeyDraftHash] = reverseHashString(getBNHexStr(this._draftHash));
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -3552,14 +3553,6 @@ export class CRCProposal extends Payload {
       return draftData.toString("hex");
     } else {
       return Base64.encode(draftData.toString("hex"));
-    }
-  }
-
-  // returns the draft hash in the same byte order representation as cyber republic website proposal's draft hash
-  private reverseHashString(draftHash: string) {
-    let hashStr = draftHash.match(/[a-fA-F0-9]{2}/g);
-    if (hashStr) {
-      return hashStr.reverse().join("");
     }
   }
 
