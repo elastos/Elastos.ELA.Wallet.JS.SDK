@@ -42,6 +42,7 @@ import { BASE64 as Base64 } from "../../walletcore/base64";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
 import { Payload } from "./Payload";
+import { SELA_PER_ELA } from "../../wallet/SubWallet";
 
 export const CRCProposalDefaultVersion = 0;
 export const CRCProposalVersion01 = 0x01;
@@ -348,7 +349,7 @@ export class SideChainInfo {
     j["SideChainName"] = this._sideChainName;
     j["MagicNumber"] = this._magicNumber;
     j["GenesisHash"] = this._genesisHash.toString(16);
-    j["ExchangeRate"] = this._exchangeRate.toNumber();
+    j["ExchangeRate"] = this._exchangeRate.dividedBy(SELA_PER_ELA).toNumber();
     j["EffectiveHeight"] = this._effectiveHeight;
     j["ResourcePath"] = this._resourcePath;
     return j;
@@ -358,7 +359,9 @@ export class SideChainInfo {
     this._sideChainName = j["SideChainName"];
     this._magicNumber = j["MagicNumber"];
     this._genesisHash = new BigNumber(j["GenesisHash"], 16);
-    this._exchangeRate = new BigNumber(j["ExchangeRate"]);
+    this._exchangeRate = new BigNumber(j["ExchangeRate"]).multipliedBy(
+      SELA_PER_ELA
+    );
     this._effectiveHeight = j["EffectiveHeight"];
     this._resourcePath = j["ResourcePath"];
   }

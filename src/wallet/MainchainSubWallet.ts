@@ -1801,7 +1801,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposalReview.digestUnsigned(version).toString(16);
+    let digest = proposalReview.digestUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;

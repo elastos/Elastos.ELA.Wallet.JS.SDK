@@ -28,6 +28,7 @@ import {
   UpgradeCodeProposalInfo,
   CRCProposalType
 } from "./transactions/payload/CRCProposal";
+import { CRCProposalReviewInfo } from "./transactions/payload/CRCProposalReview";
 
 export {
   BrowserLocalStorage,
@@ -63,5 +64,6 @@ export type {
   ReceiveCustomIDOwnerInfo,
   ChangeCustomIDFeeOwnerInfo,
   RegisterSidechainProposalInfo,
-  UpgradeCodeProposalInfo
+  UpgradeCodeProposalInfo,
+  CRCProposalReviewInfo
 };

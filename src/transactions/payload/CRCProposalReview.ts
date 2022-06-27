@@ -37,6 +37,7 @@ import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
 import { BASE64 as Base64 } from "../../walletcore/base64";
 import { uint168 } from "../../common/uint168";
+import { reverseHashString } from "../../common/utils";
 
 export const CRCProposalReviewDefaultVersion = 0;
 export const CRCProposalReviewVersion01 = 0x01;
@@ -73,7 +74,7 @@ export class CRCProposalReview extends Payload {
   private _opinionData: bytes_t;
   private _did: Address;
   private _signature: bytes_t;
-  private _digest: uint256;
+  private _digest: string;
 
   setProposalHash(hash: uint256) {
     this._proposalHash = hash;
@@ -123,12 +124,13 @@ export class CRCProposalReview extends Payload {
     return this._signature;
   }
 
-  digestUnsigned(version: uint8_t): uint256 {
-    if (this._digest.isZero()) {
+  digestUnsigned(version: uint8_t): string {
+    if (!this._digest) {
       let stream = new ByteStream();
       this.serializeUnsigned(stream, version);
       const rs = SHA256.encodeToBuffer(stream.getBytes());
-      this._digest = new BigNumber(rs.toString("hex"), 16);
+
+      this._digest = rs.toString("hex");
     }
     return this._digest;
   }
@@ -237,8 +239,11 @@ export class CRCProposalReview extends Payload {
     j[JsonKeyProposalHash] = this._proposalHash.toString(16);
     j[JsonKeyVoteResult] = this._voteResult;
     j[JsonKeyOpinionHash] = this._opinionHash.toString(16);
-    if (version >= CRCProposalReviewVersion01)
-      j[JsonKeyOpinionData] = Base64.encode(this._opinionData.toString("hex"));
+    if (version >= CRCProposalReviewVersion01) {
+      // j[JsonKeyOpinionData] = Base64.encode(this._opinionData.toString("hex"));
+      j[JsonKeyOpinionData] = this._opinionData.toString("hex");
+    }
+
     j[JsonKeyDID] = this._did.string();
     return j;
   }
@@ -249,15 +254,17 @@ export class CRCProposalReview extends Payload {
     this._opinionHash = new BigNumber(j[JsonKeyOpinionHash], 16);
     if (version >= CRCProposalReviewVersion01) {
       let opinionData = j[JsonKeyOpinionData];
-      this._opinionData = Buffer.from(Base64.decode(opinionData), "hex");
+      // this._opinionData = Buffer.from(Base64.decode(opinionData), "hex");
+      this._opinionData = Buffer.from(opinionData, "hex");
       ErrorChecker.checkParam(
         this._opinionData.length > OPINION_DATA_MAX_SIZE,
         Error.Code.ProposalContentTooLarge,
         "opinion hash too large"
       );
       let opinionHash = SHA256.hashTwice(this._opinionData).toString("hex");
+      opinionHash = reverseHashString(opinionHash);
       ErrorChecker.checkParam(
-        this._opinionHash.isEqualTo(new BigNumber(opinionHash, 16)),
+        !this._opinionHash.eq(new BigNumber(opinionHash, 16)),
         Error.Code.ProposalHashNotMatch,
         "opinion hash not match"
       );
@@ -273,7 +280,7 @@ export class CRCProposalReview extends Payload {
 
   fromJson(j: CRCProposalReviewInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature] as string);
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
   }
 
   isValidUnsigned(version: uint8_t): boolean {
