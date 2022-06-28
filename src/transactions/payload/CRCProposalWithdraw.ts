@@ -36,6 +36,7 @@ import { Log } from "../../common/Log";
 import { Payload } from "./Payload";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { uint168 } from "../../common/uint168";
+import { getBNHexStr } from "../../common/bnutils";
 
 const JsonKeyProposalHash = "ProposalHash";
 const JsonKeyOwnerPubkey = "OwnerPublicKey";
@@ -48,7 +49,7 @@ export const CRCProposalWithdrawVersion_01 = 0x01;
 
 export type CRCProposalWithdrawInfo = {
   ProposalHash: string;
-  OwnerPubkey: string;
+  OwnerPublicKey: string;
   Recipient?: string;
   Amount?: string;
   Signature?: string;
@@ -60,7 +61,7 @@ export class CRCProposalWithdraw extends Payload {
   private _recipient: Address;
   private _amount: BigNumber;
   private _signature: Buffer;
-  private _digest: uint256;
+  private _digest: string;
 
   setProposalHash(hash: uint256) {
     this._proposalHash = hash;
@@ -86,13 +87,13 @@ export class CRCProposalWithdraw extends Payload {
     return this._signature;
   }
 
-  digestUnsigned(version: number): uint256 {
-    if (this._digest.isZero()) {
+  digestUnsigned(version: number): string {
+    if (!this._digest) {
       let stream = new ByteStream();
       this.serializeUnsigned(stream, version);
 
       const rs = SHA256.encodeToBuffer(stream.getBytes());
-      this._digest = new BigNumber(rs.toString("hex"), 16);
+      this._digest = rs.toString("hex");
     }
 
     return this._digest;
@@ -187,7 +188,7 @@ export class CRCProposalWithdraw extends Payload {
 
   toJsonUnsigned(version: uint8_t): CRCProposalWithdrawInfo {
     let j = <CRCProposalWithdrawInfo>{};
-    j[JsonKeyProposalHash] = this._proposalHash.toString(16);
+    j[JsonKeyProposalHash] = getBNHexStr(this._proposalHash);
     j[JsonKeyOwnerPubkey] = this._ownerPubkey.toString("hex");
     if (version == CRCProposalWithdrawVersion_01) {
       j[JsonKeyRecipient] = this._recipient.string();
@@ -214,7 +215,7 @@ export class CRCProposalWithdraw extends Payload {
 
   fromJson(j: CRCProposalWithdrawInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
-    this._signature = Buffer.from(j[JsonKeySignature]);
+    this._signature = Buffer.from(j[JsonKeySignature], "hex");
   }
 
   isValidUnsigned(version: uint8_t): boolean {
@@ -248,7 +249,7 @@ export class CRCProposalWithdraw extends Payload {
         !EcdsaSigner.verify(
           this._ownerPubkey,
           this._signature,
-          Buffer.from(this.digestUnsigned(version).toString(16), "hex")
+          Buffer.from(this.digestUnsigned(version), "hex")
         )
       ) {
         Log.error("verify signature fail");

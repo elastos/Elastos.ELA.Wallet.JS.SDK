@@ -34,6 +34,7 @@ import {
   CRCProposalTrackingInfo,
   CRCProposalTrackingType
 } from "./transactions/payload/CRCProposalTracking";
+import { CRCProposalWithdrawInfo } from "./transactions/payload/CRCProposalWithdraw";
 
 export {
   BrowserLocalStorage,
@@ -73,5 +74,6 @@ export type {
   RegisterSidechainProposalInfo,
   UpgradeCodeProposalInfo,
   CRCProposalReviewInfo,
-  CRCProposalTrackingInfo
+  CRCProposalTrackingInfo,
+  CRCProposalWithdrawInfo
 };

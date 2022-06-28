@@ -3218,7 +3218,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
         "invalid payload"
       );
 
-    let digest = proposalWithdraw.digestUnsigned(version).toString(16);
+    let digest = proposalWithdraw.digestUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -3299,7 +3299,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  /*               Proposal Register side-chain   */
+  /*         Proposal Register side-chain         */
   //////////////////////////////////////////////////
   /**
    * @payload Change custom ID fee payload
