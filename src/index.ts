@@ -30,6 +30,10 @@ import {
 } from "./transactions/payload/CRCProposal";
 import { CRCProposalReviewInfo } from "./transactions/payload/CRCProposalReview";
 import { VoteResult } from "./transactions/payload/CRCProposalReview";
+import {
+  CRCProposalTrackingInfo,
+  CRCProposalTrackingType
+} from "./transactions/payload/CRCProposalTracking";
 
 export {
   BrowserLocalStorage,
@@ -42,7 +46,8 @@ export {
   MainchainSubWallet,
   WalletErrorException,
   CRCProposalType,
-  VoteResult
+  VoteResult,
+  CRCProposalTrackingType
 };
 
 export type {
@@ -67,5 +72,6 @@ export type {
   ChangeCustomIDFeeOwnerInfo,
   RegisterSidechainProposalInfo,
   UpgradeCodeProposalInfo,
-  CRCProposalReviewInfo
+  CRCProposalReviewInfo,
+  CRCProposalTrackingInfo
 };

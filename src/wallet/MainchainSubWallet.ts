@@ -1931,9 +1931,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
         "invalid payload"
       );
     }
-    let digest: string = proposalTracking
-      .digestOwnerUnsigned(version)
-      .toString(16);
+    let digest = proposalTracking.digestOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -1980,10 +1978,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposalTracking
-      .digestNewOwnerUnsigned(version)
-      .toString(16);
-
+    let digest = proposalTracking.digestNewOwnerUnsigned(version);
     // ArgInfo("r => {}", digest);
     return digest;
   }
@@ -2038,10 +2033,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposalTracking
-      .digestSecretaryUnsigned(version)
-      .toString(16);
-
+    let digest = proposalTracking.digestSecretaryUnsigned(version);
     // ArgInfo("r => {}", digest);
     return digest;
   }

@@ -37,7 +37,9 @@ import {
   SecretaryElectionInfo,
   RegisterSidechainProposalInfo,
   CRCProposalReviewInfo,
-  VoteResult
+  VoteResult,
+  CRCProposalTrackingInfo,
+  CRCProposalTrackingType
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -1126,6 +1128,117 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(info[0].Signers.length).toEqual(1);
     expect(info[0].Signers[0]).toEqual(
       "03a30bffc27d2fd5fd0b48bd6dc70a54acc2d0261439f58e8e3467d973690c7334"
+    );
+  });
+
+  test("test createProposalTrackingTransaction", async () => {
+    // the secretary general approved the project completion payment of the proposal #397
+    const mnemonic = `decline proud hero asthma drop involve drama borrow decrease buddy chalk raw`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-36",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+
+    let publicKey = "";
+    const pubKeys = subWallet.getPublicKeys(0, 1, false);
+    if (pubKeys instanceof Array) {
+      publicKey = pubKeys[0];
+    }
+
+    let proposalHash =
+      "89f676ceb1b1abb1a2dcf53e386048df2742ef57b209af3d51daf586820b9c6d";
+
+    let messageHash =
+      "e73a67fa51dfd9d28a9837b235100d1d8220be18887fe87dd272a5209dc5ab4b";
+
+    let messageData =
+      "504b03040a00000000007720705404e5cf3f18000000180000000c0000006d6573736167652e6a736f6e7b0a202022636f6e74656e74223a20224768686262220a7d504b010214000a00000000007720705404e5cf3f18000000180000000c00000000000000000000000000000000006d6573736167652e6a736f6e504b050600000000010001003a000000420000000000";
+
+    let ownerPublicKey = publicKey;
+    let ownerSignature =
+      "b3d9df40cc03d190421c979e79037e578561f57417d3c66661f9d75263561bdff17410ef3710185e79dcc16adaee572b36a37c348b3be0f200901cae50813abd";
+
+    let secretaryGeneralOpinionData =
+      "504b03041400000808009438dc54437606de26000000250000000c0000006f70696e696f6e2e6a736f6eabe65250504acecf2b49cd2b51b252504a2c2828ca2f4b552848accc050a29289b2a71d50200504b010214031400000808009438dc54437606de26000000250000000c0000000000000000000000a481000000006f70696e696f6e2e6a736f6e504b050600000000010001003a000000500000000000";
+
+    let secretaryGeneralOpinionHash =
+      "55fe7d26130f5ceb8370191e50b108647525531d7df0e550525ea002fb9a56c6";
+
+    let payload: CRCProposalTrackingInfo = {
+      ProposalHash: proposalHash,
+      MessageHash: messageHash,
+      MessageData: messageData,
+      Stage: 4,
+      OwnerPublicKey: ownerPublicKey,
+      NewOwnerPublicKey: "",
+      OwnerSignature: ownerSignature,
+      NewOwnerSignature: "",
+      Type: CRCProposalTrackingType.finalized,
+      SecretaryGeneralOpinionData: secretaryGeneralOpinionData,
+      SecretaryGeneralOpinionHash: secretaryGeneralOpinionHash
+    };
+
+    // secretary general's wallet
+    const mnemonic1 = `census endless craft group seed sort good upper gesture swallow gloom love`;
+
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-37",
+      mnemonic1,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const sgSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+      "ELA"
+    );
+
+    const sgAddresses = sgSubWallet.getAddresses(0, 1, false);
+
+    const crDigest = sgSubWallet.proposalTrackingSecretaryDigest(payload);
+    let sgSignature = await sgSubWallet.signDigest(
+      sgAddresses[0],
+      crDigest,
+      passwd
+    );
+    payload.SecretaryGeneralSignature = sgSignature;
+
+    const inputs = [
+      {
+        Address: sgAddresses[0],
+        Amount: "100158960000",
+        TxHash:
+          "0139efbf7d626a9624932be67e92f4c8f51447b13f1d5de86abbb2f015350732",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "proposal tracking transaction";
+
+    const tx: EncodedTx = sgSubWallet.createProposalTrackingTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await sgSubWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = sgSubWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "0349cb77a69aa35be0bcb044ffd41a616b8367136d3b339d515b1023cc0f302f87"
     );
   });
 });

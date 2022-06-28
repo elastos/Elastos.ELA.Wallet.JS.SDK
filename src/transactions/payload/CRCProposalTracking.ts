@@ -36,6 +36,8 @@ import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
 import { BASE64 as Base64 } from "../../walletcore/base64";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
+import { reverseHashString } from "../../common/utils";
+import { getBNHexStr } from "../../common/bnutils";
 
 export const MESSAGE_DATA_MAX_SIZE = 800 * 1024;
 export const OPINION_DATA_MAX_SIZE = 200 * 1024;
@@ -94,9 +96,9 @@ export class CRCProposalTracking extends Payload {
   private _secretaryGeneralOpinionHash: uint256;
   private _secretaryGeneralOpinionData: bytes_t;
   private _secretaryGeneralSignature: bytes_t;
-  private _digestOwnerUnsigned: uint256;
-  private _digestNewOwnerUnsigned: uint256;
-  private _digestSecretaryUnsigned: uint256;
+  private _digestOwnerUnsigned: string;
+  private _digestNewOwnerUnsigned: string;
+  private _digestSecretaryUnsigned: string;
 
   setProposalHash(proposalHash: uint256) {
     this._proposalHash = proposalHash;
@@ -194,34 +196,34 @@ export class CRCProposalTracking extends Payload {
     return this._secretaryGeneralSignature;
   }
 
-  digestOwnerUnsigned(version: uint8_t): uint256 {
-    if (this._digestOwnerUnsigned.isEqualTo(0)) {
+  digestOwnerUnsigned(version: uint8_t): string {
+    if (!this._digestOwnerUnsigned) {
       let stream = new ByteStream();
       this.serializeOwnerUnsigned(stream, version);
       let rs = SHA256.encodeToBuffer(stream.getBytes());
-      this._digestOwnerUnsigned = new BigNumber(rs.toString("hex"), 16);
+      this._digestOwnerUnsigned = rs.toString("hex");
     }
 
     return this._digestOwnerUnsigned;
   }
 
-  digestNewOwnerUnsigned(version: uint8_t): uint256 {
-    if (this._digestNewOwnerUnsigned.isEqualTo(0)) {
+  digestNewOwnerUnsigned(version: uint8_t): string {
+    if (!this._digestNewOwnerUnsigned) {
       let stream = new ByteStream();
       this.serializeNewOwnerUnsigned(stream, version);
       let rs = SHA256.encodeToBuffer(stream.getBytes());
-      this._digestNewOwnerUnsigned = new BigNumber(rs.toString("hex"), 16);
+      this._digestNewOwnerUnsigned = rs.toString("hex");
     }
 
     return this._digestNewOwnerUnsigned;
   }
 
-  digestSecretaryUnsigned(version: uint8_t): uint256 {
-    if (this._digestSecretaryUnsigned.isEqualTo(0)) {
+  digestSecretaryUnsigned(version: uint8_t): string {
+    if (!this._digestSecretaryUnsigned) {
       let stream = new ByteStream();
       this.serializeSecretaryUnsigned(stream, version);
       let rs = SHA256.encodeToBuffer(stream.getBytes());
-      this._digestSecretaryUnsigned = new BigNumber(rs.toString("hex"), 16);
+      this._digestSecretaryUnsigned = rs.toString("hex");
     }
 
     return this._digestSecretaryUnsigned;
@@ -306,7 +308,7 @@ export class CRCProposalTracking extends Payload {
     }
 
     let stage = stream.readUInt8();
-    if (!stage) {
+    if (!stage && stage !== 0) {
       Log.error("deserialize stage");
       return false;
     }
@@ -340,10 +342,13 @@ export class CRCProposalTracking extends Payload {
   deserializeNewOwnerUnsigned(stream: ByteStream, version: uint8_t): boolean {
     if (!this.deserializeOwnerUnsigned(stream, version)) return false;
 
-    if (!stream.readVarBytes(this._ownerSign)) {
+    let ownerSign: bytes_t;
+    ownerSign = stream.readVarBytes(ownerSign);
+    if (!ownerSign) {
       Log.error("deserialize owner sign");
       return false;
     }
+    this._ownerSign = ownerSign;
 
     return true;
   }
@@ -370,14 +375,14 @@ export class CRCProposalTracking extends Payload {
       Log.error("deserialize new owner sign");
       return false;
     }
-    this._newOwnerPubKey = newOwnerSign;
+    this._newOwnerSign = newOwnerSign;
 
     let type: uint8_t = stream.readUInt8();
-    if (!type) {
+    if (!type && type !== CRCProposalTrackingType.common) {
       Log.error("deserialize type");
       return false;
     }
-    this._type = type as CRCProposalTrackingType;
+    this._type = type;
 
     let secretaryGeneralOpinionHash = stream.readUIntOfBytesAsBN(32);
     if (!secretaryGeneralOpinionHash) {
@@ -425,10 +430,10 @@ export class CRCProposalTracking extends Payload {
 
   toJsonOwnerUnsigned(version: uint8_t): CRCProposalTrackingInfo {
     let j = <CRCProposalTrackingInfo>{};
-    j[JsonKeyProposalHash] = this._proposalHash.toString(16);
-    j[JsonKeyMessageHash] = this._messageHash.toString(16);
+    j[JsonKeyProposalHash] = getBNHexStr(this._proposalHash);
+    j[JsonKeyMessageHash] = getBNHexStr(this._messageHash);
     if (version >= CRCProposalTrackingVersion01) {
-      j[JsonKeyMessageData] = Base64.encode(this._messageData.toString("hex"));
+      j[JsonKeyMessageData] = this._messageData.toString("hex");
     }
 
     j[JsonKeyStage] = this._stage;
@@ -441,17 +446,14 @@ export class CRCProposalTracking extends Payload {
     this._proposalHash = new BigNumber(j[JsonKeyProposalHash], 16);
     this._messageHash = new BigNumber(j[JsonKeyMessageHash], 16);
     if (version >= CRCProposalTrackingVersion01) {
-      this._messageData = Buffer.from(
-        Base64.decode(j[JsonKeyMessageData]),
-        "hex"
-      );
+      this._messageData = Buffer.from(j[JsonKeyMessageData], "hex");
       ErrorChecker.checkParam(
         this._messageData.length > MESSAGE_DATA_MAX_SIZE,
         Error.Code.ProposalContentTooLarge,
         "message data size too large"
       );
       let hash = SHA256.hashTwice(this._messageData).toString("hex");
-      let messageHash = new BigNumber(hash, 16);
+      let messageHash = new BigNumber(reverseHashString(hash), 16);
       ErrorChecker.checkParam(
         !this._messageHash.isEqualTo(messageHash),
         Error.Code.ProposalHashNotMatch,
@@ -478,12 +480,12 @@ export class CRCProposalTracking extends Payload {
     let j = this.toJsonNewOwnerUnsigned(version);
     j[JsonKeyNewOwnerSignature] = this._newOwnerSign.toString("hex");
     j[JsonKeyType] = this._type;
-    j[JsonKeySecretaryGeneralOpinionHash] =
-      this._secretaryGeneralOpinionHash.toString(16);
+    j[JsonKeySecretaryGeneralOpinionHash] = getBNHexStr(
+      this._secretaryGeneralOpinionHash
+    );
     if (version >= CRCProposalTrackingVersion01) {
-      j[JsonKeySecretaryGeneralOpinionData] = Base64.encode(
-        this._secretaryGeneralOpinionData.toString("hex")
-      );
+      let data = this._secretaryGeneralOpinionData.toString("hex");
+      j[JsonKeySecretaryGeneralOpinionData] = data;
     }
 
     return j;
@@ -491,28 +493,24 @@ export class CRCProposalTracking extends Payload {
 
   fromJsonSecretaryUnsigned(j: CRCProposalTrackingInfo, version: uint8_t) {
     this.fromJsonNewOwnerUnsigned(j, version);
-    this._newOwnerSign = Buffer.from(
-      j[JsonKeyNewOwnerSignature] as string,
-      "hex"
-    );
+    this._newOwnerSign = Buffer.from(j[JsonKeyNewOwnerSignature], "hex");
     this._type = j[JsonKeyType] as CRCProposalTrackingType;
     this._secretaryGeneralOpinionHash = new BigNumber(
-      j[JsonKeySecretaryGeneralOpinionHash] as string,
+      j[JsonKeySecretaryGeneralOpinionHash],
       16
     );
     if (version >= CRCProposalTrackingVersion01) {
-      let data = j[JsonKeySecretaryGeneralOpinionData] as string;
-      this._secretaryGeneralOpinionData = Buffer.from(
-        Base64.decode(data),
-        "hex"
-      );
+      let data = j[JsonKeySecretaryGeneralOpinionData];
+      this._secretaryGeneralOpinionData = Buffer.from(data, "hex");
       ErrorChecker.checkParam(
         this._secretaryGeneralOpinionData.length > OPINION_DATA_MAX_SIZE,
         Error.Code.ProposalContentTooLarge,
         "opinion data size too large"
       );
-      let hash = SHA256.hashTwice(this._secretaryGeneralOpinionData);
-      let opinionHash = new BigNumber(hash.toString("hex"), 16);
+      let hash = SHA256.hashTwice(this._secretaryGeneralOpinionData).toString(
+        "hex"
+      );
+      let opinionHash = new BigNumber(reverseHashString(hash), 16);
       ErrorChecker.checkParam(
         !opinionHash.isEqualTo(this._secretaryGeneralOpinionHash),
         Error.Code.ProposalHashNotMatch,
@@ -544,17 +542,15 @@ export class CRCProposalTracking extends Payload {
     }
 
     try {
-      // Key key(CTElastos, _ownerPubKey);
-      let key = EcdsaSigner.getKeyFromPublic(this._ownerPubKey);
+      EcdsaSigner.getKeyFromPublic(this._ownerPubKey);
     } catch (e) {
       Log.error("invalid owner pubkey");
       return false;
     }
 
-    if (this._newOwnerPubKey) {
+    if (this._newOwnerPubKey && this._newOwnerPubKey.length !== 0) {
       try {
-        // Key key(CTElastos, _newOwnerPubKey);
-        let key = EcdsaSigner.getKeyFromPublic(this._newOwnerPubKey);
+        EcdsaSigner.getKeyFromPublic(this._newOwnerPubKey);
       } catch (e) {
         Log.error("invalid new owner pubkey");
         return false;
@@ -573,7 +569,7 @@ export class CRCProposalTracking extends Payload {
         !EcdsaSigner.verify(
           this._ownerPubKey,
           this._ownerSign,
-          Buffer.from(this.digestOwnerUnsigned(version).toString(16), "hex")
+          Buffer.from(this.digestOwnerUnsigned(version), "hex")
         )
       ) {
         Log.error("verify owner sign fail");
@@ -591,16 +587,13 @@ export class CRCProposalTracking extends Payload {
     if (!this.isValidNewOwnerUnsigned(version)) return false;
 
     // verify signature of new owner
-    if (this._newOwnerPubKey) {
+    if (this._newOwnerPubKey && this._newOwnerPubKey.length !== 0) {
       try {
         if (
           !EcdsaSigner.verify(
             this._newOwnerPubKey,
             this._newOwnerSign,
-            Buffer.from(
-              this.digestNewOwnerUnsigned(version).toString(16),
-              "hex"
-            )
+            Buffer.from(this.digestNewOwnerUnsigned(version), "hex")
           )
         ) {
           Log.error("verify new owner sign fail");
@@ -660,7 +653,7 @@ export class CRCProposalTracking extends Payload {
   equals(payload: Payload, version: uint8_t): boolean {
     try {
       const p = payload as CRCProposalTracking;
-      let equal: boolean =
+      let equal =
         this._proposalHash.eq(p._proposalHash) &&
         this._messageHash.eq(p._messageHash) &&
         this._stage == p._stage &&
