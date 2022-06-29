@@ -204,6 +204,114 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
+  test("test createCancelProducerTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-190",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    subWallet.getAddresses(0, 1, false);
+
+    const ownerPublicKey = subWallet.getOwnerPublicKey();
+    const payPasswd = passwd;
+
+    const payload = await subWallet.generateCancelProducerPayload(
+      ownerPublicKey,
+      payPasswd
+    );
+
+    const inputs = [
+      {
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "500899980000",
+        TxHash:
+          "65a3151398ef8502631eb5668989d75625cea304b9f265dc1f7bf644efc7dc0d",
+        Index: 1
+      }
+    ];
+
+    const fee = "10000";
+    const memo = "cancel producer transaction";
+
+    const tx = subWallet.createCancelProducerTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test createRetrieveDepositTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-191",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    subWallet.getAddresses(0, 1, false);
+
+    const depositAddr = subWallet.getOwnerDepositAddress();
+
+    const inputs = [
+      {
+        Address: depositAddr, // DrFjrHD593Y2MhReLH1baSTehbqwzQCoGM
+        Amount: "500100000000",
+        TxHash:
+          "b9ac9a7c151c498da2c0de197cfa707c30a32f546610417e59da1ec3ff307caa",
+        Index: 0
+      }
+    ];
+
+    const fee = "10000";
+    const memo = "retrieve deposit transaction";
+
+    const tx = subWallet.createRetrieveDepositTransaction(
+      inputs,
+      "500100000000",
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
   test("test createRegisterCRTransaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";

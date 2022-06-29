@@ -1,6 +1,7 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
@@ -42,7 +43,7 @@ export class CancelProducer extends Payload {
 
   deserializeUnsigned(istream: ByteStream, version: uint8_t): boolean {
     let publicKey: bytes_t;
-    publicKey = istream.readVarBytes(this._publicKey);
+    publicKey = istream.readVarBytes(publicKey);
     if (publicKey) {
       this._publicKey = publicKey;
       return true;
@@ -75,7 +76,7 @@ export class CancelProducer extends Payload {
     }
 
     let signature: bytes_t;
-    signature = istream.readVarBytes(this._signature);
+    signature = istream.readVarBytes(signature);
     if (!signature) {
       Log.error("Deserialize: cancel producer payload read signature");
       return false;

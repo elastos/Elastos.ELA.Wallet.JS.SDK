@@ -640,7 +640,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let feeAmount = new BigNumber(fee);
     let bgAmount = new BigNumber(amount);
     let outputs: OutputArray = [];
-    let receiveAddr: Address = utxo[0].getAddress();
+    // code from the dev branch of wallet c++ sdk
+    let addresses = wallet.getAddresses(0, 1, false);
+    ErrorChecker.checkLogic(
+      addresses.length == 0,
+      Error.Code.Address,
+      "can't get address"
+    );
+    let receiveAddr: Address = addresses[0];
     outputs.push(
       TransactionOutput.newFromParams(bgAmount.minus(feeAmount), receiveAddr)
     );
