@@ -123,20 +123,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       fee,
       memo
     );
-    console.log("tx...", tx);
-
-    const rawTx = subWallet.convertToRawTransaction(tx);
-    console.log("rawTx...", rawTx);
-
     const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
-    console.log("signedTx...", signedTx);
-
-    const signedRawTx = subWallet.convertToRawTransaction(signedTx);
-    console.log("signedRawTx...", signedRawTx);
 
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
-    console.log("info", info);
-
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");
     expect(info[0].Signers.length).toEqual(1);

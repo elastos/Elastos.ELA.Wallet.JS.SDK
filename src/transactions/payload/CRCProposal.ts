@@ -21,7 +21,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
-import { getBNHexStr } from "../../common/bnutils";
+import { getBNHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
@@ -124,7 +124,7 @@ export class Budget {
   deserialize(istream: ByteStream): boolean {
     let type: uint8_t = istream.readUInt8();
     // ignore the imprest budget type
-    if (!type && type !== 0) {
+    if (!type && type !== BudgetType.imprest) {
       Log.error("Budget::Deserialize: read type key");
       return false;
     }
@@ -2460,7 +2460,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = reverseHashString(getBNHexStr(this._draftHash));
+    j[JsonKeyDraftHash] = reverseHashString(getBNHexString(this._draftHash));
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -3573,7 +3573,7 @@ export class CRCProposal extends Payload {
       "proposal origin content too large"
     );
     let draftHashDecoded = SHA256.hashTwice(draftDataDecoded);
-    let reverseDraftHash = getBNHexStr(draftHash);
+    let reverseDraftHash = getBNHexString(draftHash);
     ErrorChecker.checkParam(
       reverseDraftHash != draftHashDecoded.toString("hex"),
       Error.Code.ProposalHashNotMatch,

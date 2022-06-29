@@ -23,6 +23,7 @@ import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { reverseHashString } from "../common/utils";
 import { ChainConfig } from "../config";
 import { Asset } from "../transactions/Asset";
 import {
@@ -773,8 +774,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
           }
 
           let key = keys[i];
-          let proposalHash = Buffer.from(key, "hex");
-
+          let proposalHash = Buffer.from(reverseHashString(key), "hex");
           ErrorChecker.checkParam(
             proposalHash.length != 32,
             Error.Code.InvalidArgument,
@@ -873,7 +873,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *     "Type":"CRC",
    *     "Candidates":
    *     {
-   *       "iYMVuGs1FscpgmghSzg243R6PzPiszrgj7": "100000000",
+   *       "iYMVuGs1FscpgmghSzg243R6PzPiszrgj7": "100000000", // key is CID
    *       ...
    *     }
    *   },
@@ -881,7 +881,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *     "Type":"CRCProposal",
    *     "Candidates":
    *     {
-   *       "109780cf45c7a6178ad674ac647545b47b10c2c3e3b0020266d0707e5ca8af7c": "100000000",
+   *       "109780cf45c7a6178ad674ac647545b47b10c2c3e3b0020266d0707e5ca8af7c": "100000000", // key is proposal hash
    *       ...
    *     }
    *   },
@@ -889,7 +889,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *     "Type": "CRCImpeachment",
    *     "Candidates":
    *     {
-   *       "innnNZJLqmJ8uKfVHKFxhdqVtvipNHzmZs": "100000000",
+   *       "innnNZJLqmJ8uKfVHKFxhdqVtvipNHzmZs": "100000000", // key is CID
    *       ...
    *     }
    *   },
@@ -897,7 +897,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *     "Type":"Delegate",
    *     "Candidates":
    *     {
-   *       "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4": "100000000",
+   *       "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4": "100000000", // key is a DPoS node's public key
    *       ...
    *     }
    *   }

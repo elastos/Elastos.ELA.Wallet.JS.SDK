@@ -50,7 +50,7 @@ export const newBNFromBuffer = (buffer: Buffer): BigNumber => {
   return bytestream.readUIntOfBytesAsBN(buffer.length);
 };
 
-export const getBNHexStr = (bn: BigNumber): string => {
+export const getBNHexString = (bn: BigNumber): string => {
   let bnBytes = getBNBytes(bn);
   return bnBytes.toString("hex");
 };
