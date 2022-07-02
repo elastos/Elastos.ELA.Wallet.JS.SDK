@@ -1,14 +1,16 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
-import { bytes_t, json, JSONArray, size_t, uint8_t } from "../../types";
+import { size_t, uint8_t } from "../../types";
 import { Base58 } from "../../walletcore/base58";
 import { BASE64 } from "../../walletcore/base64";
-import { DeterministicKey } from "../../walletcore/deterministickey";
+import { EcdsaSigner } from "../../walletcore/ecdsasigner";
+import { Payload } from "./Payload";
 
 export const DID_DEFAULT_TYPE = "ECDSAsecp256r1";
 export const PREFIX_DID = "did:elastos:";
@@ -20,16 +22,79 @@ type CredentialSubjectArray = CredentialSubject[];
 type ServiceEndpoints = ServiceEndpoint[];
 type VerifiableCredentialArray = VerifiableCredential[];
 
+export type DIDHeaderInfoJson = {
+  specification: string;
+  operation: string;
+  previousTxid?: string;
+};
+
+export type DIDPubKeyInfoJson = {
+  id?: string;
+  publicKeyBase58?: string;
+  type?: string;
+  controller?: string;
+};
+
+export type DIDProofInfoJson = {
+  type?: string;
+  verificationMethod: string;
+  signature: string;
+};
+
+export type CredentialSubjectJson = { id?: string };
+
+export type VerifiableCredentialJson = {
+  id?: string;
+  type?: string[];
+  issuer: string;
+  issuanceDate: string;
+  expirationDate: string;
+  credentialSubject?: CredentialSubjectJson;
+  proof?: DIDProofInfoJson;
+};
+
+export type ServiceEndpointJson = {
+  id?: string;
+  type?: string;
+  serviceEndpoint?: string;
+};
+
+export type DIDPayloadProofJson = {
+  type?: string;
+  created?: string;
+  creator?: string;
+  signatureValue: string;
+};
+
+export type DIDPayloadInfoJson = {
+  controller?: string[] | string;
+  id: string;
+  publicKey: DIDPubKeyInfoJson[];
+  authentication: DIDPubKeyInfoJson[];
+  authorization: DIDPubKeyInfoJson[];
+  expires: string;
+  verifiableCredential: VerifiableCredentialJson[];
+  service: ServiceEndpointJson[];
+  proof: DIDPayloadProofJson;
+};
+
+export type DIDInfoJson = {
+  header: DIDHeaderInfoJson;
+  payload: string;
+  proof: DIDProofInfoJson;
+};
+
 export class DIDHeaderInfo {
   private _specification: string;
   private _operation: string;
   private _previousTxid: string;
 
-  constructor(specification: string, operation: string, preTxID: string) {
-    this._specification = specification;
-    this._operation = operation;
-    this._previousTxid = preTxID;
-    return this;
+  static newFromParams(specification: string, operation: string, preTxID = "") {
+    let headerInfo = new DIDHeaderInfo();
+    headerInfo._specification = specification;
+    headerInfo._operation = operation;
+    headerInfo._previousTxid = preTxID;
+    return headerInfo;
   }
 
   specification(): string {
@@ -95,7 +160,7 @@ export class DIDHeaderInfo {
 
     if (this._operation == UPDATE_DID) {
       this._previousTxid = stream.readVarString();
-      if (!this.previousTxid) {
+      if (!this._previousTxid) {
         Log.error("DIDHeaderInfo deserialize: previousTxid");
         return false;
       }
@@ -104,8 +169,8 @@ export class DIDHeaderInfo {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): DIDHeaderInfoJson {
+    let j = <DIDHeaderInfoJson>{};
     j["specification"] = this._specification;
     j["operation"] = this._operation;
     if (this._operation == UPDATE_DID) {
@@ -114,12 +179,12 @@ export class DIDHeaderInfo {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._specification = j["specification"] as string;
-    this._operation = j["operation"] as string;
+  fromJson(j: DIDHeaderInfoJson, version: uint8_t) {
+    this._specification = j["specification"];
+    this._operation = j["operation"];
 
     if (this._operation == UPDATE_DID) {
-      this._previousTxid = j["previousTxid"] as string;
+      this._previousTxid = j["previousTxid"];
     }
   }
 
@@ -213,8 +278,8 @@ export class DIDPubKeyInfo {
     }
     */
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): DIDPubKeyInfoJson {
+    let j = <DIDPubKeyInfoJson>{};
 
     j["id"] = this._id;
     j["type"] = this._type;
@@ -228,22 +293,22 @@ export class DIDPubKeyInfo {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: DIDPubKeyInfoJson | string, version: uint8_t) {
     if (j["id"]) {
-      this._id = j["id"] as string;
-      this._publicKeyBase58 = j["publicKeyBase58"] as string;
+      this._id = j["id"];
+      this._publicKeyBase58 = j["publicKeyBase58"];
     } else if (typeof j === "string") {
       this._id = j;
     }
 
     if (j["type"]) {
-      this._type = j["type"] as string;
+      this._type = j["type"];
     } else {
       this._type = DID_DEFAULT_TYPE;
     }
 
     if (j["controller"]) {
-      this._controller = j["controller"] as string;
+      this._controller = j["controller"];
       ErrorChecker.checkParam(
         !this._controller && this._controller.indexOf(PREFIX_DID) === -1,
         Error.Code.InvalidArgument,
@@ -255,7 +320,7 @@ export class DIDPubKeyInfo {
 
 export class CredentialSubject {
   private _id: string;
-  private _properties: json;
+  private _properties: CredentialSubjectJson;
 
   setID(id: string) {
     ErrorChecker.checkParam(
@@ -277,7 +342,7 @@ export class CredentialSubject {
     }
   }
 
-  getProperties(): json {
+  getProperties(): CredentialSubjectJson {
     return this._properties;
   }
 
@@ -342,15 +407,15 @@ export class CredentialSubject {
       }
     }
 */
-  toJson(version: uint8_t): json {
+  toJson(version: uint8_t): CredentialSubjectJson {
     let j = this._properties;
     j["id"] = this._id;
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: CredentialSubjectJson, version: uint8_t) {
     if (j["id"]) {
-      this._id = j["id"] as string;
+      this._id = j["id"];
       ErrorChecker.checkParam(
         this._id.indexOf(PREFIX_DID) === -1,
         Error.Code.InvalidArgument,
@@ -368,10 +433,12 @@ export class ServiceEndpoint {
   private _type: string;
   private _serviceEndpoint: string;
 
-  constructor(id: string, type: string, serviceEndpoint: string) {
-    this._id = id;
-    this._type = type;
-    this._serviceEndpoint = serviceEndpoint;
+  static newFromParams(id: string, type: string, serviceEndpoint: string) {
+    let endpoint = new ServiceEndpoint();
+    endpoint._id = id;
+    endpoint._type = type;
+    endpoint._serviceEndpoint = serviceEndpoint;
+    return endpoint;
   }
 
   setID(id: string) {
@@ -403,6 +470,7 @@ export class ServiceEndpoint {
       this._id = did + this._id;
     }
   }
+
   /*
     void ServiceEndpoint::ToOrderedJson(JsonGenerator *generator) const {
       JsonGenerator_WriteStartObject(generator);
@@ -414,8 +482,9 @@ export class ServiceEndpoint {
       JsonGenerator_WriteEndObject(generator);
     }
 */
-  toJson(version: uint8_t): json {
-    let j: json;
+
+  toJson(version: uint8_t): ServiceEndpointJson {
+    let j = <ServiceEndpointJson>{};
 
     j["id"] = this._id;
     j["type"] = this._type;
@@ -424,13 +493,12 @@ export class ServiceEndpoint {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    if (j["id"]) this._id = j["id"] as string;
+  fromJson(j: ServiceEndpointJson, version: uint8_t) {
+    if (j["id"]) this._id = j["id"];
 
-    if (j["type"]) this._type = j["type"] as string;
+    if (j["type"]) this._type = j["type"];
 
-    if (j["serviceEndpoint"])
-      this._serviceEndpoint = j["serviceEndpoint"] as string;
+    if (j["serviceEndpoint"]) this._serviceEndpoint = j["serviceEndpoint"];
   }
 }
 
@@ -546,8 +614,8 @@ export class VerifiableCredential {
     }
     */
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): VerifiableCredentialJson {
+    let j = <VerifiableCredentialJson>{};
     j["id"] = this._id;
     j["type"] = this._types;
     j["issuer"] = this._issuer;
@@ -559,34 +627,34 @@ export class VerifiableCredential {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._id = j["id"] as string;
+  fromJson(j: VerifiableCredentialJson, version: uint8_t) {
+    this._id = j["id"];
 
     if (j["type"]) {
-      let types = j["type"] as string[];
+      let types = j["type"];
       this._types = types;
     }
 
     if (j["issuer"]) {
-      this._issuer = j["issuer"] as string;
+      this._issuer = j["issuer"];
     }
 
     if (j["issuanceDate"]) {
-      this._issuanceDate = j["issuanceDate"] as string;
+      this._issuanceDate = j["issuanceDate"];
     }
 
     if (j["expirationDate"]) {
-      this._expirationDate = j["expirationDate"] as string;
+      this._expirationDate = j["expirationDate"];
     }
 
     if (j["credentialSubject"]) {
-      // TODO
-      // this._credentialSubject = j["credentialSubject"].fromJson(version);
+      this._credentialSubject = new CredentialSubject();
+      this._credentialSubject.fromJson(j["credentialSubject"], version);
     }
 
     if (j["proof"]) {
-      // TODO
-      // this._proof.fromJson(j["proof"], version);
+      this._proof = new DIDProofInfo();
+      this._proof.fromJson(j["proof"], version);
     }
   }
 }
@@ -633,8 +701,8 @@ export class DIDPayloadProof {
     return this._signatureValue;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): DIDPayloadProofJson {
+    let j = <DIDPayloadProofJson>{};
 
     j["type"] = this._type;
 
@@ -650,22 +718,22 @@ export class DIDPayloadProof {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: DIDPayloadProofJson, version: uint8_t) {
     if (j["type"]) {
-      this._type = j["type"] as string;
+      this._type = j["type"];
     } else {
       this._type = DID_DEFAULT_TYPE;
     }
 
     if (j["created"]) {
-      this._created = j["created"] as string;
+      this._created = j["created"];
     }
 
     if (j["creator"]) {
-      this._creator = j["creator"] as string;
+      this._creator = j["creator"];
     }
 
-    this._signatureValue = j["signatureValue"] as string;
+    this._signatureValue = j["signatureValue"];
   }
 }
 
@@ -769,19 +837,19 @@ export class DIDPayloadInfo {
       if (pubkeyID[0] == "#") pubkeyID = this._id + pubkeyID;
 
       if (proofID == pubkeyID) {
+        let signature = Buffer.from(
+          BASE64.decode(this._proof.getSignature()),
+          "hex"
+        );
+        let pubkey = Base58.decode(this._publickey[i].publicKeyBase58());
         // TODO
-        let signature: bytes_t = Buffer.from(
-          BASE64.decode(this._proof.getSignature())
-        );
-        let pubkey: bytes_t = Base58.decode(
-          this._publickey[i].publicKeyBase58()
-        );
-        let key: DeterministicKey = new DeterministicKey(
-          DeterministicKey.ELASTOS_VERSIONS
-        );
-        key.publicKey = pubkey;
-        // TODO
-        // if (key.verify(this.toOrderedJson(), signature)) {
+        // if (
+        //   EcdsaSigner.verify(
+        //     pubkey,
+        //     signature,
+        //     Buffer.from(this.toOrderedJson(), "hex")
+        //   )
+        // ) {
         //   verifiedSign = true;
         // }
         break;
@@ -791,11 +859,11 @@ export class DIDPayloadInfo {
     return verifiedSign;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): DIDPayloadInfoJson {
+    let j = <DIDPayloadInfoJson>{};
     j["id"] = this._id;
 
-    let jPubKey: JSONArray;
+    let jPubKey = [];
     for (let i = 0; i < this._publickey.length; ++i) {
       jPubKey.push(this._publickey[i].toJson(version));
     }
@@ -803,7 +871,7 @@ export class DIDPayloadInfo {
     j["publicKey"] = jPubKey;
 
     if (this._authentication) {
-      let jAuthentication: JSONArray;
+      let jAuthentication = [];
       for (let i = 0; i < this._authentication.length; ++i) {
         jAuthentication.push(this._authentication[i].toJson(version));
       }
@@ -812,7 +880,7 @@ export class DIDPayloadInfo {
     }
 
     if (this._authorization) {
-      let jAuthorization: JSONArray;
+      let jAuthorization = [];
       for (let i = 0; i < this._authorization.length; ++i) {
         jAuthorization.push(this._authorization[i].toJson(version));
       }
@@ -821,7 +889,7 @@ export class DIDPayloadInfo {
     }
 
     if (this._verifiableCredential) {
-      let jVerifiableCredential: JSONArray;
+      let jVerifiableCredential = [];
       for (let i = 0; i < this._verifiableCredential.length; ++i) {
         jVerifiableCredential.push(
           this._verifiableCredential[i].toJson(version)
@@ -833,7 +901,7 @@ export class DIDPayloadInfo {
     j["expires"] = this._expires;
 
     if (this._services) {
-      let jService: JSONArray;
+      let jService = [];
       for (let i = 0; i < this._services.length; ++i) {
         jService.push(this._services[i].toJson(version));
       }
@@ -903,74 +971,79 @@ export class DIDPayloadInfo {
       free((void *)pjson);
       return json;
     }
+  */
 
-    void DIDPayloadInfo::FromJson(const nlohmann::json &j, uint8_t version) {
-        if (j.contains("controller")) {
-                if (j.is_array()) {
-                    _controller = j["controller"].get<std::vector<std::string>>();
-                } else {
-                    _controller.push_back(j["controller"].get<std::string>());
-                }
-        } else {
-                _id = j["id"].get<std::string>();
-        }
-
-#if 0
-      nlohmann::json jPubKey = j["publicKey"];
-      for (nlohmann::json::iterator it = jPubKey.begin(); it != jPubKey.end(); ++it) {
-        DIDPubKeyInfo pubKeyInfo;
-        pubKeyInfo.FromJson(*it, version);
-        pubKeyInfo.AutoFill(_id);
-        _publickey.push_back(pubKeyInfo);
+  fromJson(j: DIDPayloadInfoJson, version: uint8_t) {
+    if (j["controller"]) {
+      if (Array.isArray(j)) {
+        this._controller = j["controller"] as string[];
+      } else {
+        this._controller.push(j["controller"] as string);
       }
+    } else {
+      this._id = j["id"];
+    }
 
-      if (j.find("authentication") != j.end()) {
-        nlohmann::json jAuthentication = j["authentication"];
-        for (nlohmann::json::iterator it = jAuthentication.begin(); it != jAuthentication.end(); ++it) {
-          DIDPubKeyInfo pubKeyInfo;
-          pubKeyInfo.FromJson(*it, version);
-          pubKeyInfo.AutoFill(_id);
-          _authentication.push_back(pubKeyInfo);
-        }
+    let jPubKey = j["publicKey"];
+    this._publickey = [];
+    for (let i = 0; i < jPubKey.length; ++i) {
+      let pubKeyInfo = new DIDPubKeyInfo();
+      pubKeyInfo.fromJson(jPubKey[i], version);
+      pubKeyInfo.autoFill(this._id);
+      this._publickey.push(pubKeyInfo);
+    }
+
+    if (j["authentication"]) {
+      let jAuthentication = j["authentication"];
+      this._authentication = [];
+      for (let i = 0; i < jAuthentication.length; ++i) {
+        let pubKeyInfo = new DIDPubKeyInfo();
+        pubKeyInfo.fromJson(jAuthentication[i], version);
+        pubKeyInfo.autoFill(this._id);
+        this._authentication.push(pubKeyInfo);
       }
+    }
 
-      if (j.find("authorization") != j.end()) {
-        nlohmann::json jAuthorization = j["authorization"];
-        for (nlohmann::json::iterator it = jAuthorization.begin(); it != jAuthorization.end(); ++it) {
-          DIDPubKeyInfo pubKeyInfo;
-          pubKeyInfo.FromJson(*it, version);
-          pubKeyInfo.AutoFill(_id);
-          _authorization.push_back(pubKeyInfo);
-        }
+    if (j["authorization"]) {
+      let jAuthorization = j["authorization"];
+      this._authorization = [];
+      for (let i = 0; i < jAuthorization.length; ++i) {
+        let pubKeyInfo = new DIDPubKeyInfo();
+        pubKeyInfo.fromJson(jAuthorization[i], version);
+        pubKeyInfo.autoFill(this._id);
+        this._authorization.push(pubKeyInfo);
       }
+    }
 
-      _expires = j["expires"].get<std::string>();
+    this._expires = j["expires"] as string;
 
-      if (j.find("verifiableCredential") != j.end()) {
-        nlohmann::json jVerifiableCredential = j["verifiableCredential"];
-        for (nlohmann::json::iterator it = jVerifiableCredential.begin(); it != jVerifiableCredential.end(); ++it) {
-          VerifiableCredential verifiableCredential;
-          verifiableCredential.FromJson(*it, version);
-          verifiableCredential.AutoFill(_id);
-          _verifiableCredential.push_back(verifiableCredential);
-        }
+    if (j["verifiableCredential"]) {
+      let jVerifiableCredential = j["verifiableCredential"];
+      this._verifiableCredential = [];
+      for (let i = 0; i < jVerifiableCredential.length; ++i) {
+        let verifiableCredential = new VerifiableCredential();
+        verifiableCredential.fromJson(jVerifiableCredential[i], version);
+        verifiableCredential.autoFill(this._id);
+        this._verifiableCredential.push(verifiableCredential);
       }
+    }
 
-      if (j.find("service") != j.end()) {
-        nlohmann::json jservices = j["service"];
-        for (nlohmann::json::iterator it = jservices.begin(); it != jservices.end(); ++it) {
-          ServiceEndpoint serviceEndpoint;
-          serviceEndpoint.FromJson(*it, version);
-          serviceEndpoint.AutoFill(_id);
-          _services.push_back(serviceEndpoint);
-        }
+    if (j["service"]) {
+      let jservices = j["service"];
+      this._services = [];
+      for (let i = 0; i < jservices.length; ++i) {
+        let serviceEndpoint = new ServiceEndpoint();
+        serviceEndpoint.fromJson(jservices[i], version);
+        serviceEndpoint.autoFill(this._id);
+        this._services.push(serviceEndpoint);
       }
+    }
 
-      if (j.find("proof") != j.end()) {
-        _proof.FromJson(j["proof"], version);
-      }
-#endif
-    }*/
+    if (j["proof"]) {
+      this._proof = new DIDPayloadProof();
+      this._proof.fromJson(j["proof"], version);
+    }
+  }
 }
 
 export class DIDProofInfo {
@@ -978,10 +1051,12 @@ export class DIDProofInfo {
   private _verificationMethod: string;
   private _signature: string;
 
-  constructor(method: string, signature: string, type: string) {
-    this._verificationMethod = method;
-    this._signature = signature;
-    this._type = type;
+  static newFromParams(method: string, signature: string, type: string) {
+    let proofInfo = new DIDProofInfo();
+    proofInfo._verificationMethod = method;
+    proofInfo._signature = signature;
+    proofInfo._type = type;
+    return proofInfo;
   }
 
   type(): string {
@@ -1068,7 +1143,7 @@ export class DIDProofInfo {
 
       JsonGenerator_WriteEndObject(generator);
     }
-    */
+  */
 
   equals(info: DIDProofInfo): boolean {
     return (
@@ -1078,8 +1153,8 @@ export class DIDProofInfo {
     );
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): DIDProofInfoJson {
+    let j = <DIDProofInfoJson>{};
 
     j["type"] = this._type;
     j["verificationMethod"] = this._verificationMethod;
@@ -1088,19 +1163,19 @@ export class DIDProofInfo {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: DIDProofInfoJson, version: uint8_t) {
     if (j["type"]) {
-      this._type = j["type"] as string;
+      this._type = j["type"];
     } else {
       this._type = DID_DEFAULT_TYPE;
     }
 
-    this._verificationMethod = j["verificationMethod"] as string;
-    this._signature = j["signature"] as string;
+    this._verificationMethod = j["verificationMethod"];
+    this._signature = j["signature"];
   }
 }
 
-export class DIDInfo {
+export class DIDInfo extends Payload {
   private _header: DIDHeaderInfo;
   private _payload: string;
   private _proof: DIDProofInfo;
@@ -1120,9 +1195,8 @@ export class DIDInfo {
 
   setDIDPlayloadInfo(didPayloadInfo: DIDPayloadInfo) {
     this._payloadInfo = didPayloadInfo;
-    // TODO
-    //let str: string = this._payloadInfo.toJson(0);
-    //this._payload = BASE64.encode(str);
+    let str = this._payloadInfo.toJson(0);
+    this._payload = BASE64.encode(JSON.stringify(str));
   }
 
   didPayload(): DIDPayloadInfo {
@@ -1154,6 +1228,7 @@ export class DIDInfo {
   }
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
+    this._header = new DIDHeaderInfo();
     if (!this._header.deserialize(stream, version)) {
       Log.error("DIDInfo deserialize header");
       return false;
@@ -1165,22 +1240,22 @@ export class DIDInfo {
       return false;
     }
 
+    this._proof = new DIDProofInfo();
     this._proof.deserialize(stream, version);
     if (!this._proof) {
       Log.error("DIDInfo deserialize proof");
       return false;
     }
 
-    // TODO
-    // bytes_t bytes = Base64::DecodeURL(_payload);
-    // std::string payloadString((char *) bytes.data(), bytes.size());
-    // _payloadInfo.FromJson(nlohmann::json::parse(payloadString), version);
+    let payloadString = BASE64.decode(this._payload);
+    this._payloadInfo = new DIDPayloadInfo();
+    this._payloadInfo.fromJson(JSON.parse(payloadString), version);
 
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): DIDInfoJson {
+    let j = <DIDInfoJson>{};
 
     j["header"] = this._header.toJson(version);
     j["payload"] = this._payload;
@@ -1189,88 +1264,92 @@ export class DIDInfo {
     return j;
   }
 
-  /*
-    void DIDInfo::FromJson(const nlohmann::json &j, uint8_t version) {
-      _header.FromJson(j["header"], version);
-      _payload = j["payload"].get<std::string>();
-      _proof.FromJson(j["proof"], version);
+  fromJson(j: DIDInfoJson, version: uint8_t) {
+    this._header = new DIDHeaderInfo();
+    this._header.fromJson(j["header"], version);
+    this._payload = j["payload"];
 
-      bytes_t bytes = Base64::DecodeURL(_payload);
-      std::string payloadString((char *) bytes.data(), bytes.size());
-      SPVLOG_DEBUG("did doc: {}", payloadString);
-      _payloadInfo.FromJson(nlohmann::json::parse(payloadString), version);
+    this._proof = new DIDProofInfo();
+    this._proof.fromJson(j["proof"], version);
+
+    let payloadString = BASE64.decode(this._payload);
+    Log.info("did doc: {}", payloadString);
+    this._payloadInfo = new DIDPayloadInfo();
+    this._payloadInfo.fromJson(JSON.parse(payloadString), version);
+  }
+
+  isValid(version: uint8_t): boolean {
+    let verifiedSign = false;
+
+    if (this._proof.type() != DID_DEFAULT_TYPE) {
+      Log.error("unsupport did type {}", this._proof.type());
+      return false;
     }
 
-    bool DIDInfo::IsValid(uint8_t version) const {
-      bool verifiedSign = false;
+    let proofID = this._proof.verificationMethod();
+    if (!proofID) {
+      Log.error("VerificationMethod of proof is empty");
+      return false;
+    }
 
-      if (_proof.Type() != DID_DEFAULT_TYPE) {
-        Log::error("unsupport did type {}", _proof.Type());
-        return false;
-      }
-#if 1
-      return true;
-#else
-      std::string proofID = _proof.VerificationMethod();
-      if (proofID.empty()) {
-        Log::error("VerificationMethod of proof is empty");
-        return false;
-      }
+    if (!this._payloadInfo.isValid()) {
+      Log.error("did document verify signature fail");
+      return false;
+    }
 
-      if (!_payloadInfo.IsValid()) {
-        Log::error("did document verify signature fail");
-        return false;
-      }
+    if (proofID[0] == "#") proofID = this._payloadInfo.id() + proofID;
 
-      if (proofID[0] == '#')
-        proofID = _payloadInfo.ID() + proofID;
+    let sourceData = "";
+    if (this._header.operation() == UPDATE_DID) {
+      sourceData =
+        this._header.specification() +
+        this._header.operation() +
+        this._header.previousTxid() +
+        this._payload;
+    } else {
+      sourceData =
+        this._header.specification() + this._header.operation() + this._payload;
+    }
 
-      std::string sourceData = "";
-      if (_header.Operation() == UPDATE_DID) {
-        sourceData = _header.Specification() + _header.Operation() + _header.PreviousTxid() + _payload;
-      } else {
-        sourceData = _header.Specification() + _header.Operation() + _payload;
-      }
+    const pubkeyInfoArray = this._payloadInfo.publicKeyInfo();
+    for (let i = 0; i < pubkeyInfoArray.length; ++i) {
+      let pubkeyID = pubkeyInfoArray[i].id();
+      if (pubkeyID[0] == "#") pubkeyID = this._payloadInfo.id() + pubkeyID;
 
-      const DIDPubKeyInfoArray &pubkeyInfoArray = _payloadInfo.PublicKeyInfo();
-      for (DIDPubKeyInfoArray::const_iterator it = pubkeyInfoArray.cbegin(); it != pubkeyInfoArray.cend(); ++it) {
-        std::string pubkeyID = (*it).ID();
-        if (pubkeyID[0] == '#')
-          pubkeyID = _payloadInfo.ID() + pubkeyID;
-
-        if (proofID == pubkeyID) {
-          bytes_t signature = Base64::DecodeURL(_proof.Signature());
-          bytes_t pubkey = Base58::Decode((*it).PublicKeyBase58());
-          Key key;
-          key.SetPubKey(pubkey);
-
-          if (key.Verify(sourceData, signature)) {
-            verifiedSign = true;
-          }
-
-          break;
+      if (proofID == pubkeyID) {
+        let signature = BASE64.decode(this._proof.signature());
+        let pubkey = Base58.decode(pubkeyInfoArray[i].publicKeyBase58());
+        if (
+          EcdsaSigner.verify(
+            pubkey,
+            Buffer.from(signature, "hex"),
+            Buffer.from(sourceData, "hex")
+          )
+        ) {
+          verifiedSign = true;
         }
-      }
 
-      if (!verifiedSign) {
-        Log::error("did payload verify signature fail");
+        break;
       }
-
-      return verifiedSign;
-#endif
     }
 
-    IPayload &DIDInfo::operator=(const IPayload &payload) {
-      try {
-        const DIDInfo &didInfo = dynamic_cast<const DIDInfo &>(payload);
-        operator=(didInfo);
-      } catch (const std::bad_cast &e) {
-        Log::error("payload is not instance of CRInfo");
-      }
-
-      return *this;
+    if (!verifiedSign) {
+      Log.error("did payload verify signature fail");
     }
-    */
+
+    return verifiedSign;
+  }
+
+  copyFromPayload(payload: Payload) {
+    try {
+      let didInfo = payload as DIDInfo;
+      this.copyFromDIDInfo(didInfo);
+    } catch (e) {
+      Log.error("payload is not instance of CRInfo");
+    }
+
+    return this;
+  }
 
   copyFromDIDInfo(payload: DIDInfo): DIDInfo {
     this._header = payload._header;
@@ -1285,9 +1364,9 @@ export class DIDInfo {
   equals(p: DIDInfo, version: uint8_t): boolean {
     try {
       return (
-        this._header == p._header &&
+        this._header.equals(p._header) &&
         this._payload == p._payload &&
-        this._proof == p._proof
+        this._proof.equals(p._proof)
       );
     } catch (e) {
       Log.error("payload is not instance of DIDInfo");

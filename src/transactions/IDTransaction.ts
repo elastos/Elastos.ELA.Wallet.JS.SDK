@@ -9,6 +9,10 @@ import { uint8_t } from "../types";
 
 export const registerIdentification = 0x09; // deprecated
 export const didTransaction = 0x0a;
+export enum IDTransactionType {
+  registerIdentification = 0x09, // deprecated
+  didTransaction = 0x0a
+}
 
 export class IDTransaction extends Transaction {
   constructor() {

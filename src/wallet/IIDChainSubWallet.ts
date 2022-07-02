@@ -24,6 +24,7 @@ import { Payload } from "../transactions/payload/Payload";
 import { uint32_t } from "../types";
 import { ISidechainSubWallet } from "./ISidechainSubWallet";
 import { UTXOInput } from "./UTXO";
+
 export interface IIDChainSubWallet extends ISidechainSubWallet {
   /**
    * Create a id transaction and return the content of transaction in json format, this is a special transaction to register id related information on id chain.
