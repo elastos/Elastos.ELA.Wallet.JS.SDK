@@ -173,6 +173,7 @@ export class TransferCrossChainAsset extends Payload {
         return false;
       }
 
+      this._info = [];
       for (let i = 0; i < len.toNumber(); ++i) {
         let info = new TransferInfo();
         let address = istream.readVarString();

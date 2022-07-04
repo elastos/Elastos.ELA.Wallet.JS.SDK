@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { ethers } from "ethers";
 import {
   Account,
   AccountBasicInfo,
@@ -616,7 +617,7 @@ export class MasterWallet {
 
     let valid: boolean = Address.newFromAddressString(address).valid();
     if (!valid) {
-      // TODO: valid = addressValidateString(address) == ETHEREUM_BOOLEAN_TRUE;
+      valid = ethers.utils.isAddress(address);
     }
 
     // ArgInfo("r => {}", valid);
@@ -645,7 +646,7 @@ export class MasterWallet {
       }
       // TODO: valid = BRAddressIsValid(addrParams, address);
     } else if (chainID.indexOf("ETH") !== -1) {
-      // TODO:  valid = addressValidateString(address) == ETHEREUM_BOOLEAN_TRUE;
+      valid = ethers.utils.isAddress(address);
     }
 
     // ArgInfo("r => {}", valid);

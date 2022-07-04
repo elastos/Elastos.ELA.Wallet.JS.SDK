@@ -67,8 +67,8 @@ export class IDChainSubWallet extends SidechainSubWallet {
   createIDTransaction(
     inputsJson: UTXOInput[],
     payloadJson: DIDInfoJson,
-    memo: string = "",
-    fee: string = "10000"
+    memo = "",
+    fee = "10000"
   ) {
     let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());

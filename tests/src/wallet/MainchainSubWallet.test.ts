@@ -1385,4 +1385,54 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "0287de855c87579ee3821ff4a3a3dc9072ca727cb53316d54f6d2f1709e821c5af"
     );
   });
+
+  test("test createDepositTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-38",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+      "ELA"
+    );
+    const addresses = subWallet.getAddresses(0, 1, false);
+    const inputs = [
+      {
+        Address: addresses[0],
+        Amount: "168960000",
+        TxHash:
+          "c0128fc23e819596af6077d4e096550a684be9b5d2fdbb7740d80ce996f0de00",
+        Index: 1
+      }
+    ];
+    const fee = "10000";
+    const memo = "deposit ela to side chain transaction";
+
+    // Deposit ELA from the Elastos testnet to the ESC-testnet
+    // https://esc-testnet.elastos.io/address/0x1b527d47a1d054d3A39817dC2ef45eD7706a6D3f/coin-balances
+    const tx: EncodedTx = subWallet.createDepositTransaction(
+      1,
+      inputs,
+      "ETHSC",
+      "1000000",
+      "0x1b527d47a1d054d3A39817dC2ef45eD7706a6D3f",
+      "XWCiyXM1bQyGTawoaYKx9PjRkMUGGocWub", // ESC-testnet lock address
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info.length).toEqual(1);
+    expect(info[0].SignType).toEqual("Standard");
+    expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
 });

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 import BigNumber from "bignumber.js";
+import { ethers } from "ethers";
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
@@ -220,8 +221,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
         "invalid standard address"
       );
     } else if (sideChainID.indexOf("ETH") !== -1) {
-      // TODO
-      // ErrorChecker.checkParam(addressValidateString(sideChainAddress) != ETHEREUM_BOOLEAN_TRUE, Error.Code.Address, "invalid ethsc address");
+      ErrorChecker.checkParam(
+        !ethers.utils.isAddress(sideChainAddress),
+        Error.Code.Address,
+        "invalid ethsc address"
+      );
     } else {
       ErrorChecker.throwParamException(
         Error.Code.InvalidArgument,
@@ -230,7 +234,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     }
 
     let payload: Payload;
-    let outputs: OutputArray;
+    let outputs: OutputArray = [];
     let receiveAddr = Address.newFromAddressString(lockAddress);
 
     if (payloadVersion == TransferCrossChainVersion) {
