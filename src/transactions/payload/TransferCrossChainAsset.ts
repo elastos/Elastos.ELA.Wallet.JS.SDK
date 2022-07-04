@@ -4,21 +4,18 @@
 import { Log } from "../../common/Log";
 import { Address } from "../../walletcore/Address";
 import BigNumber from "bignumber.js";
-import {
-  uint16_t,
-  json,
-  uint8_t,
-  size_t,
-  sizeof_uint16_t,
-  sizeof_uint64_t,
-  JSONArray,
-  JSONValue
-} from "../../types";
+import { uint16_t, uint8_t, size_t, sizeof_uint64_t } from "../../types";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
 
 export const TransferCrossChainVersion = 0x00;
 export const TransferCrossChainVersionV1 = 0x01;
+
+export type TransferInfoJson = {
+  CrossChainAddress?: string;
+  OutputIndex?: number;
+  CrossChainAmount?: string;
+};
 
 export class TransferInfo {
   private _crossChainAddress: string;
@@ -63,24 +60,24 @@ export class TransferInfo {
     return this._crossChainAmount;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json;
+  toJson(version: uint8_t): TransferInfoJson {
+    let j = <TransferInfoJson>{};
 
     if (version == TransferCrossChainVersion) {
       j["CrossChainAddress"] = this._crossChainAddress;
       j["OutputIndex"] = this._outputIndex;
-      j["CrossChainAmount"] = this._crossChainAmount.toNumber();
+      j["CrossChainAmount"] = this._crossChainAmount.toString();
     } else if (version == TransferCrossChainVersionV1) {
     }
 
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: TransferInfoJson, version: uint8_t) {
     if (version == TransferCrossChainVersion) {
-      this._crossChainAddress = j["CrossChainAddress"] as string;
-      this._outputIndex = j["OutputIndex"] as uint16_t;
-      this._crossChainAmount = new BigNumber(j["CrossChainAmount"] as string);
+      this._crossChainAddress = j["CrossChainAddress"];
+      this._outputIndex = j["OutputIndex"];
+      this._crossChainAmount = new BigNumber(j["CrossChainAmount"]);
     } else if (version == TransferCrossChainVersionV1) {
     }
   }
@@ -89,7 +86,7 @@ export class TransferInfo {
     return (
       this._crossChainAddress == info._crossChainAddress &&
       this._outputIndex == info._outputIndex &&
-      this._crossChainAmount.isEqualTo(info._crossChainAmount)
+      this._crossChainAmount.eq(info._crossChainAmount)
     );
   }
 }
@@ -145,7 +142,7 @@ export class TransferCrossChainAsset extends Payload {
         );
         size += this._info[i].getCrossChainAddress().length;
         size += stream.writeVarUInt(this._info[i].getOutputIndex());
-        size += sizeof_uint16_t();
+        size += sizeof_uint64_t();
       }
     } else if (version == TransferCrossChainVersionV1) {
     }
@@ -157,12 +154,12 @@ export class TransferCrossChainAsset extends Payload {
     if (version == TransferCrossChainVersion) {
       // size_t len = _info.size();
       // ostream.WriteVarUint((uint64_t) len);
-      ostream.writeVarUInt(sizeof_uint64_t());
+      ostream.writeVarUInt(this._info.length);
       for (let i = 0; i < this._info.length; ++i) {
         ostream.writeVarString(this._info[i].getCrossChainAddress());
         ostream.writeVarUInt(this._info[i].getOutputIndex());
         // ostream.WriteUint64(_info[i]._crossChainAmount.getUint64());
-        ostream.writeBigNumber(this._info[i].getCrossChainAmount());
+        ostream.writeBNAsUIntOfSize(this._info[i].getCrossChainAmount(), 8);
       }
     } else if (version == TransferCrossChainVersionV1) {
     }
@@ -176,8 +173,8 @@ export class TransferCrossChainAsset extends Payload {
         return false;
       }
 
-      let info: TransferInfo;
       for (let i = 0; i < len.toNumber(); ++i) {
+        let info = new TransferInfo();
         let address = istream.readVarString();
         if (!address) {
           Log.error(
@@ -196,14 +193,14 @@ export class TransferCrossChainAsset extends Payload {
         }
         info.setOutputIndex(index.toNumber());
 
-        let amount = istream.readUInt64();
+        let amount = istream.readUIntOfBytesAsBN(8);
         if (!amount) {
           Log.error(
             "Payload transfer cross chain asset deserialize cross chain amount fail"
           );
           return false;
         }
-        info.setCrossChainAmount(new BigNumber(amount));
+        info.setCrossChainAmount(amount);
 
         this._info.push(info);
       }
@@ -213,8 +210,8 @@ export class TransferCrossChainAsset extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): JSONValue {
-    let j: JSONArray;
+  toJson(version: uint8_t): TransferInfoJson[] {
+    let j: TransferInfoJson[] = [];
 
     if (version == TransferCrossChainVersion) {
       for (let i = 0; i < this._info.length; ++i) {
@@ -226,10 +223,10 @@ export class TransferCrossChainAsset extends Payload {
     return j;
   }
 
-  fromJson(j: json[], version: uint8_t) {
+  fromJson(j: TransferInfoJson[], version: uint8_t) {
     if (version == TransferCrossChainVersion) {
       if (!Array.isArray(j)) {
-        Log.error("cross chain info json should be array");
+        Log.error("cross chain info json should be an array");
         return;
       }
 

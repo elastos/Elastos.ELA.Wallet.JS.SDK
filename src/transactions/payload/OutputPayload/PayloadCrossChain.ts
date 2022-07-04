@@ -169,7 +169,7 @@ export class PayloadCrossChain extends OutputPayload {
       return (
         this._version == p._version &&
         this._targetAddress == p._targetAddress &&
-        this._targetAmount.isEqualTo(p._targetAmount) &&
+        this._targetAmount.eq(p._targetAmount) &&
         this._targetData.equals(p._targetData)
       );
     } catch (error) {
