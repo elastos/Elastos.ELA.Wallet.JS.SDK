@@ -21,21 +21,25 @@
  */
 
 import { Buffer } from "buffer";
+import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { LocalStore } from "../persistence/LocalStore";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { bytes_t } from "../types";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
-import { Base58Check } from "../walletcore/base58";
+import { Base58, Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { Secp256 } from "../walletcore/secp256";
+import { BASE64 as Base64 } from "../walletcore/base64";
+import { ElaNewWalletJson } from "../walletcore/ElaNewWalletJson";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
+const READONLY_WALLET_VERSION00 = 0;
 
 export enum SignType {
   Standard,
@@ -1165,294 +1169,320 @@ export class Account {
     this._localstore.removeSubWalletInfo(chainID);
   }
 
-  /*KeyStore Account::ExportKeystore(const std::string &payPasswd) const {
-          if (!_localstore->Readonly() && _localstore->GetxPubKeyBitcoin().empty()) {
-              RegenerateKey(payPasswd);
-              Init();
-          }
-
-    bytes_t bytes;
-    ElaNewWalletJson json;
-    if (!_localstore->Readonly()) {
-      bytes = AES::DecryptCCM(_localstore->GetxPrivKey(), payPasswd);
-      if (!bytes.empty()) {
-        json.SetxPrivKey(Base58::CheckEncode(bytes));
-      }
-
-      bytes = AES::DecryptCCM(_localstore->GetMnemonic(), payPasswd);
-      json.SetMnemonic(std::string((char *)bytes.data(), bytes.size()));
-      if (bytes.empty()) {
-        json.SetHasPassPhrase(false);
-      }
-
-      bytes = AES::DecryptCCM(_localstore->GetRequestPrivKey(), payPasswd);
-      json.SetRequestPrivKey(bytes.getHex());
-
-      bytes = AES::DecryptCCM(_localstore->GetSeed(), payPasswd);
-      json.SetSeed(bytes.getHex());
-
-      bytes = AES::DecryptCCM(_localstore->GetSinglePrivateKey(), payPasswd);
-      json.SetSinglePrivateKey(bytes.getHex());
+  async exportKeystore(payPasswd: string) {
+    if (!this._localstore.readonly() && !this._localstore.getxPubKeyBitcoin()) {
+      await this.regenerateKey(payPasswd);
+      this.init();
     }
 
-    json.SetOwnerPubKey(_localstore->GetOwnerPubKey());
-    json.SetxPubKey(_localstore->GetxPubKey());
-    json.SetxPubKeyHDPM(_localstore->GetxPubKeyHDPM());
-    json.SetRequestPubKey(_localstore->GetRequestPubKey());
-    json.SetPublicKeyRing(_localstore->GetPublicKeyRing());
-    json.SetM(_localstore->GetM());
-    json.SetN(_localstore->GetN());
-    json.SetHasPassPhrase(_localstore->HasPassPhrase());
-    json.SetDerivationStrategy(_localstore->DerivationStrategy());
-    json.SetAccount(0);
-    json.SetSingleAddress(_localstore->SingleAddress());
-    json.SetCoinInfoList(_localstore->GetSubWalletInfoList());
-    json.SetETHSCPrimaryPubKey(_localstore->GetETHSCPrimaryPubKey());
-          json.SetxPubKeyBitcoin(_localstore->GetxPubKeyBitcoin());
-          json.SetRipplePrimaryPubKey(_localstore->GetRipplePrimaryPubKey());
+    let bytes: bytes_t;
+    let json = new ElaNewWalletJson();
+    if (!this._localstore.readonly()) {
+      bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+      if (!bytes.length) {
+        json.setxPrivKey(Base58.encode(bytes));
+      }
 
-    return KeyStore(json);
+      bytes = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
+      json.setMnemonic(bytes.toString());
+      if (!bytes.length) {
+        json.setHasPassPhrase(false);
+      }
+
+      bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPasswd);
+      json.setRequestPrivKey(bytes.toString("hex"));
+
+      bytes = AESDecrypt(this._localstore.getSeed(), payPasswd);
+      json.setSeed(bytes.toString("hex"));
+
+      bytes = AESDecrypt(this._localstore.getSinglePrivateKey(), payPasswd);
+      json.setSinglePrivateKey(bytes.toString("hex"));
+    }
+
+    json.setOwnerPubKey(this._localstore.getOwnerPubKey());
+    json.setxPubKey(this._localstore.getxPubKey());
+    json.setxPubKeyHDPM(this._localstore.getxPubKeyHDPM());
+    json.setRequestPubKey(this._localstore.getRequestPubKey());
+    let publicKeyRings = [];
+    for (let item of this._localstore.getPublicKeyRing()) {
+      publicKeyRings.push(item.toJson());
+    }
+    json.setPublicKeyRing(publicKeyRings);
+    json.setM(this._localstore.getM());
+    json.setN(this._localstore.getN());
+    json.setHasPassPhrase(this._localstore.hasPassPhrase());
+    json.setDerivationStrategy(this._localstore.derivationStrategy());
+    json.setAccount(0);
+    json.setSingleAddress(this._localstore.singleAddress());
+    json.setCoinInfoList(this._localstore.getSubWalletInfoList());
+    json.setETHSCPrimaryPubKey(this._localstore.getETHSCPrimaryPubKey());
+    json.setxPubKeyBitcoin(this._localstore.getxPubKeyBitcoin());
+    json.setRipplePrimaryPubKey(this._localstore.getRipplePrimaryPubKey());
+
+    //TODO
+    // return KeyStore(json);
   }
 
-#if 0
-#define READONLY_WALLET_VERSION00 0
-  nlohmann::json Account::ExportReadonlyWallet() const {
-    nlohmann::json j;
-    bytes_t tmp;
-    ByteStream stream;
+  exportReadonlyWallet(): { Data?: string } {
+    let j = {};
+    let tmp: bytes_t;
+    let stream = new ByteStream();
 
-    stream.WriteUint8(READONLY_WALLET_VERSION00);
-    stream.WriteUint8((uint8_t)(_localstore->SingleAddress() ? 1 : 0));
-    stream.WriteUint8((uint8_t)(_localstore->HasPassPhrase() ? 1 : 0));
-    stream.WriteUint32(_localstore->GetM());
-    stream.WriteUint32(_localstore->GetN());
-    stream.WriteUint32(_localstore->Account());
-    stream.WriteVarString(_localstore->DerivationStrategy());
+    stream.writeUInt8(READONLY_WALLET_VERSION00);
+    stream.writeUInt8(this._localstore.singleAddress() ? 1 : 0);
+    stream.writeUInt8(this._localstore.hasPassPhrase() ? 1 : 0);
+    stream.writeUInt32(this._localstore.getM());
+    stream.writeUInt32(this._localstore.getN());
+    stream.writeUInt32(this._localstore.account());
+    stream.writeVarString(this._localstore.derivationStrategy());
 
-    tmp.setHex(_localstore->GetETHSCPrimaryPubKey());
-    stream.WriteVarBytes(tmp);
+    tmp = Buffer.from(this._localstore.getETHSCPrimaryPubKey(), "hex");
+    stream.writeVarBytes(tmp);
 
-    if (_localstore->GetN() > 1) {
-      tmp.clear();
+    if (this._localstore.getN() > 1) {
+      tmp = Buffer.alloc(0);
       // request pubkey
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
       // owner pubkey
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
       // xpub
-              stream.WriteVarBytes(tmp);
-              // btc xpub
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
+      // btc xpub
+      stream.writeVarBytes(tmp);
       // xpub HDPM
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
     } else {
-      tmp.setHex(_localstore->GetRequestPubKey());
-      stream.WriteVarBytes(tmp);
+      tmp = Buffer.from(this._localstore.getRequestPubKey(), "hex");
+      stream.writeVarBytes(tmp);
 
-      tmp.setHex(_localstore->GetOwnerPubKey());
-      stream.WriteVarBytes(tmp);
+      tmp = Buffer.from(this._localstore.getOwnerPubKey());
+      stream.writeVarBytes(tmp);
 
-      if (!Base58::CheckDecode(_localstore->GetxPubKey(), tmp)) {
-        Log::error("Decode xpub fail when exoprt read-only wallet");
+      tmp = Base58.decode(this._localstore.getxPubKey());
+      if (!tmp) {
+        Log.error("Decode xpub fail when exoprt read-only wallet");
         return j;
       }
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
 
-              if (!Base58::CheckDecode(_localstore->GetxPubKeyBitcoin(), tmp)) {
-                  Log::error("Decode btc xpub fail when exoprt read-only wallet");
-                  return j;
-              }
-              stream.WriteVarBytes(tmp);
-
-      if (!Base58::CheckDecode(_localstore->GetxPubKeyHDPM(), tmp)) {
-        Log::error("Decode xpubHDPM fail when export read-only wallet");
+      tmp = Base58.decode(this._localstore.getxPubKeyBitcoin());
+      if (!tmp) {
+        Log.error("Decode btc xpub fail when exoprt read-only wallet");
         return j;
       }
-      stream.WriteVarBytes(tmp);
+      stream.writeVarBytes(tmp);
+
+      tmp = Base58.decode(this._localstore.getxPubKeyHDPM());
+      if (!tmp) {
+        Log.error("Decode xpubHDPM fail when export read-only wallet");
+        return j;
+      }
+      stream.writeVarBytes(tmp);
     }
 
-    if (_localstore->GetN() > 1) {
-      const std::vector<PublicKeyRing> &pubkeyRing = _localstore->GetPublicKeyRing();
-      stream.WriteVarUint(pubkeyRing.size());
-      for (size_t i = 0; i < pubkeyRing.size(); ++i) {
-        tmp.setHex(pubkeyRing[i].GetRequestPubKey());
-        stream.WriteVarBytes(tmp);
+    if (this._localstore.getN() > 1) {
+      let pubkeyRing: PublicKeyRing[] = this._localstore.getPublicKeyRing();
+      stream.writeVarUInt(pubkeyRing.length);
+      for (let i = 0; i < pubkeyRing.length; ++i) {
+        tmp = Buffer.from(pubkeyRing[i].getRequestPubKey(), "hex");
+        stream.writeVarBytes(tmp);
 
-        if (!Base58::CheckDecode(pubkeyRing[i].GetxPubKey(), tmp)) {
-          Log::error("Decode pubkey ring xpub fail when export read-only wallet");
+        tmp = Base58.decode(pubkeyRing[i].getxPubKey());
+        if (!tmp) {
+          Log.error(
+            "Decode pubkey ring xpub fail when export read-only wallet"
+          );
           return j;
         }
-        stream.WriteVarBytes(tmp);
+        stream.writeVarBytes(tmp);
       }
     }
 
-    const std::vector<CoinInfoPtr> &info = _localstore->GetSubWalletInfoList();
-    stream.WriteVarUint(info.size());
-    for(size_t i = 0; i < info.size(); ++i)
-      stream.WriteVarString(info[i]->GetChainID());
+    let info: CoinInfo[] = this._localstore.getSubWalletInfoList();
+    stream.writeVarUInt(info.length);
+    for (let i = 0; i < info.length; ++i) {
+      stream.writeVarString(info[i].getChainID());
+    }
 
-    const bytes_t &bytes = stream.GetBytes();
+    let bytes = stream.getBytes();
 
-    j["Data"] = bytes.getBase64();
+    j["Data"] = Base64.encode(bytes.toString("hex"));
 
     return j;
   }
 
-  bool Account::ImportReadonlyWallet(const nlohmann::json &walletJSON) {
-    if (walletJSON.find("Data") == walletJSON.end()) {
-      Log::error("Import read-only wallet: json format error");
+  importReadonlyWallet(walletJSON: { Data: string }) {
+    if (!walletJSON["Data"]) {
+      Log.error("Import read-only wallet: json format error");
       return false;
     }
 
-    uint8_t version = 0;
-    bytes_t bytes;
-    bytes.setBase64(walletJSON["Data"].get<std::string>());
-    ByteStream stream(bytes);
+    let version = 0;
+    let bytes = Buffer.from(Base64.decode(walletJSON["Data"]), "hex");
+    let stream = new ByteStream(bytes);
 
-    if (!stream.ReadUint8(version)) {
-      Log::error("Import read-only wallet: version");
+    version = stream.readUInt8();
+    if (!version) {
+      Log.error("Import read-only wallet: version");
       return false;
     }
 
-    uint8_t byte;
-    if (!stream.ReadUint8(byte)) {
-      Log::error("Import read-only wallet: single address");
+    let byte = stream.readUInt8();
+    if (!byte) {
+      Log.error("Import read-only wallet: single address");
       return false;
     }
-    _localstore->SetSingleAddress(byte != 0);
+    this._localstore.setSingleAddress(byte != 0);
 
-    if (!stream.ReadUint8(byte)) {
-      Log::error("Import read-only wallet: has passphrase");
+    byte = stream.readUInt8();
+    if (!byte) {
+      Log.error("Import read-only wallet: has passphrase");
       return false;
     }
-    _localstore->SetHasPassPhrase(byte != 0);
+    this._localstore.setHasPassPhrase(byte != 0);
 
-    uint32_t tmpUint;
-    if (!stream.ReadUint32(tmpUint)) {
-      Log::error("Import read-only wallet: M");
+    let tmpUint = stream.readUInt32();
+    if (!tmpUint) {
+      Log.error("Import read-only wallet: M");
       return false;
     }
-    _localstore->SetM(tmpUint);
+    this._localstore.setM(tmpUint);
 
-    if (!stream.ReadUint32(tmpUint)) {
-      Log::error("Import read-only wallet: N");
+    tmpUint = stream.readUInt32();
+    if (!tmpUint) {
+      Log.error("Import read-only wallet: N");
       return false;
     }
-    _localstore->SetN(tmpUint);
+    this._localstore.setN(tmpUint);
 
-    if (!stream.ReadUint32(tmpUint)) {
-      Log::error("Import read-only wallet: account");
+    tmpUint = stream.readUInt32();
+    if (!tmpUint) {
+      Log.error("Import read-only wallet: account");
       return false;
     }
-    _localstore->SetAccount(tmpUint);
+    this._localstore.setAccount(tmpUint);
 
-    std::string str;
-    if (!stream.ReadVarString(str)) {
-      Log::error("Import read-only wallet: derivation strategy");
+    let str = stream.readVarString();
+    if (!str) {
+      Log.error("Import read-only wallet: derivation strategy");
       return false;
     }
-    _localstore->SetDerivationStrategy(str);
+    this._localstore.setDerivationStrategy(str);
 
-    if (!stream.ReadVarBytes(bytes)) {
-      Log::error("Import read-only wallet: ethsc pubkey");
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: ethsc pubkey");
       return false;
     }
-    _localstore->SetETHSCPrimaryPubKey(bytes.getHex());
+    this._localstore.setETHSCPrimaryPubKey(bytes.toString("hex"));
 
-    if (!stream.ReadVarBytes(bytes)) {
-      Log::error("Import read-only wallet: request pubkey");
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: request pubkey");
       return false;
     }
-    _localstore->SetRequestPubKey(bytes.getHex());
+    this._localstore.setRequestPubKey(bytes.toString("hex"));
 
-    if (!stream.ReadVarBytes(bytes)) {
-      Log::error("Import read-only wallet: owner pubkey");
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: owner pubkey");
       return false;
     }
-    _localstore->SetOwnerPubKey(bytes.getHex());
+    this._localstore.setOwnerPubKey(bytes.toString("hex"));
 
-          // xpub
-    if (!stream.ReadVarBytes(bytes)) {
-      Log::error("Import read-only wallet: xpub");
+    // xpub
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: xpub");
       return false;
     }
-    if (bytes.empty())
-      _localstore->SetxPubKey("");
-    else
-      _localstore->SetxPubKey(Base58::CheckEncode(bytes));
+    if (bytes.length === 0) this._localstore.setxPubKey("");
+    else this._localstore.setxPubKey(Base58.encode(bytes));
 
-          // btc xpub
-          if (!stream.ReadVarBytes(bytes)) {
-              Log::error("Import read-only wallet: btc xpub");
-              return false;
-          }
-          if (bytes.empty())
-              _localstore->SetxPubKeyBitcoin("");
-          else
-              _localstore->SetxPubKeyBitcoin(Base58::CheckEncode(bytes));
-
-          // xpub HDPM
-    if (!stream.ReadVarBytes(bytes)) {
-      Log::error("Import read-only wallet: xpubHDPM");
+    // btc xpub
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: btc xpub");
       return false;
     }
-    if (bytes.empty())
-              _localstore->SetxPubKeyHDPM("");
-    else
-      _localstore->SetxPubKeyHDPM(Base58::CheckEncode(bytes));
+    if (bytes.length === 0) this._localstore.setxPubKeyBitcoin("");
+    else this._localstore.setxPubKeyBitcoin(Base58.encode(bytes));
 
-    uint64_t len;
-    if (_localstore->GetN() > 1) {
-      if (!stream.ReadVarUint(len)) {
-        Log::error("Import read-only wallet: pubkeyRing size");
+    // xpub HDPM
+    bytes = Buffer.alloc(0);
+    bytes = stream.readVarBytes(bytes);
+    if (!bytes) {
+      Log.error("Import read-only wallet: xpubHDPM");
+      return false;
+    }
+    if (bytes.length === 0) this._localstore.setxPubKeyHDPM("");
+    else this._localstore.setxPubKeyHDPM(Base58.encode(bytes));
+
+    if (this._localstore.getN() > 1) {
+      let len = stream.readVarUInt();
+      if (!len) {
+        Log.error("Import read-only wallet: pubkeyRing size");
         return false;
       }
 
-      bytes_t requestPub, xpub;
-      for (size_t i = 0; i < len; ++i) {
-        if (!stream.ReadVarBytes(requestPub)) {
-          Log::error("Import read-only wallet: pubkey ring request pubkey");
+      let requestPub: bytes_t, xpub: bytes_t;
+      for (let i = 0; i < len.toNumber(); ++i) {
+        requestPub = stream.readVarBytes(requestPub);
+        if (!requestPub) {
+          Log.error("Import read-only wallet: pubkey ring request pubkey");
+          return false;
+        }
+        xpub = stream.readVarBytes(xpub);
+        if (!xpub) {
+          Log.error("Import read-only wallet: pubkey ring xpub");
           return false;
         }
 
-        if (!stream.ReadVarBytes(xpub)) {
-          Log::error("Import read-only wallet: pubkey ring xpub");
-          return false;
-        }
-
-        if (xpub.empty())
-          _localstore->AddPublicKeyRing(PublicKeyRing(requestPub.getHex(), ""));
+        if (xpub.length === 0)
+          this._localstore.addPublicKeyRing(
+            new PublicKeyRing(requestPub.toString("hex"), "")
+          );
         else
-          _localstore->AddPublicKeyRing(PublicKeyRing(requestPub.getHex(), Base58::CheckEncode(xpub)));
+          this._localstore.addPublicKeyRing(
+            new PublicKeyRing(requestPub.toString("hex"), Base58.encode(xpub))
+          );
       }
     } else {
-      _localstore->AddPublicKeyRing(PublicKeyRing(_localstore->GetRequestPubKey(), _localstore->GetxPubKeyHDPM()));
+      this._localstore.addPublicKeyRing(
+        new PublicKeyRing(
+          this._localstore.getRequestPubKey(),
+          this._localstore.getxPubKeyHDPM()
+        )
+      );
     }
-
-    if (!stream.ReadVarUint(len)) {
-      Log::error("Import read-only wallet: coininfo size");
+    let len = stream.readVarUInt();
+    if (!len) {
+      Log.error("Import read-only wallet: coininfo size");
       return false;
     }
 
-    std::vector<CoinInfoPtr> infoList;
-    for (size_t i = 0; i < len; ++i) {
-      std::string chainID;
-      if (!stream.ReadVarString(chainID)) {
-        Log::error("Import read-only wallet: chainID");
+    let infoList: CoinInfo[] = [];
+    for (let i = 0; i < len.toNumber(); ++i) {
+      let chainID = stream.readVarString();
+      if (!chainID) {
+        Log.error("Import read-only wallet: chainID");
         return false;
       }
 
-      CoinInfoPtr info(new CoinInfo());
-      info->SetChainID(chainID);
-
-      infoList.push_back(info);
+      let info = new CoinInfo();
+      info.setChainID(chainID);
+      infoList.push(info);
     }
-    _localstore->SetSubWalletInfoList(infoList);
+    this._localstore.setSubWalletInfoList(infoList);
 
-    _localstore->SetReadonly(true);
+    this._localstore.setReadonly(true);
     return true;
   }
-#endif
-*/
 
   async exportMnemonic(payPasswd: string): Promise<string> {
     if (this._localstore.readonly()) {

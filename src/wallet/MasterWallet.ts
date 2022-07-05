@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { ethers } from "ethers";
+import { isAddress } from "ethers/lib/utils";
 import {
   Account,
   AccountBasicInfo,
@@ -477,18 +477,14 @@ export class MasterWallet {
     return j;
   }
 
-  /*
-#if 0
-  nlohmann::json MasterWallet::ExportReadonlyWallet() const {
-    ArgInfo("{} {}", _id, GetFunName());
+  exportReadonlyWallet(): { Data?: string } {
+    // ArgInfo("{} {}", _id, GetFunName());
 
-    nlohmann::json j = _account->ExportReadonlyWallet();
+    let j = this._account.exportReadonlyWallet();
 
-    ArgInfo("r => {}", j.dump());
+    // ArgInfo("r => {}", j.dump());
     return j;
   }
-#endif
-*/
 
   async exportKeystore(
     backupPassword: string,
@@ -617,7 +613,7 @@ export class MasterWallet {
 
     let valid: boolean = Address.newFromAddressString(address).valid();
     if (!valid) {
-      valid = ethers.utils.isAddress(address);
+      valid = isAddress(address);
     }
 
     // ArgInfo("r => {}", valid);
@@ -646,7 +642,7 @@ export class MasterWallet {
       }
       // TODO: valid = BRAddressIsValid(addrParams, address);
     } else if (chainID.indexOf("ETH") !== -1) {
-      valid = ethers.utils.isAddress(address);
+      valid = isAddress(address);
     }
 
     // ArgInfo("r => {}", valid);

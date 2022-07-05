@@ -1,11 +1,14 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Log } from "../common/Log";
 import { Payload } from "./payload/Payload";
 import { Transaction, TxVersion } from "./Transaction";
 import { ByteStream } from "../common/bytestream";
 import { uint8_t } from "../types";
+import { DIDInfo } from "./payload/DIDInfo";
+import { RegisterIdentification } from "./payload/RegisterIdentification";
 
 export const registerIdentification = 0x09; // deprecated
 export const didTransaction = 0x0a;
@@ -32,11 +35,9 @@ export class IDTransaction extends Transaction {
     let payload: Payload;
 
     if (registerIdentification == type) {
-      // deprecated
-      // payload = new RegisterIdentification();
+      payload = new RegisterIdentification();
     } else if (didTransaction == type) {
-      // TODO
-      // payload = new DIDInfo();
+      payload = new DIDInfo();
     } else {
       const transaction = new Transaction();
       payload = transaction.initPayload(type);

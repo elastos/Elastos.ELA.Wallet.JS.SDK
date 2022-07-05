@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import BigNumber from "bignumber.js";
-import { ethers } from "ethers";
+import { isAddress } from "ethers/lib/utils";
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
@@ -222,7 +222,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     } else if (sideChainID.indexOf("ETH") !== -1) {
       ErrorChecker.checkParam(
-        !ethers.utils.isAddress(sideChainAddress),
+        !isAddress(sideChainAddress),
         Error.Code.Address,
         "invalid ethsc address"
       );

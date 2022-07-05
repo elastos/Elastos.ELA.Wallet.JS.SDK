@@ -27,6 +27,7 @@ import { PublickeysInfo, SubAccount } from "../account/SubAccount";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { ChainConfig } from "../config";
+import { IDTransaction } from "../transactions/IDTransaction";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import { SignedInfo } from "../transactions/Program";
 import { Transaction, TransactionType } from "../transactions/Transaction";
@@ -393,10 +394,10 @@ export class ElastosBaseSubWallet
     let fee: uint64_t = new BigNumber(0);
 
     try {
-      algorithm = encodedTx["Algorithm"] as string;
-      data = encodedTx["Data"] as string;
-      chainID = encodedTx["ChainID"] as string;
-      if ("Fee" in encodedTx) fee = new BigNumber(encodedTx["Fee"] as string);
+      algorithm = encodedTx["Algorithm"];
+      data = encodedTx["Data"];
+      chainID = encodedTx["ChainID"];
+      if ("Fee" in encodedTx) fee = new BigNumber(encodedTx["Fee"]);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.InvalidArgument,
@@ -418,7 +419,7 @@ export class ElastosBaseSubWallet
       this.getChainID() == CHAINID_IDCHAIN ||
       this.getChainID() == CHAINID_TOKENCHAIN
     ) {
-      // TODO tx = new IDTransaction();
+      tx = new IDTransaction();
     }
 
     let rawHex: bytes_t;
