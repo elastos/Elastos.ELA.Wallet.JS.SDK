@@ -26,8 +26,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import {
   INT32_MAX,
-  json,
-  JSONArray,
+  JSONValue,
   size_t,
   time_t,
   UINT16_MAX,
@@ -43,8 +42,8 @@ import { TransferAsset } from "./payload/TransferAsset";
 import { RegisterAsset } from "./payload/RegisterAsset";
 import { Payload } from "./payload/Payload";
 import { Program, ProgramInfo, SignedInfo } from "./Program";
-import { TransactionInput } from "./TransactionInput";
-import { TransactionOutput } from "./TransactionOutput";
+import { TransactionInput, TransactionInputInfo } from "./TransactionInput";
+import { TransactionOutput, TransactionOutputInfo } from "./TransactionOutput";
 import { Record } from "./payload/Record";
 import { SideChainPow } from "./payload/SideChainPow";
 import { RechargeToSideChain } from "./payload/RechargeToSideChain";
@@ -114,6 +113,23 @@ export enum TxVersion {
 const DEFAULT_PAYLOAD_TYPE = TransactionType.transferAsset;
 const TX_LOCKTIME = 0x00000000;
 const TX_UNCONFIRMED = INT32_MAX; // block height indicating transaction is unconfirmed
+
+export type TransactionInfo = {
+  IsRegistered: boolean;
+  TxHash: string;
+  Version: number;
+  LockTime: number;
+  BlockHeight: number;
+  Timestamp: number;
+  Inputs: TransactionInputInfo[];
+  Type: number;
+  PayloadVersion: number;
+  PayLoad: JSONValue;
+  Attributes: AttributeInfo[];
+  Programs: ProgramInfo[];
+  Outputs: TransactionOutputInfo[];
+  Fee: number;
+};
 
 export class Transaction {
   protected _isRegistered: boolean;
@@ -210,52 +226,62 @@ export class Transaction {
     return transaction;
   }
 
-  /*	bool Transaction::operator==(const Transaction &tx) const {
-			bool equal = _version == tx._version &&
-						 _lockTime == tx._lockTime &&
-						 _blockHeight == tx._blockHeight &&
-						 _timestamp == tx._timestamp &&
-						 _type == tx._type &&
-						 _payloadVersion == tx._payloadVersion &&
-						 _outputs.size() == tx._outputs.size() &&
-						 _inputs.size() == tx._inputs.size() &&
-						 _attributes.size() == tx._attributes.size() &&
-						 _programs.size() == tx._programs.size();
+  equals(tx: Transaction): boolean {
+    let equal =
+      this._version == tx._version &&
+      this._lockTime == tx._lockTime &&
+      this._blockHeight == tx._blockHeight &&
+      this._timestamp == tx._timestamp &&
+      this._type == tx._type &&
+      this._payloadVersion == tx._payloadVersion &&
+      this._outputs.length == tx._outputs.length &&
+      this._inputs.length == tx._inputs.length &&
+      this._attributes.length == tx._attributes.length &&
+      this._programs.length == tx._programs.length;
 
-			if (equal)
-				equal = _payload->Equal(*tx._payload, _payloadVersion);
+    if (equal) {
+      equal = this._payload.equals(tx._payload, this._payloadVersion);
+    }
 
-			if (equal)
-				for (int i = 0; i < _outputs.size(); ++i)
-					if (*_outputs[i] != *tx._outputs[i]) {
-						equal = false;
-						break;
-					}
+    if (equal) {
+      for (let i = 0; i < this._outputs.length; ++i) {
+        if (!this._outputs[i].equals(tx._outputs[i])) {
+          equal = false;
+          break;
+        }
+      }
+    }
 
-			if (equal)
-				for (int i = 0; i < _inputs.size(); ++i)
-					if (*_inputs[i] != *tx._inputs[i]) {
-						equal = false;
-						break;
-					}
+    if (equal) {
+      for (let i = 0; i < this._inputs.length; ++i) {
+        if (!this._inputs[i].equals(tx._inputs[i])) {
+          equal = false;
+          break;
+        }
+      }
+    }
 
-			if (equal)
-				for (int i = 0; i < _attributes.size(); ++i)
-					if (*_attributes[i] != *tx._attributes[i]) {
-						equal = false;
-						break;
-					}
+    if (equal) {
+      for (let i = 0; i < this._attributes.length; ++i) {
+        if (!this._attributes[i].equals(tx._attributes[i])) {
+          equal = false;
+          break;
+        }
+      }
+    }
 
-			if (equal)
-				for (int i = 0; i < _programs.size(); ++i)
-					if (*_programs[i] != *tx._programs[i]) {
-						equal = false;
-						break;
-					}
+    if (equal) {
+      for (let i = 0; i < this._programs.length; ++i) {
+        if (!this._programs[i].equals(tx._programs[i])) {
+          equal = false;
+          break;
+        }
+      }
+    }
 
-			return equal;
-		}
-*/
+    return equal;
+  }
+
   public isRegistered(): boolean {
     return this._isRegistered;
   }
@@ -265,7 +291,6 @@ export class Transaction {
   }
 
   public getHash(): uint256 {
-    // this._txHash is undefined when sign a tx
     if (!this._txHash || this._txHash.eq(0)) {
       let stream: ByteStream = new ByteStream();
       this.serializeUnsigned(stream);
@@ -307,18 +332,36 @@ export class Transaction {
     this._type = type;
   }
 
-  /*std::vector<uint8_t> Transaction::GetDPoSTxTypes() {
-		return {registerProducer, cancelProducer, updateProducer, returnDepositCoin, activateProducer};
-	}
+  getDPoSTxTypes() {
+    return [
+      TransactionType.registerProducer,
+      TransactionType.cancelProducer,
+      TransactionType.updateProducer,
+      TransactionType.returnDepositCoin,
+      TransactionType.activateProducer
+    ];
+  }
 
-	std::vector<uint8_t> Transaction::GetCRCTxTypes() {
-		return {registerCR, unregisterCR, updateCR, returnCRDepositCoin, crCouncilMemberClaimNode};
-	}
+  getCRCTxTypes() {
+    return [
+      TransactionType.registerCR,
+      TransactionType.unregisterCR,
+      TransactionType.updateCR,
+      TransactionType.returnCRDepositCoin,
+      TransactionType.crCouncilMemberClaimNode
+    ];
+  }
 
-	std::vector<uint8_t> Transaction::GetProposalTypes() {
-		return {crcProposal, crcProposalReview, crcProposalTracking, crcAppropriation, crcProposalWithdraw};
-	}
-*/
+  getProposalTypes() {
+    return [
+      TransactionType.crcProposal,
+      TransactionType.crcProposalReview,
+      TransactionType.crcProposalTracking,
+      TransactionType.crcAppropriation,
+      TransactionType.crcProposalWithdraw
+    ];
+  }
+
   private reinit() {
     this.cleanup();
     this._type = DEFAULT_PAYLOAD_TYPE;
@@ -343,64 +386,51 @@ export class Transaction {
     this._outputs.push(output);
   }
 
-  /*	void Transaction::RemoveOutput(const OutputPtr &output) {
-			for (std::vector<OutputPtr>::iterator it = _outputs.begin(); it != _outputs.end(); ) {
-				if (output == (*it)) {
-					it = _outputs.erase(it);
-					break;
-				} else {
-					++it;
-				}
-			}
-		}
+  removeOutput(output: TransactionOutput) {
+    this._outputs = this._outputs.filter((item) => !item.equals(output));
+  }
 
-		const std::vector<InputPtr> &Transaction::GetInputs() const {
-			return _inputs;
-		}
-
-		std::vector<InputPtr>& Transaction::GetInputs() {
-			return _inputs;
-		}*/
+  getInputs(): TransactionInput[] {
+    return this._inputs;
+  }
 
   public addInput(Input: TransactionInput) {
     this._inputs.push(Input);
   }
 
-  /*	bool Transaction::ContainInput(const uint256 &hash, uint32_t n) const {
-			for (size_t i = 0; i < _inputs.size(); ++i) {
-				if (_inputs[i]->TxHash() == hash && n == _inputs[i]->Index()) {
-					return true;
-				}
-			}
+  containInput(hash: uint256, n: uint32_t): boolean {
+    for (let i = 0; i < this._inputs.length; ++i) {
+      if (this._inputs[i].txHash().eq(hash) && n == this._inputs[i].index()) {
+        return true;
+      }
+    }
 
-			return false;
-		}
+    return false;
+  }
 
-		uint32_t Transaction::GetLockTime() const {
+  getLockTime(): uint32_t {
+    return this._lockTime;
+  }
 
-			return _lockTime;
-		}
+  setLockTime(t: uint32_t) {
+    this._lockTime = t;
+  }
 
-		void Transaction::SetLockTime(uint32_t t) {
+  getBlockHeight(): uint32_t {
+    return this._blockHeight;
+  }
 
-			_lockTime = t;
-		}
+  setBlockHeight(height: uint32_t) {
+    this._blockHeight = height;
+  }
 
-		uint32_t Transaction::GetBlockHeight() const {
-			return _blockHeight;
-		}
+  getTimestamp() {
+    return this._timestamp;
+  }
 
-		void Transaction::SetBlockHeight(uint32_t height) {
-			_blockHeight = height;
-		}
-
-		time_t Transaction::GetTimestamp() const {
-			return _timestamp;
-		}
-
-		void Transaction::SetTimestamp(time_t t) {
-			_timestamp = t;
-		}*/
+  setTimestamp(t: time_t) {
+    this._timestamp = t;
+  }
 
   public estimateSize(): size_t {
     let i: size_t,
@@ -515,14 +545,15 @@ export class Transaction {
 	IPayload *Transaction::GetPayload() {
 		return _payload.get();
 	}
+  */
 
-	const PayloadPtr &Transaction::GetPayloadPtr() const {
-		return _payload;
-	}
+  getPayloadPtr(): Payload {
+    return this._payload;
+  }
 
-	void Transaction::SetPayload(const PayloadPtr &payload) {
-		_payload = payload;
-	}*/
+  setPayload(payload: Payload) {
+    this._payload = payload;
+  }
 
   public addAttribute(attribute: Attribute) {
     this._attributes.push(attribute);
@@ -705,7 +736,7 @@ export class Transaction {
     return true;
   }
 
-  public toJson(): json {
+  public toJson(): TransactionInfo {
     return {
       IsRegistered: this._isRegistered,
       TxHash: this.getHash().toString(16),
@@ -724,41 +755,37 @@ export class Transaction {
     };
   }
 
-  public fromJson(j: json) {
+  public fromJson(j: TransactionInfo) {
     this.reinit();
 
     try {
-      this._isRegistered = j["IsRegistered"] as boolean;
+      this._isRegistered = j["IsRegistered"];
 
-      this._version = j["Version"] as TxVersion;
-      this._lockTime = j["LockTime"] as uint32_t;
-      this._blockHeight = j["BlockHeight"] as uint32_t;
-      this._timestamp = j["Timestamp"] as uint32_t;
-      this._inputs = (j["Inputs"] as JSONArray).map((i) =>
-        new TransactionInput().fromJson(i as json)
-      );
-      this._type = j["Type"] as uint8_t;
-      this._payloadVersion = j["PayloadVersion"] as number;
+      this._version = j["Version"];
+      this._lockTime = j["LockTime"];
+      this._blockHeight = j["BlockHeight"];
+      this._timestamp = j["Timestamp"];
+      this._inputs = j["Inputs"].map((i) => new TransactionInput().fromJson(i));
+      this._type = j["Type"];
+      this._payloadVersion = j["PayloadVersion"];
       this._payload = this.initPayload(this._type);
 
       if (this._payload === null) {
         Log.error("_payload is nullptr when convert from json");
       } else {
-        this._payload.fromJson(j["PayLoad"] as json, this._payloadVersion);
+        this._payload.fromJson(j["PayLoad"], this._payloadVersion);
       }
 
-      this._attributes = (j["Attributes"] as JSONArray).map((a) =>
-        new Attribute().fromJson(a as AttributeInfo)
+      this._attributes = j["Attributes"].map((a) =>
+        new Attribute().fromJson(a)
       );
-      this._programs = (j["Programs"] as JSONArray).map((p) =>
-        new Program().fromJson(p as ProgramInfo)
+      this._programs = j["Programs"].map((p) => new Program().fromJson(p));
+      this._outputs = j["Outputs"].map((o) =>
+        new TransactionOutput().fromJson(o)
       );
-      this._outputs = (j["Outputs"] as JSONArray).map((o) =>
-        new TransactionOutput().fromJson(o as json)
-      );
-      this._fee = new BigNumber(j["Fee"] as number);
+      this._fee = new BigNumber(j["Fee"]);
 
-      this._txHash = new BigNumber(j["TxHash"] as string, 16);
+      this._txHash = new BigNumber(j["TxHash"], 16);
     } catch (e) {
       ErrorChecker.throwLogicException(
         Error.Code.JsonFormatError,

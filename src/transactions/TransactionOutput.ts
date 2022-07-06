@@ -46,6 +46,16 @@ export enum Type {
 export type OutputPtr = TransactionOutput;
 export type OutputArray = OutputPtr[];
 
+export type TransactionOutputInfo = {
+  Amount: string;
+  AssetId: string;
+  OutputLock: number;
+  ProgramHash: string;
+  Address: string;
+  OutputType: number;
+  Payload: json;
+};
+
 export class TransactionOutput implements JsonSerializer {
   private _amount: BigNumber = new BigNumber(0); // to support token chain
   private _assetID: uint256 = new BigNumber(0);
@@ -260,7 +270,7 @@ export class TransactionOutput implements JsonSerializer {
     return payload;
   }
 
-  public toJson(): json {
+  public toJson(): TransactionOutputInfo {
     return {
       Amount: this._amount.toString(),
       AssetId: this._assetID.toString(16),
@@ -272,19 +282,17 @@ export class TransactionOutput implements JsonSerializer {
     };
   }
 
-  public fromJson(j: json): TransactionOutput {
-    this._amount = new BigNumber(j["Amount"] as string);
-    this._assetID = new BigNumber(j["AssetId"] as string, 16);
-    this._outputLock = j["OutputLock"] as number;
+  public fromJson(j: TransactionOutputInfo): TransactionOutput {
+    this._amount = new BigNumber(j["Amount"]);
+    this._assetID = new BigNumber(j["AssetId"], 16);
+    this._outputLock = j["OutputLock"];
     this._address.setProgramHash(
-      uint168.newFrom21BytesBuffer(
-        Buffer.from(j["ProgramHash"] as string, "hex")
-      )
+      uint168.newFrom21BytesBuffer(Buffer.from(j["ProgramHash"], "hex"))
     );
 
-    this._outputType = j["OutputType"] as Type;
+    this._outputType = j["OutputType"];
     this._payload = this.generatePayload(this._outputType);
-    this._payload.fromJson(j["Payload"] as json);
+    this._payload.fromJson(j["Payload"]);
 
     return this;
   }

@@ -1,29 +1,34 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
-import { bytes_t, json, size_t, uint8_t } from "../../types";
+import { bytes_t, size_t, uint8_t } from "../../types";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
+
+export type CoinBaseInfo = { CoinBaseData: string };
 
 export class CoinBase extends Payload {
   private _coinBaseData: bytes_t;
 
-  /* CoinBase::CoinBase(const bytes_t &coinBaseData) {
-		_coinBaseData = coinBaseData;
-	}
+  static newFromParams(coinBaseData: bytes_t) {
+    let coinBase = new CoinBase();
+    coinBase._coinBaseData = coinBaseData;
+    return coinBase;
+  }
 
-	CoinBase::CoinBase(const CoinBase &payload) {
-		operator=(payload);
-	}
+  // CoinBase::CoinBase(const CoinBase &payload) {
+  // 	operator=(payload);
+  // }
 
-	void CoinBase::SetCoinBaseData(const bytes_t &coinBaseData) {
-		_coinBaseData = coinBaseData;
-	}
+  setCoinBaseData(coinBaseData: bytes_t) {
+    this._coinBaseData = coinBaseData;
+  }
 
-	const bytes_t &CoinBase::GetCoinBaseData() const {
-		return _coinBaseData;
-	}*/
+  getCoinBaseData(): bytes_t {
+    return this._coinBaseData;
+  }
 
   public estimateSize(version: uint8_t): size_t {
     let size = 0;
@@ -44,14 +49,14 @@ export class CoinBase extends Payload {
     return !!this._coinBaseData;
   }
 
-  public toJson(version: uint8_t): json {
+  public toJson(version: uint8_t): CoinBaseInfo {
     return {
       CoinBaseData: this._coinBaseData.toString("hex")
     };
   }
 
-  public fromJson(j: json, version: uint8_t) {
-    this._coinBaseData = Buffer.from(j["CoinBaseData"] as string, "hex");
+  public fromJson(j: CoinBaseInfo, version: uint8_t) {
+    this._coinBaseData = Buffer.from(j["CoinBaseData"], "hex");
   }
 
   /*IPayload &CoinBase::operator=(const IPayload &payload) {

@@ -1,14 +1,21 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
+
 import BigNumber from "bignumber.js";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
-import { json, size_t, uint16_t, uint256, uint32_t } from "../types";
+import { size_t, uint16_t, uint256, uint32_t } from "../types";
 
 export type InputPtr = TransactionInput;
 export type InputArray = InputPtr[];
+
+export type TransactionInputInfo = {
+  TxHash: string;
+  Index: number;
+  Sequence: number;
+};
 
 export class TransactionInput extends ELAMessage implements JsonSerializer {
   private _txHash: uint256;
@@ -112,7 +119,7 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public toJson(): json {
+  public toJson(): TransactionInputInfo {
     return {
       TxHash: this._txHash.toString(16),
       Index: this._index,
@@ -120,10 +127,10 @@ export class TransactionInput extends ELAMessage implements JsonSerializer {
     };
   }
 
-  public fromJson(j: json): TransactionInput {
-    this._txHash = new BigNumber(j["TxHash"] as string, 16);
-    this._index = j["Index"] as uint16_t;
-    this._sequence = j["Sequence"] as uint32_t;
+  public fromJson(j: TransactionInputInfo): TransactionInput {
+    this._txHash = new BigNumber(j["TxHash"], 16);
+    this._index = j["Index"];
+    this._sequence = j["Sequence"];
     return this;
   }
 }

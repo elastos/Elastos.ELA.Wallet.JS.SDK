@@ -171,7 +171,6 @@ export class Account {
         }
 
         sortedSigners.sort((a, b) => {
-          // WAS return a -> pubkey().getHex() < b -> pubkey().getHex();
           return a
             .getPublicKeyBytes()
             .toString("hex")
@@ -795,16 +794,21 @@ export class Account {
     return account;
   }
 
-  /*
-#if 0
-  Account::Account(const std::string &path, const nlohmann &walletJSON) {
-    _localstore = LocalStorePtr(new LocalStore(path));
-    ErrorChecker::CheckParam(!ImportReadonlyWallet(walletJSON), Error::InvalidArgument,
-                 "Invalid readonly wallet json");
-    Init();
+  public static newFromReadOnlyWalletJson(
+    id: string,
+    storage: WalletStorage,
+    walletJSON: { Data: string }
+  ) {
+    let account = new Account();
+    account._localstore = new LocalStore(storage, id);
+    ErrorChecker.checkParam(
+      !account.importReadonlyWallet(walletJSON),
+      Error.Code.InvalidArgument,
+      "Invalid readonly wallet json"
+    );
+    account.init();
+    return account;
   }
-#endif
-*/
 
   public static newFromKeyStore(
     id: string,

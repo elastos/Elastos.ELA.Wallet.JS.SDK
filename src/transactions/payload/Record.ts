@@ -1,11 +1,17 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
-import { size_t, uint8_t, bytes_t, json } from "../../types";
+import { size_t, uint8_t, bytes_t } from "../../types";
 import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+
+export type RecordInfo = {
+  RecordType: string;
+  RecordData: string;
+};
 
 export class Record extends Payload {
   private _recordType: string;
@@ -78,8 +84,8 @@ export class Record extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j = {};
+  toJson(version: uint8_t): RecordInfo {
+    let j = <RecordInfo>{};
 
     j["RecordType"] = this._recordType;
     j["RecordData"] = this._recordData.toString("hex");
@@ -87,9 +93,9 @@ export class Record extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._recordType = j["RecordType"] as string;
-    this._recordData = Buffer.from(j["RecordData"] as string, "hex");
+  fromJson(j: RecordInfo, version: uint8_t) {
+    this._recordType = j["RecordType"];
+    this._recordData = Buffer.from(j["RecordData"], "hex");
   }
 
   copyFromPayload(payload: Payload) {
