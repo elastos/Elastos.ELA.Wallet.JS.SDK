@@ -35,8 +35,10 @@ import {
   CRCProposalTrackingType
 } from "./transactions/payload/CRCProposalTracking";
 import { CRCProposalWithdrawInfo } from "./transactions/payload/CRCProposalWithdraw";
+import { Address } from "./walletcore/Address";
 
 export {
+  Address,
   BrowserLocalStorage,
   Mnemonic,
   KeySpec,
