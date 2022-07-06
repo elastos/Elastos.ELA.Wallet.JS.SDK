@@ -29,7 +29,7 @@ import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { ChainConfig, Config, ConfigMap, CONFIG_MAINNET } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
-import { JSONObject, uint32_t } from "../types";
+import { uint32_t } from "../types";
 import {
   CHAINID_IDCHAIN,
   CHAINID_MAINCHAIN,
@@ -37,10 +37,12 @@ import {
 } from "../wallet/WalletCommon";
 import { Address } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
+import { KeyStore, KeyStoreInfo } from "../walletcore/keystore";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 // import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
 import { EthereumNetworks } from "./EthereumNetwork";
+import { IDChainSubWallet } from "./IDChainSubWallet";
 import { MainchainSubWallet } from "./MainchainSubWallet";
 import { SubWallet } from "./SubWallet";
 
@@ -144,30 +146,28 @@ export class MasterWallet {
     return masterWallet;
   }
 
-  public static newFromKeystore(
+  public static async newFromKeystore(
     id: string,
-    keystoreContent: JSONObject,
+    keystoreContent: KeyStoreInfo,
     backupPassword: string,
     payPasswd: string,
     config: Config,
     storage: WalletStorage
   ) {
-    // TODO
-    // KeyStore keystore;
-    // keystore.Import(keystoreContent, backupPassword);
+    let keystore = new KeyStore();
+    keystore.import(keystoreContent, backupPassword);
 
     let masterWallet = new MasterWallet();
     masterWallet._id = id;
     masterWallet._config = config;
 
-    // TODO
-    // masterWallet._account = Account.newFromKeyStore(
-    //   id,
-    //   storage,
-    //   keystore,
-    //   payPasswd
-    // );
-    // masterWallet._account.save();
+    masterWallet._account = Account.newFromKeyStore(
+      id,
+      storage,
+      keystore,
+      payPasswd
+    );
+    await masterWallet._account.save();
     masterWallet.setupNetworkParameters();
     return masterWallet;
   }
@@ -489,7 +489,7 @@ export class MasterWallet {
   async exportKeystore(
     backupPassword: string,
     payPassword: string
-  ): Promise<JSONObject> {
+  ): Promise<KeyStoreInfo> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("backupPassword: *");
     // ArgInfo("payPassword: *");
@@ -499,10 +499,10 @@ export class MasterWallet {
     this._account.setSubWalletInfoList(coinInfo);
     await this._account.save();
 
-    let j: JSONObject = {};
+    let j = <KeyStoreInfo>{};
     // TODO
-    // const keyStore: KeyStore = this._account.exportKeystore(payPassword);
-    // j = keyStore.Export(backupPassword, true);
+    const keyStore: KeyStore = await this._account.exportKeystore(payPassword);
+    j = keyStore.export(backupPassword, true);
 
     // ArgInfo("r => *");
     return j;
@@ -579,8 +579,7 @@ export class MasterWallet {
     if (info.getChainID() == "ELA") {
       return new MainchainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "IDChain") {
-      // TODO
-      // return new IDChainSubWallet(info, config, parent, netType);
+      return new IDChainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "BTC") {
       // TODO
       // return new BTCSubWallet(info, config, parent, netType);

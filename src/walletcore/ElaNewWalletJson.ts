@@ -4,12 +4,23 @@
 
 import { ErrorChecker, Error } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
-import { json } from "../types";
-import { CoinInfo } from "./CoinInfo";
-import { ElaWebWalletJson } from "./ElaWebWalletJson";
+import { CoinInfo, ChainIDInfo } from "./CoinInfo";
+import { ElaWebWalletJson, ElaWebWalletInfo } from "./ElaWebWalletJson";
 import { HDKey, KeySpec } from "./hdkey";
 import { Mnemonic } from "./mnemonic";
 import { Secp256 } from "./secp256";
+
+export interface ElaNewWalletInfo extends ElaWebWalletInfo {
+  CoinInfoList?: ChainIDInfo[];
+  SingleAddress?: boolean;
+  OwnerPubKey?: string;
+  xPubKeyHDPM?: string;
+  seed?: string;
+  ethscPrimaryPubKey?: string;
+  xPubKeyBitcoin?: string;
+  singlePrivateKey?: string;
+  ripplePrimaryPubKey?: string;
+}
 
 export class ElaNewWalletJson extends ElaWebWalletJson {
   private _coinInfoList: CoinInfo[];
@@ -108,18 +119,18 @@ export class ElaNewWalletJson extends ElaWebWalletJson {
   }
 
   toJson(withPrivKey: boolean) {
-    // let j = ElaWebWalletJson.toJson(withPrivKey);
-    // this.toJsonCommon(j);
-    // return j;
+    let j = super.toJson(withPrivKey);
+    this.toJsonCommon(j);
+    return j;
   }
 
-  fromJson(j: json) {
-    // ElaWebWalletJson::FromJson(j);
-    // this.fromJsonCommon(j);
+  fromJson(j: ElaNewWalletInfo) {
+    super.fromJson(j);
+    this.fromJsonCommon(j);
   }
 
-  private toJsonCommon(j: json) {
-    let coinInfoList = [];
+  private toJsonCommon(j: ElaNewWalletInfo) {
+    let coinInfoList: ChainIDInfo[] = [];
     for (let i = 0; i < this._coinInfoList.length; ++i)
       coinInfoList.push(this._coinInfoList[i].toJson());
 
@@ -134,10 +145,10 @@ export class ElaNewWalletJson extends ElaWebWalletJson {
     j["ripplePrimaryPubKey"] = this._ripplePrimaryPubKey;
   }
 
-  private fromJsonCommon(j: json) {
+  private fromJsonCommon(j: ElaNewWalletInfo) {
     if (j["CoinInfoList"]) {
       this._coinInfoList = [];
-      let coinInfoList = j["CoinInfoList"] as [];
+      let coinInfoList = j["CoinInfoList"];
       for (let i = 0; i < coinInfoList.length; ++i) {
         let coinInfo = new CoinInfo();
         coinInfo.fromJson(coinInfoList[i]);
@@ -146,27 +157,27 @@ export class ElaNewWalletJson extends ElaWebWalletJson {
     }
 
     if (j["SingleAddress"]) {
-      this._singleAddress = j["SingleAddress"] as boolean;
+      this._singleAddress = j["SingleAddress"];
     }
 
     if (j["OwnerPubKey"]) {
-      this._ownerPubKey = j["OwnerPubKey"] as string;
+      this._ownerPubKey = j["OwnerPubKey"];
     }
 
     if (j["xPubKeyHDPM"]) {
-      this._xPubKeyHDPM = j["xPubKeyHDPM"] as string;
+      this._xPubKeyHDPM = j["xPubKeyHDPM"];
     }
 
     if (j["ethscPrimaryPubKey"]) {
-      this._ethscPrimaryPubKey = j["ethscPrimaryPubKey"] as string;
+      this._ethscPrimaryPubKey = j["ethscPrimaryPubKey"];
     }
 
     if (j["ripplePrimaryPubKey"]) {
-      this._ripplePrimaryPubKey = j["ripplePrimaryPubKey"] as string;
+      this._ripplePrimaryPubKey = j["ripplePrimaryPubKey"];
     }
 
     if (j["xPubKeyBitcoin"]) {
-      this._xPubKeyBitcoin = j["xPubKeyBitcoin"] as string;
+      this._xPubKeyBitcoin = j["xPubKeyBitcoin"];
     }
 
     if (j["CoSigners"] && j["Type"] == "MultiSign") {
@@ -185,20 +196,20 @@ export class ElaNewWalletJson extends ElaWebWalletJson {
 
     let passphrase = "";
     if (j["PhrasePassword"]) {
-      passphrase = j["PhrasePassword"] as string;
+      passphrase = j["PhrasePassword"];
       if (!passphrase) this._mnemonicHasPassphrase = true;
     }
 
     if (j["IsSingleAddress"]) {
-      this._singleAddress = j["IsSingleAddress"] as boolean;
+      this._singleAddress = j["IsSingleAddress"];
     }
 
     if (j["seed"]) {
-      this._seed = j["seed"] as string;
+      this._seed = j["seed"];
     }
 
     if (j["singlePrivateKey"]) {
-      this._singlePrivateKey = j["singlePrivateKey"] as string;
+      this._singlePrivateKey = j["singlePrivateKey"];
     }
 
     if (

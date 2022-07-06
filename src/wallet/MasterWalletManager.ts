@@ -31,8 +31,9 @@ import {
   ConfigInfo
 } from "../config";
 import { WalletStorage } from "../persistence/WalletStorage";
-import { JSONObject, time_t, uint32_t } from "../types";
+import { time_t, uint32_t } from "../types";
 import { Base58Check } from "../walletcore/base58";
+import { KeyStoreInfo } from "../walletcore/keystore";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { MasterWallet } from "./MasterWallet";
@@ -645,7 +646,7 @@ export class MasterWalletManager {
    */
   async importWalletWithKeystore(
     masterWalletID: string,
-    keystoreContent: JSONObject,
+    keystoreContent: KeyStoreInfo,
     backupPassword: string,
     payPassword: string
   ) {
@@ -669,8 +670,7 @@ export class MasterWalletManager {
       // ArgInfo("r => already exist");
       return this._masterWalletMap.get(masterWalletID);
     }
-    // TODO
-    const masterWallet = MasterWallet.newFromKeystore(
+    const masterWallet = await MasterWallet.newFromKeystore(
       masterWalletID,
       keystoreContent,
       backupPassword,

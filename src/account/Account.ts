@@ -37,6 +37,7 @@ import { PublicKeyRing } from "../walletcore/publickeyring";
 import { Secp256 } from "../walletcore/secp256";
 import { BASE64 as Base64 } from "../walletcore/base64";
 import { ElaNewWalletJson } from "../walletcore/ElaNewWalletJson";
+import { KeyStore } from "../walletcore/keystore";
 
 export const MAX_MULTISIGN_COSIGNERS = 6;
 const READONLY_WALLET_VERSION00 = 0;
@@ -805,71 +806,85 @@ export class Account {
 #endif
 */
 
-  /* TODO: try to migrate KeyStore later
-  public static newFromKeyStore(storage: WalletStorage, ks: KeyStore, payPasswd: string) {
-    const ElaNewWalletJson &json = ks.WalletJson();
+  public static newFromKeyStore(
+    id: string,
+    storage: WalletStorage,
+    ks: KeyStore,
+    payPasswd: string
+  ) {
+    const json: ElaNewWalletJson = ks.walletJson();
 
-    const account = new Account()
-    account._localstore = new LocalStore(storage);
+    const account = new Account();
+    account._localstore = new LocalStore(storage, id);
     let bytes: Buffer;
     let str: string;
 
     account._localstore.setReadonly(true);
     if (json.xPrivKey()) {
       bytes = Base58Check.decode(json.xPrivKey());
-      const deterministicKey = new DeterministicKey(DeterministicKey.ELASTOS_VERSIONS)
-      const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos)
+      const deterministicKey = new DeterministicKey(
+        DeterministicKey.ELASTOS_VERSIONS
+      );
+      const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
 
       const encrypedPrivKey: string = AESEncrypt(bytes, payPasswd);
       account._localstore.setxPrivKey(encrypedPrivKey);
       account._localstore.setReadonly(false);
     }
 
-    if (json.Mnemonic()) {
-      const mnemonic = json.Mnemonic()
-      const encryptedMnemonic: string = AESEncrypt(Buffer.from(mnemonic), payPasswd);
+    if (json.mnemonic()) {
+      const mnemonic = json.mnemonic();
+      const encryptedMnemonic: string = AESEncrypt(
+        Buffer.from(mnemonic),
+        payPasswd
+      );
       account._localstore.setMnemonic(encryptedMnemonic);
       account._localstore.setReadonly(false);
     }
 
-    if (json.RequestPrivKey()) {
-      bytes.setHex(json.RequestPrivKey());
-
+    if (json.requestPrivKey()) {
+      bytes = Buffer.from(json.requestPrivKey(), "hex");
       account._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
       account._localstore.setReadonly(false);
     }
 
-    if (json.GetSeed()) {
-      bytes.setHex(json.GetSeed());
+    if (json.getSeed()) {
+      bytes = Buffer.from(json.getSeed(), "hex");
       account._localstore.setSeed(AESEncrypt(bytes, payPasswd));
       account._localstore.setReadonly(false);
     }
 
-    if (json.GetSinglePrivateKey()) {
-      bytes.setHex(json.GetSinglePrivateKey());
+    if (json.getSinglePrivateKey()) {
+      bytes = Buffer.from(json.getSinglePrivateKey(), "hex");
       account._localstore.setSinglePrivateKey(AESEncrypt(bytes, payPasswd));
       account._localstore.setReadonly(false);
     }
 
-    account._localstore.setxPubKeyBitcoin(json.GetxPubKeyBitcoin());
+    let publicKeyRings = [];
+    for (let item of json.getPublicKeyRing()) {
+      let publicKeyRing = new PublicKeyRing();
+      publicKeyRings.push(publicKeyRing.fromJson(item));
+    }
+
+    account._localstore.setxPubKeyBitcoin(json.getxPubKeyBitcoin());
     account._localstore.setxPubKey(json.xPubKey());
-    account._localstore.setRequestPubKey(json.RequestPubKey());
-    account._localstore.setPublicKeyRing(json.GetPublicKeyRing());
-    account._localstore.setM(json.GetM());
-    account._localstore.setN(json.GetN());
-    account._localstore.setHasPassPhrase(json.HasPassPhrase());
-    account._localstore.setSingleAddress(json.SingleAddress());
-    account._localstore.setDerivationStrategy(json.DerivationStrategy());
+    account._localstore.setRequestPubKey(json.requestPubKey());
+    account._localstore.setPublicKeyRing(publicKeyRings);
+    account._localstore.setM(json.getM());
+    account._localstore.setN(json.getN());
+    account._localstore.setHasPassPhrase(json.hasPassPhrase());
+    account._localstore.setSingleAddress(json.singleAddress());
+    account._localstore.setDerivationStrategy(json.derivationStrategy());
     account._localstore.setxPubKeyHDPM(json.xPubKeyHDPM());
-    account._localstore.setOwnerPubKey(json.OwnerPubKey());
-    account._localstore.setSubWalletInfoList(json.GetCoinInfoList());
-    account._localstore.setETHSCPrimaryPubKey(json.GetETHSCPrimaryPubKey());
-    account._localstore.setRipplePrimaryPubKey(json.GetRipplePrimaryPubKey());
+    account._localstore.setOwnerPubKey(json.ownerPubKey());
+    account._localstore.setSubWalletInfoList(json.getCoinInfoList());
+    account._localstore.setETHSCPrimaryPubKey(json.getETHSCPrimaryPubKey());
+    account._localstore.setRipplePrimaryPubKey(json.getRipplePrimaryPubKey());
 
     account.init();
+    return account;
   }
 
-*/
   public RequestPubKey(): bytes_t {
     return this._requestPubKey;
   }
@@ -1219,8 +1234,7 @@ export class Account {
     json.setxPubKeyBitcoin(this._localstore.getxPubKeyBitcoin());
     json.setRipplePrimaryPubKey(this._localstore.getRipplePrimaryPubKey());
 
-    //TODO
-    // return KeyStore(json);
+    return KeyStore.newFromParams(json);
   }
 
   exportReadonlyWallet(): { Data?: string } {

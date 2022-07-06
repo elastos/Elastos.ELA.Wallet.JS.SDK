@@ -7,6 +7,10 @@ import {
   BitcoreWalletClientInfo
 } from "./BitcoreWalletClientJson";
 
+export interface ElaWebWalletInfo extends BitcoreWalletClientInfo {
+  mnemonic: string;
+}
+
 export class ElaWebWalletJson extends BitcoreWalletClientJson {
   protected _mnemonic: string;
 
