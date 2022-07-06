@@ -28,14 +28,13 @@ import { LocalStore } from "../persistence/LocalStore";
 import { WalletStorage } from "../persistence/WalletStorage";
 import { bytes_t } from "../types";
 import { AESDecrypt, AESEncrypt } from "../walletcore/aes";
-import { Base58, Base58Check } from "../walletcore/base58";
+import { Base58Check } from "../walletcore/base58";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { DeterministicKey } from "../walletcore/deterministickey";
 import { HDKey, KeySpec } from "../walletcore/hdkey";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { Secp256 } from "../walletcore/secp256";
-import { BASE64 as Base64 } from "../walletcore/base64";
 import { ElaNewWalletJson } from "../walletcore/ElaNewWalletJson";
 import { KeyStore } from "../walletcore/keystore";
 
@@ -273,12 +272,7 @@ export class Account {
     );
     let bytes = Base58Check.decode(xprv);
     ErrorChecker.checkLogic(!bytes, Error.Code.InvalidArgument, "Invalid xprv");
-
-    let deterministicKey: DeterministicKey = DeterministicKey.fromExtendedKey(
-      xprv,
-      DeterministicKey.ELASTOS_VERSIONS
-    );
-    const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+    const rootkey: HDKey = HDKey.deserializeBase58(xprv, KeySpec.Elastos);
 
     const encryptedxPrvKey: string = AESEncrypt(xprv, payPasswd);
     const xPubKey: string = rootkey
@@ -1199,7 +1193,7 @@ export class Account {
     if (!this._localstore.readonly()) {
       bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
       if (!bytes.length) {
-        json.setxPrivKey(Base58.encode(bytes));
+        json.setxPrivKey(Base58Check.encode(bytes));
       }
 
       bytes = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
@@ -1276,21 +1270,21 @@ export class Account {
       tmp = Buffer.from(this._localstore.getOwnerPubKey());
       stream.writeVarBytes(tmp);
 
-      tmp = Base58.decode(this._localstore.getxPubKey());
+      tmp = Base58Check.decode(this._localstore.getxPubKey());
       if (!tmp) {
         Log.error("Decode xpub fail when exoprt read-only wallet");
         return j;
       }
       stream.writeVarBytes(tmp);
 
-      tmp = Base58.decode(this._localstore.getxPubKeyBitcoin());
+      tmp = Base58Check.decode(this._localstore.getxPubKeyBitcoin());
       if (!tmp) {
         Log.error("Decode btc xpub fail when exoprt read-only wallet");
         return j;
       }
       stream.writeVarBytes(tmp);
 
-      tmp = Base58.decode(this._localstore.getxPubKeyHDPM());
+      tmp = Base58Check.decode(this._localstore.getxPubKeyHDPM());
       if (!tmp) {
         Log.error("Decode xpubHDPM fail when export read-only wallet");
         return j;
@@ -1305,7 +1299,7 @@ export class Account {
         tmp = Buffer.from(pubkeyRing[i].getRequestPubKey(), "hex");
         stream.writeVarBytes(tmp);
 
-        tmp = Base58.decode(pubkeyRing[i].getxPubKey());
+        tmp = Base58Check.decode(pubkeyRing[i].getxPubKey());
         if (!tmp) {
           Log.error(
             "Decode pubkey ring xpub fail when export read-only wallet"
@@ -1324,7 +1318,7 @@ export class Account {
 
     let bytes = stream.getBytes();
 
-    j["Data"] = Base64.encode(bytes.toString("hex"));
+    j["Data"] = bytes.toString("base64");
 
     return j;
   }
@@ -1336,7 +1330,7 @@ export class Account {
     }
 
     let version = 0;
-    let bytes = Buffer.from(Base64.decode(walletJSON["Data"]), "hex");
+    let bytes = Buffer.from(walletJSON["Data"], "base64");
     let stream = new ByteStream(bytes);
 
     version = stream.readUInt8();
@@ -1419,7 +1413,7 @@ export class Account {
       return false;
     }
     if (bytes.length === 0) this._localstore.setxPubKey("");
-    else this._localstore.setxPubKey(Base58.encode(bytes));
+    else this._localstore.setxPubKey(Base58Check.encode(bytes));
 
     // btc xpub
     bytes = Buffer.alloc(0);
@@ -1429,7 +1423,7 @@ export class Account {
       return false;
     }
     if (bytes.length === 0) this._localstore.setxPubKeyBitcoin("");
-    else this._localstore.setxPubKeyBitcoin(Base58.encode(bytes));
+    else this._localstore.setxPubKeyBitcoin(Base58Check.encode(bytes));
 
     // xpub HDPM
     bytes = Buffer.alloc(0);
@@ -1439,7 +1433,7 @@ export class Account {
       return false;
     }
     if (bytes.length === 0) this._localstore.setxPubKeyHDPM("");
-    else this._localstore.setxPubKeyHDPM(Base58.encode(bytes));
+    else this._localstore.setxPubKeyHDPM(Base58Check.encode(bytes));
 
     if (this._localstore.getN() > 1) {
       let len = stream.readVarUInt();
@@ -1467,7 +1461,10 @@ export class Account {
           );
         else
           this._localstore.addPublicKeyRing(
-            new PublicKeyRing(requestPub.toString("hex"), Base58.encode(xpub))
+            new PublicKeyRing(
+              requestPub.toString("hex"),
+              Base58Check.encode(xpub)
+            )
           );
       }
     } else {
@@ -1570,16 +1567,13 @@ export class Account {
       rootkey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
       // encrypt private key
       this._localstore.setxPrivKey(
-        AESEncrypt(rootkey.getPrivateKeyBytes(), payPasswd)
+        AESEncrypt(rootkey.serializeBase58(), payPasswd)
       );
+
       haveRootkey = true;
     } else if (this._localstore.getxPrivKey()) {
       const privateKey = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
-      const deterministicKey = DeterministicKey.fromExtendedKey(
-        privateKey,
-        DeterministicKey.ELASTOS_VERSIONS
-      );
-      rootkey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
+      rootkey = HDKey.deserializeBase58(privateKey, KeySpec.Elastos);
       haveRootkey = true;
     }
 
