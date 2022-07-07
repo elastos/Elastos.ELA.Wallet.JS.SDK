@@ -367,7 +367,7 @@ export class MasterWallet {
       if (chainID == "ELA") {
         return subWallet as MainchainSubWallet;
       } else if (chainID == "IDChain") {
-        return subWallet as IDChainSubWallet;
+        // return subWallet as IDChainSubWallet;
       } else if (chainID == "BTC") {
         // return subWallet as BTCSubWallet;
       } else if (chainID.indexOf("ETH") !== -1) {
@@ -579,7 +579,7 @@ export class MasterWallet {
     if (info.getChainID() == "ELA") {
       return new MainchainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "IDChain") {
-      return new IDChainSubWallet(info, config, parent, netType);
+      // return new IDChainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "BTC") {
       // TODO
       // return new BTCSubWallet(info, config, parent, netType);

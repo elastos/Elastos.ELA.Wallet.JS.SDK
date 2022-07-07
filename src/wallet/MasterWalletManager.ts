@@ -453,6 +453,11 @@ export class MasterWalletManager {
       Error.Code.PubKeyFormat,
       "cosigners should at least contain 1 elements"
     );
+    ErrorChecker.checkCondition(
+      typeof m !== "number",
+      Error.Code.InvalidArgument,
+      "The type of m should be number"
+    );
     ErrorChecker.checkParam(m < 1, Error.Code.InvalidArgument, "Invalid m");
 
     let pubKeyRing: PublicKeyRing[] = [];

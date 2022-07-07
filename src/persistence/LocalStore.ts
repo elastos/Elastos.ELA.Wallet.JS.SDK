@@ -33,8 +33,8 @@ export type LocalStoreInfo = {
   requestPrivKey: string;
   requestPubKey: string;
   publicKeyRing: PublicKeyRingInfo[];
-  m: number; // Multisign - number of requested signatures
-  n: number; // Multisign - total number of requested public keys
+  m: number; // Multisign - number of required signers
+  n: number; // Multisign - total number of signers
   mnemonicHasPassphrase: boolean;
   derivationStrategy: string;
   account: number;

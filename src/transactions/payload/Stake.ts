@@ -40,7 +40,7 @@ export class Stake extends Payload {
     return {};
   }
 
-  fromJson(j: {}, version: uint8_t) {}
+  fromJson(j, version: uint8_t) {}
 
   isValid(version: uint8_t): boolean {
     return true;
