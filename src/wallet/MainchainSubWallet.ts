@@ -132,6 +132,11 @@ import {
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
 } from "./WalletCommon";
+import { Stake } from "../transactions/payload/Stake";
+import {
+  PayloadStake,
+  PayloadStakeInfo
+} from "../transactions/payload/OutputPayload/PayloadStake";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -3446,7 +3451,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     fee: string,
     memo: string
   ): EncodedTx {
-    // WalletPtr wallet = _walletManager->GetWallet();
+    let wallet = this.getWallet();
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("inputs: {}", inputs.dump());
     // ArgInfo("payload: {}", payload.dump());
@@ -3475,11 +3480,80 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
 
     let feeAmount = new BigNumber(fee);
-    let tx = this.getWallet().createTransaction(
+    let tx = wallet.createTransaction(
       TransactionType.crcProposal,
       p,
       utxo,
       [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+
+    return result;
+  }
+
+  //////////////////////////////////////////////////
+  /*            DPoS 2.0 new transactions         */
+  //////////////////////////////////////////////////
+
+  createStakeTransaction(
+    inputs: UTXOInput[],
+    payload: PayloadStakeInfo,
+    lockAddress: string,
+    amount: string,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("lockAddress: {}", lockAddress);
+    // ArgInfo("amount: {}", amount);
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let version = 0;
+    let p = new Stake();
+    let outputpayload = new PayloadStake();
+    try {
+      outputpayload.fromJson(payload);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    let bgAmount = new BigNumber(amount);
+    let receiveAddr = Address.newFromAddressString(lockAddress);
+
+    let outputs: TransactionOutput[] = [];
+    outputs.push(
+      TransactionOutput.newFromParams(
+        bgAmount,
+        receiveAddr,
+        Asset.getELAAssetID(),
+        Type.Stake,
+        outputpayload
+      )
+    );
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.Stake,
+      p,
+      utxo,
+      outputs,
       memo,
       feeAmount
     );

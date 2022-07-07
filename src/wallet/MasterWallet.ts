@@ -367,7 +367,7 @@ export class MasterWallet {
       if (chainID == "ELA") {
         return subWallet as MainchainSubWallet;
       } else if (chainID == "IDChain") {
-        // return subWallet as IDChainSubWallet;
+        return subWallet as IDChainSubWallet;
       } else if (chainID == "BTC") {
         // return subWallet as BTCSubWallet;
       } else if (chainID.indexOf("ETH") !== -1) {

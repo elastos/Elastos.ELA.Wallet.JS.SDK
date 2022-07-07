@@ -1,6 +1,7 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { ByteStream } from "../../common/bytestream";
 import { json, size_t, uint8_t } from "../../types";
 import { Payload } from "./Payload";

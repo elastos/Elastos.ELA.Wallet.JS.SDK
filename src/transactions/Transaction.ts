@@ -102,6 +102,21 @@ export enum TransactionType {
   crcAssetsRectify = 0x2b,
   crCouncilMemberClaimNode = 0x31,
 
+  RevertToPOW = 0x41,
+  RevertToDPOS = 0x42,
+
+  ReturnSideChainDepositCoin = 0x51,
+
+  // DPoS2.0
+  DposV2ClaimReward = 0x60,
+  DposV2ClaimRewardRealWithdraw = 0x61,
+  Stake = 0x62,
+  Voting = 0x63,
+  CancelVotes = 0x64,
+  Unstake = 0x65,
+  UnstakeRealWithdraw = 0x66,
+  // DPoS2.0 end
+
   TypeMaxCount
 }
 
