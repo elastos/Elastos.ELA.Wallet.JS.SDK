@@ -453,7 +453,7 @@ export class MasterWalletManager {
       Error.Code.PubKeyFormat,
       "cosigners should at least contain 1 elements"
     );
-    ErrorChecker.checkCondition(
+    ErrorChecker.checkParam(
       typeof m !== "number",
       Error.Code.InvalidArgument,
       "The type of m should be number"

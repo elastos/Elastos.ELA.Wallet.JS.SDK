@@ -137,6 +137,7 @@ import {
   PayloadStake,
   PayloadStakeInfo
 } from "../transactions/payload/OutputPayload/PayloadStake";
+import { Voting, VotingInfo } from "../transactions/payload/Voting";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -3554,6 +3555,53 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       p,
       utxo,
       outputs,
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+
+    return result;
+  }
+
+  createDPoSV2VoteTransaction(
+    inputs: UTXOInput[],
+    payload: VotingInfo,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let version = 0;
+    let p = new Voting();
+    try {
+      version = payload["Version"];
+      p.fromJson(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.Voting,
+      p,
+      utxo,
+      [],
       memo,
       feeAmount
     );
