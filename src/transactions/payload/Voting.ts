@@ -31,7 +31,6 @@ import {
   size_t,
   sizeof_uint64_t,
   sizeof_uint32_t,
-  json,
   sizeof_uint8_t,
   uint256,
   sizeof_uint256_t

@@ -138,6 +138,16 @@ import {
   PayloadStakeInfo
 } from "../transactions/payload/OutputPayload/PayloadStake";
 import { Voting, VotingInfo } from "../transactions/payload/Voting";
+import {
+  DPoSV2ClaimReward,
+  DPoSV2ClaimRewardInfo,
+  DPoSV2ClaimRewardVersion
+} from "../transactions/payload/DPoSV2ClaimReward";
+import {
+  CancelVotes,
+  CancelVotesInfo
+} from "../transactions/payload/CancelVotes";
+import { Unstake, UnstakeInfo } from "../transactions/payload/Unstake";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -3611,6 +3621,178 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
 
+    return result;
+  }
+
+  getDPoSV2ClaimRewardDigest(payload: DPoSV2ClaimRewardInfo): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
+
+    let version = DPoSV2ClaimRewardVersion;
+    let p = new DPoSV2ClaimReward();
+    try {
+      p.fromJsonUnsigned(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    return p.digestDPoSV2ClaimReward(version);
+  }
+
+  createDPoSV2ClaimRewardTransaction(
+    inputs: UTXOInput[],
+    payload: DPoSV2ClaimRewardInfo,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let version = DPoSV2ClaimRewardVersion;
+    let p = new DPoSV2ClaimReward();
+    try {
+      p.fromJson(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.DposV2ClaimReward,
+      p,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+
+    return result;
+  }
+
+  createCancelVotesTransaction(
+    inputs: UTXOInput[],
+    payload: CancelVotesInfo,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let version = 0;
+    let p = new CancelVotes();
+    try {
+      p.fromJson(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.CancelVotes,
+      p,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  unstakeDigest(payload: UnstakeInfo): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("payload: {}", payload.dump());
+
+    let version = 0;
+    let p = new Unstake();
+    try {
+      p.fromJsonUnsigned(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    return p.digestUnstake(version);
+  }
+
+  createUnstakeTransaction(
+    inputs: UTXOInput[],
+    payload: UnstakeInfo,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payload.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let version = 0;
+    let p = new Unstake();
+    try {
+      p.fromJson(payload, version);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.CancelVotes,
+      p,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+    tx.setPayloadVersion(version);
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
+    // ArgInfo("r => {}", result.dump());
     return result;
   }
 }
