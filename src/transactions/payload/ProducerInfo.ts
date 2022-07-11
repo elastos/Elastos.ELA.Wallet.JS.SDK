@@ -8,12 +8,17 @@ import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import {
   bytes_t,
+  sizeof_uint32_t,
   sizeof_uint64_t,
   size_t,
+  uint32_t,
   uint64_t,
   uint8_t
 } from "../../types";
 import { Payload } from "./Payload";
+
+export const ProducerInfoVersion = 0x00;
+export const ProducerInfoDposV2Version = 0x01;
 
 export type ProducerInfoJson = {
   OwnerPublicKey: string;
@@ -22,6 +27,7 @@ export type ProducerInfoJson = {
   Url: string;
   Location: string;
   Address: string;
+  StakeUntil?: number;
   Signature: string;
 };
 
@@ -32,6 +38,7 @@ export class ProducerInfo extends Payload {
   private _url: string;
   private _location: uint64_t;
   private _address: string;
+  private _StakeUntil: uint32_t;
   private _signature: bytes_t;
 
   newFromParams(
@@ -41,6 +48,7 @@ export class ProducerInfo extends Payload {
     url: string,
     location: uint64_t,
     address: string,
+    stakeUntil: number,
     signature: bytes_t
   ) {
     this._ownerPublicKey = ownerPublicKey;
@@ -49,6 +57,9 @@ export class ProducerInfo extends Payload {
     this._url = url;
     this._location = location;
     this._address = address;
+    if (stakeUntil) {
+      this._StakeUntil = stakeUntil;
+    }
     this._signature = signature;
   }
 
@@ -106,6 +117,14 @@ export class ProducerInfo extends Payload {
     this._address = address;
   }
 
+  getStakeUntil(): uint32_t {
+    return this._StakeUntil;
+  }
+
+  setStakeUntil(stakeUntil: uint32_t) {
+    this._StakeUntil = stakeUntil;
+  }
+
   getSignature(): bytes_t {
     return this._signature;
   }
@@ -121,6 +140,9 @@ export class ProducerInfo extends Payload {
     ostream.writeVarString(this._url);
     ostream.writeBNAsUIntOfSize(this._location, 8);
     ostream.writeVarString(this._address);
+    if (version === ProducerInfoDposV2Version) {
+      ostream.writeUInt32(this._StakeUntil);
+    }
   }
 
   deserializeUnsigned(istream: ByteStream, version: uint8_t): boolean {
@@ -167,6 +189,16 @@ export class ProducerInfo extends Payload {
       return false;
     }
     this._address = address;
+
+    if (version === ProducerInfoDposV2Version) {
+      const stakeUntil = istream.readUInt32();
+      if (!stakeUntil) {
+        Log.error("Deserialize: read stakeUntil");
+        return false;
+      }
+      this._StakeUntil = stakeUntil;
+    }
+
     return true;
   }
 
@@ -193,6 +225,10 @@ export class ProducerInfo extends Payload {
     let address = Buffer.from(this._address, "utf8");
     size += stream.writeVarUInt(address.length);
     size += address.length;
+
+    if (version === ProducerInfoDposV2Version) {
+      size += sizeof_uint32_t(); // size of this.stakeUntil
+    }
 
     size += stream.writeVarUInt(this._signature.length);
     size += this._signature.length;
@@ -229,6 +265,9 @@ export class ProducerInfo extends Payload {
     j["Url"] = this._url;
     j["Location"] = this._location.toString(16);
     j["Address"] = this._address;
+    if (version === ProducerInfoDposV2Version) {
+      j["stakeUntil"] = this._StakeUntil;
+    }
     j["Signature"] = this._signature.toString("hex");
     return j;
   }
@@ -240,6 +279,9 @@ export class ProducerInfo extends Payload {
     this._url = j["Url"];
     this._location = new BigNumber(j["Location"], 16);
     this._address = j["Address"];
+    if (version === ProducerInfoDposV2Version) {
+      this._StakeUntil = j["StakeUntil"];
+    }
     this._signature = Buffer.from(j["Signature"], "hex");
   }
 
@@ -261,6 +303,9 @@ export class ProducerInfo extends Payload {
     this._url = payload._url;
     this._location = payload._location;
     this._address = payload._address;
+    if (payload._StakeUntil) {
+      this._StakeUntil = payload._StakeUntil;
+    }
     this._signature = payload._signature;
     return this;
   }
@@ -268,15 +313,18 @@ export class ProducerInfo extends Payload {
   equals(payload: Payload, version: uint8_t): boolean {
     try {
       const p = payload as ProducerInfo;
-      return (
+      let equal =
         this._ownerPublicKey.equals(p._ownerPublicKey) &&
         this._nodePublicKey.equals(p._nodePublicKey) &&
         this._nickName == p._nickName &&
         this._url == p._url &&
         this._location.eq(p._location) &&
         this._address == p._address &&
-        this._signature.equals(p._signature)
-      );
+        this._signature.equals(p._signature);
+      if (version === ProducerInfoDposV2Version) {
+        equal = equal && this._StakeUntil == p._StakeUntil;
+      }
+      return equal;
     } catch (e) {
       Log.error("payload is not instance of ProducerInfo");
     }

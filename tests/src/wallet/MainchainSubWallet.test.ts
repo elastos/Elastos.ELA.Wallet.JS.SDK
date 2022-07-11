@@ -169,6 +169,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       url,
       ipAddress,
       location,
+      "",
       payPasswd
     );
 

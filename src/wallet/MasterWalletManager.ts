@@ -289,7 +289,7 @@ export class MasterWalletManager {
 
     for (let i = 0; i < cosigners.length; i++) {
       ErrorChecker.checkCondition(
-        !typeof cosigners[i],
+        typeof cosigners[i] !== "string",
         Error.Code.PubKeyFormat,
         "cosigners should be string"
       );
@@ -378,7 +378,7 @@ export class MasterWalletManager {
     let pubKeyRing: PublicKeyRing[] = [];
     for (let i = 0; i < cosigners.length; i++) {
       ErrorChecker.checkCondition(
-        !(typeof cosigners[i] === "string"),
+        typeof cosigners[i] !== "string",
         Error.Code.PubKeyFormat,
         "cosigners should be string"
       );
@@ -463,7 +463,7 @@ export class MasterWalletManager {
     let pubKeyRing: PublicKeyRing[] = [];
     for (let i = 0; i < cosigners.length; i++) {
       ErrorChecker.checkCondition(
-        !(typeof cosigners[i] === "string"),
+        typeof cosigners[i] !== "string",
         Error.Code.PubKeyFormat,
         "cosigners should be string"
       );
@@ -560,9 +560,7 @@ export class MasterWalletManager {
     let pubKeyRing: PublicKeyRing[] = [];
     for (let i = 0; i < cosigners.length; i++) {
       ErrorChecker.checkCondition(
-        !(
-          typeof cosigners[i] === "string" || !Base58Check.decode(cosigners[i])
-        ),
+        typeof cosigners[i] !== "string" || !Base58Check.decode(cosigners[i]),
         Error.Code.PubKeyFormat,
         "cosigners format error"
       );

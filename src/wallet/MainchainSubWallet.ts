@@ -95,7 +95,9 @@ import {
 import { Payload } from "../transactions/payload/Payload";
 import {
   ProducerInfo,
-  ProducerInfoJson
+  ProducerInfoJson,
+  ProducerInfoVersion,
+  ProducerInfoDposV2Version
 } from "../transactions/payload/ProducerInfo";
 import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
@@ -116,7 +118,7 @@ import {
   TransactionOutput,
   Type
 } from "../transactions/TransactionOutput";
-import { bytes_t, size_t, uint64_t, uint8_t } from "../types";
+import { bytes_t, size_t, uint32_t, uint64_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
@@ -320,6 +322,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param url            URL of producer.
    * @param ipAddress      IP address of node. This argument is deprecated.
    * @param location       Location code.
+   * @param stakeUntil     The block height when your staking expires. It is required in DPoS 2.0 version.
    * @param payPasswd      Pay password is using for signing the payload with
    *                       the owner private key.
    *
@@ -332,6 +335,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     url: string,
     ipAddress: string,
     location: uint64_t,
+    stakeUntil: uint32_t,
     payPasswd: string
   ) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
@@ -344,6 +348,13 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("payPasswd: *");
 
     ErrorChecker.checkPassword(payPasswd, "Generate payload");
+    if (stakeUntil) {
+      ErrorChecker.checkParam(
+        typeof stakeUntil !== "number",
+        Error.Code.InvalidArgument,
+        "The type of stakeUntil should be number"
+      );
+    }
 
     let ownerPubKey = Buffer.from(ownerPublicKey, "hex");
     EcdsaSigner.getKeyFromPublic(ownerPubKey);
@@ -360,9 +371,14 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     pr.setLocation(location);
 
     let ostream = new ByteStream();
-    pr.serializeUnsigned(ostream, 0);
-    let prUnsigned = ostream.getBytes();
+    let version = ProducerInfoVersion;
+    if (stakeUntil) {
+      version = ProducerInfoDposV2Version;
+      pr.setStakeUntil(stakeUntil);
+    }
+    pr.serializeUnsigned(ostream, version);
 
+    let prUnsigned = ostream.getBytes();
     let signature = await this.getWallet().signWithOwnerKey(
       prUnsigned,
       payPasswd
@@ -370,7 +386,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     pr.setSignature(signature);
 
-    let payloadJson = pr.toJson(0);
+    let payloadJson = pr.toJson(version);
 
     // ArgInfo("r => {}", payloadJson.dump());
     return payloadJson;
@@ -470,8 +486,12 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
 
     let payload = new ProducerInfo();
+    let version = ProducerInfoVersion;
+    if (payloadJson.StakeUntil) {
+      version = ProducerInfoDposV2Version;
+    }
     try {
-      payload.fromJson(payloadJson, 0);
+      payload.fromJson(payloadJson, version);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
@@ -535,15 +555,21 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
+
     let payload = new ProducerInfo();
+    let version = ProducerInfoVersion;
+    if (payloadJson.StakeUntil) {
+      version = ProducerInfoDposV2Version;
+    }
     try {
-      payload.fromJson(payloadJson, 0);
+      payload.fromJson(payloadJson, version);
     } catch (e) {
       ErrorChecker.throwParamException(
         Error.Code.JsonFormatError,
         "Payload format err: " + e
       );
     }
+
     let feeAmount = new BigNumber(fee);
 
     let tx = wallet.createTransaction(
