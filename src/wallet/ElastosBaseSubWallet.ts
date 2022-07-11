@@ -83,6 +83,7 @@ export class ElastosBaseSubWallet
       Error.Code.UnsupportOperation,
       "unsupport to create elastos based wallet"
     );
+
     // TODO boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
     // TODO subWalletDBPath /= _info->GetChainID() + ".db";
 

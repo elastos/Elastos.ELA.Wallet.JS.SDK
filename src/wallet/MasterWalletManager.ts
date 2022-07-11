@@ -693,19 +693,19 @@ export class MasterWalletManager {
   }
 
   /**
-   * Import master wallet by mnemonic.
-   * @param masterWalletID is the unique identification of a master wallet object.
-   * @param mnemonic for importing the master wallet.
-   * @param phrasePassword combine with mnemonic to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
-   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-   * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
-   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction.
-   * @return If success will return a pointer of master wallet interface.
+   * Import master wallet by mnemonic
+   * @param masterWalletID is the unique identification of a master wallet object
+   * @param mnemonic for importing the master wallet
+   * @param passphrase combine with mnemonic to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+   * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception
+   * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security
+   * @param timestamp the value of time in seconds since 1970-01-01 00:00:00. It means the time when the wallet contains the first transaction
+   * @return If success will return a pointer of master wallet interface
    */
   async importWalletWithMnemonic(
     masterWalletID: string,
     mnemonic: string,
-    phrasePassword: string,
+    passphrase: string,
     payPassword: string,
     singleAddress: boolean,
     timestamp: time_t
@@ -722,7 +722,7 @@ export class MasterWalletManager {
 
     ErrorChecker.checkParamNotEmpty(masterWalletID, "Master wallet ID");
     ErrorChecker.checkParamNotEmpty(mnemonic, "Mnemonic");
-    ErrorChecker.checkPasswordWithNullLegal(phrasePassword, "Phrase");
+    ErrorChecker.checkPasswordWithNullLegal(passphrase, "Phrase");
     ErrorChecker.checkPassword(payPassword, "Pay");
 
     if (this._masterWalletMap.has(masterWalletID)) {
@@ -732,7 +732,7 @@ export class MasterWalletManager {
 
     const lang = Mnemonic.getLanguage(mnemonic);
     const mnemonicObj = Mnemonic.getInstance(lang);
-    ErrorChecker.checkLogic(
+    ErrorChecker.checkParam(
       !mnemonicObj.isValid(mnemonic),
       Error.Code.Mnemonic,
       "Invalid mnemonic"
@@ -741,7 +741,7 @@ export class MasterWalletManager {
     const masterWallet = await MasterWallet.newFromMnemonic(
       masterWalletID,
       mnemonic,
-      phrasePassword,
+      passphrase,
       payPassword,
       singleAddress,
       this._config,

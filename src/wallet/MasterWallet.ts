@@ -318,6 +318,10 @@ export class MasterWallet {
     await this._account.remove();
   }
 
+  /**
+   * Get the master wallet id.
+   * @return master wallet id.
+   */
   public getID(): string {
     return this._id;
   }
@@ -326,6 +330,10 @@ export class MasterWallet {
     return this._id;
   }
 
+  /**
+   * Get wallet existing sub wallets.
+   * @return existing sub wallets by array.
+   */
   public getAllSubWallets(): SubWallet[] {
     //ArgInfo("{} {}", _id, GetFunName());
 
@@ -339,6 +347,11 @@ export class MasterWallet {
     return subWallets;
   }
 
+  /**
+   * Get a sub wallet of chainID.
+   * @param chainID unique identity of a sub wallet. Chain id should not be empty.
+   * @return If success will return a sub wallet interface.
+   */
   public getSubWallet(chainID: string): SubWallet {
     //ArgInfo("{} {}", _id, GetFunName());
     //ArgInfo("chainID: {}", chainID);
@@ -350,6 +363,11 @@ export class MasterWallet {
     return null;
   }
 
+  /**
+   * Create a sub wallet of chainID.
+   * @param chainID unique identity of a sub wallet. Chain id should not be empty.
+   * @return If success will return a sub wallet interface.
+   */
   public async createSubWallet(chainID: string) {
     //ArgInfo("{} {}", _id, GetFunName());
     //ArgInfo("chainID: {}", chainID);
@@ -400,6 +418,12 @@ export class MasterWallet {
     return subWallet;
   }
 
+  /**
+   * Verify private key whether same as current wallet
+   * @param mnemonic
+   * @param passphrase
+   * @return
+   */
   verifyPrivateKey(mnemonic: string, passphrase: string): boolean {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("mnemonic: *");
@@ -409,6 +433,12 @@ export class MasterWallet {
     return r;
   }
 
+  /**
+   *
+   * @param passphrase
+   * @param payPasswd
+   * @return
+   */
   async verifyPassPhrase(
     passphrase: string,
     payPasswd: string
@@ -424,6 +454,11 @@ export class MasterWallet {
     return r;
   }
 
+  /**
+   *
+   * @param payPasswd
+   * @return
+   */
   async verifyPayPassword(payPasswd: string): Promise<boolean> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPasswd: *");
@@ -451,6 +486,10 @@ export class MasterWallet {
     }
   }
 
+  /**
+   * Destroy a sub wallet created by the master wallet.
+   * @param chainID chain ID of subWallet.
+   */
   async destroyWallet(chainID: string): Promise<void> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("chainID: {}", chainID);
@@ -469,6 +508,10 @@ export class MasterWallet {
     }
   }
 
+  /**
+   * Get public key info
+   * @return public key info
+   */
   getPubKeyInfo(): AccountPubKeyInfo {
     // ArgInfo("{} {}",this._id, GetFunName());
     const j = this._account.getPubKeyInfo();
@@ -486,6 +529,12 @@ export class MasterWallet {
     return j;
   }
 
+  /**
+   * Export Keystore of the current wallet in JSON format.
+   * @param backupPassword use to decrypt key store file. Backup password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @param payPassword use to decrypt and generate mnemonic temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success will return key store content in json format.
+   */
   async exportKeystore(
     backupPassword: string,
     payPassword: string
@@ -508,6 +557,11 @@ export class MasterWallet {
     return j;
   }
 
+  /**
+   * Export mnemonic of the current wallet.
+   * @param payPassword use to decrypt and generate mnemonic temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success will return the mnemonic of master wallet.
+   */
   async exportMnemonic(payPassword: string): Promise<string> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPassword: *");
@@ -518,6 +572,26 @@ export class MasterWallet {
     return mnemonic;
   }
 
+  /**
+   * Export seed of the current wallet.
+   * @param payPassword  use to decrypt and generate mnemonic temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return If success will return the seed of master wallet.
+   */
+  exportSeed(payPassword: string): string {
+    // ArgInfo("{} {}", _id, GetFunName());
+    // ArgInfo("payPassword: *");
+
+    let seed = this._account.getSeed(payPassword);
+
+    // ArgInfo("r => *");
+    return seed.toString("hex");
+  }
+
+  /**
+   * Export root private key of the current wallet.
+   * @param payPasswd use to decrypt and generate mnemonic temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+   * @return root private key.
+   */
   async exportPrivateKey(payPasswd: string): Promise<string> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("payPsswd: *");
@@ -534,6 +608,10 @@ export class MasterWallet {
     return xprv;
   }
 
+  /**
+   * Export master public key.
+   * @return master public key
+   */
   exportMasterPublicKey(): string {
     // ArgInfo("{} {}", _id, GetFunName());
 
@@ -606,6 +684,11 @@ export class MasterWallet {
     return this._account;
   }
 
+  /**
+   * Verify an address which can be normal, multi-sign, cross chain, or id address.
+   * @param address to be verified.
+   * @return True if valid, otherwise return false.
+   */
   isAddressValid(address: string): boolean {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("addr: {}", address);
@@ -619,6 +702,12 @@ export class MasterWallet {
     return valid;
   }
 
+  /**
+   *
+   * @param chainID chain id of subwallet
+   * @param address address of subwallet
+   * @return
+   */
   isSubWalletAddressValid(chainID: string, address: string): boolean {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("chainID: {}", chainID);
@@ -648,20 +737,23 @@ export class MasterWallet {
     return valid;
   }
 
+  /**
+   * Get all chain ids of supported chains.
+   * @return a list of chain id.
+   */
   getSupportedChains(): string[] {
     // ArgInfo("{} {}", _id, GetFunName());
-
     let chainIDs: string[] = this._config.getAllChainIDs();
-
-    let result: string;
-    for (let i = 0; i < chainIDs.length; ++i) {
-      result += chainIDs[i] + ", ";
-    }
-
-    // ArgInfo("r => {}", result);
+    let result = chainIDs.join(", ");
+    Log.info("supported chains: {}", result);
     return chainIDs;
   }
 
+  /**
+   * Change pay password which encrypted private key and other important data in memory.
+   * @param oldPassword the old pay password.
+   * @param newPassword new pay password.
+   */
   async changePassword(
     oldPassword: string,
     newPassword: string
@@ -673,6 +765,12 @@ export class MasterWallet {
     await this._account.changePassword(oldPassword, newPassword);
   }
 
+  /**
+   * Reset payment password of current wallet
+   * @param mnemonic mnemonic
+   * @param passphrase passphrase
+   * @param newPassword New password will be set.
+   */
   async resetPassword(
     mnemonic: string,
     passphrase: string,
@@ -688,6 +786,11 @@ export class MasterWallet {
     // ArgInfo("r => ");
   }
 
+  /**
+   * Get basic info of master wallet
+   * @return basic information. Such as:
+   * {"M":1,"N":1,"Readonly":false,"SingleAddress":false,"Type":"Standard", "HasPassPhrase": false}
+   */
   getBasicInfo(): AccountBasicInfo {
     // ArgInfo("{} {}", _id, GetFunName());
 

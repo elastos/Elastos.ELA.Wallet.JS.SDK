@@ -244,7 +244,7 @@ export class CRCProposalReview extends Payload {
       getBNHexString(this._opinionHash)
     );
     if (version >= CRCProposalReviewVersion01) {
-      // j[JsonKeyOpinionData] = Base64.encode(this._opinionData.toString("hex"));
+      // sync with dev branch of wallet c++ sdk
       j[JsonKeyOpinionData] = this._opinionData.toString("hex");
     }
 
@@ -258,7 +258,6 @@ export class CRCProposalReview extends Payload {
     this._opinionHash = new BigNumber(j[JsonKeyOpinionHash], 16);
     if (version >= CRCProposalReviewVersion01) {
       let opinionData = j[JsonKeyOpinionData];
-      // this._opinionData = Buffer.from(Base64.decode(opinionData), "hex");
       this._opinionData = Buffer.from(opinionData, "hex");
       ErrorChecker.checkParam(
         this._opinionData.length > OPINION_DATA_MAX_SIZE,

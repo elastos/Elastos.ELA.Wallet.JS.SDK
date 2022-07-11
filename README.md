@@ -12,9 +12,8 @@ This JS SDK diverges a little bit from that original SDK in a few ways:
 
 ## Note
 
-- The current version is based on that [f1eba107](https://github.com/elastos/Elastos.ELA.SPV.Cpp/tree/no_p2p) commit ID.
+- The current version is based on that [04bee6d](https://github.com/elastos/Elastos.ELA.SPV.Cpp/tree/dev) commit ID.
 - For now we continue to migrate C++ -> TS on this version
-- When we will have the first stable version of the TS SDK, we will "replay" the diff between no_p2p and dev c++ branches into TS
 
 ## App integration - known issues
 
