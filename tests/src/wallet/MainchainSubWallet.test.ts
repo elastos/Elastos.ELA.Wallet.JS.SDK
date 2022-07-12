@@ -74,10 +74,12 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
+
     subWallet.getAddresses(0, 1, false);
+
     const inputs = [
       {
         Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
@@ -148,9 +150,10 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
+
     subWallet.getAddresses(0, 1, false);
 
     const ownerPublicKey = subWallet.getOwnerPublicKey();
@@ -169,7 +172,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       url,
       ipAddress,
       location,
-      "",
+      0,
       payPasswd
     );
 
@@ -218,9 +221,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet.getAddresses(0, 1, false);
 
     const ownerPublicKey = subWallet.getOwnerPublicKey();
@@ -275,9 +278,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet.getAddresses(0, 1, false);
 
     const depositAddr = subWallet.getOwnerDepositAddress();
@@ -327,9 +330,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addr = subWallet.getAddresses(0, 1, false);
     let crPublicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -413,9 +416,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet.getAddresses(0, 1, false);
 
     let depositAddress = subWallet.getCRDepositAddress();
@@ -464,9 +467,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
 
     const nodePublicKey =
@@ -528,11 +531,10 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
-    console.log("addresses...", addresses);
 
     let publicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -579,8 +581,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet =
-      await crMasterWallet.createSubWallet("ELA");
+    const crSubWallet = (await crMasterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
     console.log("councilMemberAddresses", councilMemberAddresses);
@@ -642,9 +645,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
     console.log("addresses...", addresses);
 
@@ -689,9 +692,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
 
@@ -709,7 +712,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
 
     payload.CRCouncilMemberSignature = councilMemberSignature;
-    console.log("payload...", payload);
 
     const inputs = [
       {
@@ -754,9 +756,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     let publicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -793,9 +795,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
     payload.Signature = signature;
@@ -810,7 +812,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       passwd
     );
     payload.CRCouncilMemberSignature = councilMemberSignature;
-    console.log("payload...", payload);
 
     const inputs = [
       {
@@ -857,9 +858,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     let publicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -898,9 +899,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
 
@@ -913,7 +914,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       passwd
     );
     payload.CRCouncilMemberSignature = councilMemberSignature;
-    console.log("payload...", payload);
 
     const inputs = [
       {
@@ -958,9 +958,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       passwd,
       singleAddress
     );
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     let publicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -1000,9 +1000,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
 
@@ -1062,9 +1062,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     let publicKey = "";
     const pubKeys = subWallet.getPublicKeys(0, 1, false);
@@ -1107,9 +1107,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
 
@@ -1187,9 +1187,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const crSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const crSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const councilMemberAddresses = crSubWallet.getAddresses(0, 1, false);
 
@@ -1280,9 +1280,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const sgSubWallet: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const sgSubWallet = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const sgAddresses = sgSubWallet.getAddresses(0, 1, false);
 
@@ -1336,9 +1336,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       singleAddress
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     let ownerPublicKey =
       "0287de855c87579ee3821ff4a3a3dc9072ca727cb53316d54f6d2f1709e821c5af";
@@ -1399,9 +1399,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       passwd,
       singleAddress
     );
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
     const inputs = [
       {

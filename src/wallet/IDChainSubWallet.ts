@@ -65,7 +65,7 @@ export class IDChainSubWallet extends SidechainSubWallet {
    */
 
   createIDTransaction(
-    inputsJson: UTXOInput[],
+    inputs: UTXOInput[],
     payloadJson: DIDInfoJson,
     memo = "",
     fee = "10000"
@@ -78,7 +78,7 @@ export class IDChainSubWallet extends SidechainSubWallet {
     // ArgInfo("fee: {}", fee);
 
     let utxo = new UTXOSet();
-    this.UTXOFromJson(utxo, inputsJson);
+    this.UTXOFromJson(utxo, inputs);
 
     let userFee = new BigNumber(fee);
 
@@ -248,7 +248,7 @@ export class IDChainSubWallet extends SidechainSubWallet {
    * Sign message with private key of did.
    * @param DIDOrCID will sign the message with public key of this did/cid.
    * @param message to be signed.
-   * @param passwd pay password.
+   * @param payPassword password.
    * @return If success, signature will be returned.
    */
   async sign(

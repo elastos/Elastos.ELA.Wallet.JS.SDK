@@ -60,9 +60,9 @@ describe("Standard Wallet Payment Tests", () => {
     );
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
     expect(addresses[0]).toBe("EUL3gVZCdJaj6oRfGfzYu8v41ecZvE1Unz");
 

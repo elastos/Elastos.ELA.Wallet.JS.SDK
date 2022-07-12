@@ -64,9 +64,9 @@ describe("MultiSig Wallet Payment Tests", () => {
     expect(masterWallet).toBeInstanceOf(MasterWallet);
 
     const xPubKey = masterWallet.getPubKeyInfo().xPubKeyHDPM;
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const addresses = subWallet.getAddresses(0, 1, false);
     expect(addresses[0]).toEqual("EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L");
@@ -83,9 +83,9 @@ describe("MultiSig Wallet Payment Tests", () => {
     expect(masterWallet1).toBeInstanceOf(MasterWallet);
 
     const xPubKey1 = masterWallet1.getPubKeyInfo().xPubKeyHDPM;
-    const subWallet1: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const subWallet1 = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const addresses1 = subWallet1.getAddresses(0, 1, false);
     expect(addresses1[0]).toEqual("EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw");
@@ -101,9 +101,9 @@ describe("MultiSig Wallet Payment Tests", () => {
     );
 
     const xPubKey2 = masterWallet2.getPubKeyInfo().xPubKeyHDPM;
-    const subWallet2: MainchainSubWallet = await masterWallet2.createSubWallet(
+    const subWallet2 = (await masterWallet2.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
 
     const addresses2 = subWallet2.getAddresses(0, 1, false);
     expect(addresses2[0]).toEqual("EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo");
@@ -121,9 +121,9 @@ describe("MultiSig Wallet Payment Tests", () => {
         singleAddress
       );
 
-    const subWallet3: MainchainSubWallet = await masterWallet3.createSubWallet(
+    const subWallet3 = (await masterWallet3.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses3 = subWallet3.getAddresses(0, 1, false);
     expect(addresses3[0]).toEqual("8XPn7aHnFos8y5aaddi5ciNKmzNVDoaF5n");
 
@@ -199,9 +199,9 @@ describe("MultiSig Wallet Payment Tests", () => {
       "xpub68yaz1bGWJkFwmWwotAyWXrWdMuQLnjzhs2wEAFtWuVcqpRBnXfLttDaEkP4YtwyPFBf2eAjHk7kjpAUnn7gzkcwfeznsN6F9LqRSFdfEKx"
     );
 
-    const subWallet: MainchainSubWallet = await masterWallet.createSubWallet(
+    const subWallet = (await masterWallet.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet.getAddresses(0, 3, false);
 
     const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
@@ -213,9 +213,9 @@ describe("MultiSig Wallet Payment Tests", () => {
       singleAddress
     );
 
-    const subWallet1: MainchainSubWallet = await masterWallet1.createSubWallet(
+    const subWallet1 = (await masterWallet1.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet1.getAddresses(0, 3, false);
 
     const xPubKey1 = masterWallet1.getPubKeyInfo().xPubKeyHDPM;
@@ -232,9 +232,9 @@ describe("MultiSig Wallet Payment Tests", () => {
       singleAddress
     );
 
-    const subWallet2: MainchainSubWallet = await masterWallet2.createSubWallet(
+    const subWallet2 = (await masterWallet2.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     subWallet2.getAddresses(0, 3, false);
 
     const xPubKey2 = masterWallet2.getPubKeyInfo().xPubKeyHDPM;
@@ -256,9 +256,9 @@ describe("MultiSig Wallet Payment Tests", () => {
         false
       );
 
-    const subWallet3: MainchainSubWallet = await masterWallet3.createSubWallet(
+    const subWallet3 = (await masterWallet3.createSubWallet(
       "ELA"
-    );
+    )) as MainchainSubWallet;
     const addresses3 = subWallet3.getAddresses(0, 3, false);
 
     const xPubKey3 = masterWallet3.getPubKeyInfo().xPubKeyHDPM;

@@ -44,10 +44,11 @@ import { PublicKeyRing } from "../walletcore/publickeyring";
 import { EthereumNetworks } from "./EthereumNetwork";
 import { IDChainSubWallet } from "./IDChainSubWallet";
 import { MainchainSubWallet } from "./MainchainSubWallet";
-import { SubWallet } from "./SubWallet";
+
+export type SubWalletInstance = MainchainSubWallet | IDChainSubWallet;
 
 type WalletMap = {
-  [id: string]: SubWallet;
+  [id: string]: SubWalletInstance;
 };
 
 export class MasterWallet {
@@ -334,10 +335,10 @@ export class MasterWallet {
    * Get wallet existing sub wallets.
    * @return existing sub wallets by array.
    */
-  public getAllSubWallets(): SubWallet[] {
+  public getAllSubWallets(): SubWalletInstance[] {
     //ArgInfo("{} {}", _id, GetFunName());
 
-    let subWallets: SubWallet[] = Object.values(this._createdWallets);
+    let subWallets: SubWalletInstance[] = Object.values(this._createdWallets);
 
     let result = "";
     for (let i = 0; i < subWallets.length; ++i)
@@ -352,7 +353,7 @@ export class MasterWallet {
    * @param chainID unique identity of a sub wallet. Chain id should not be empty.
    * @return If success will return a sub wallet interface.
    */
-  public getSubWallet(chainID: string): SubWallet {
+  public getSubWallet(chainID: string): SubWalletInstance {
     //ArgInfo("{} {}", _id, GetFunName());
     //ArgInfo("chainID: {}", chainID);
 
@@ -385,13 +386,9 @@ export class MasterWallet {
       if (chainID == "ELA") {
         return subWallet as MainchainSubWallet;
       } else if (chainID == "IDChain") {
-        // return subWallet as IDChainSubWallet;
-      } else if (chainID == "BTC") {
-        // return subWallet as BTCSubWallet;
+        return subWallet as IDChainSubWallet;
       } else if (chainID.indexOf("ETH") !== -1) {
         // return subWallet as EthSidechainSubWallet;
-      } else if (chainID == "XRP") {
-        // return subWallet as RippleSubWallet;
       }
     }
 
@@ -632,7 +629,7 @@ export class MasterWallet {
         continue;
       }
 
-      let subWallet: SubWallet = this.subWalletFactoryMethod(
+      let subWallet = this.subWalletFactoryMethod(
         info[i],
         chainConfig,
         this,
@@ -657,15 +654,9 @@ export class MasterWallet {
     if (info.getChainID() == "ELA") {
       return new MainchainSubWallet(info, config, parent, netType);
     } else if (info.getChainID() == "IDChain") {
-      // return new IDChainSubWallet(info, config, parent, netType);
-    } else if (info.getChainID() == "BTC") {
-      // TODO
-      // return new BTCSubWallet(info, config, parent, netType);
+      return new IDChainSubWallet(info, config, parent, netType);
     } else if (info.getChainID().indexOf("ETH") !== -1) {
-      // TODO
       // return new EthSidechainSubWallet(info, config, parent, netType);
-      // } else if (info.getChainID() == "XRP") {
-      // return new RippleSubWallet(info, config, parent, netType);
     } else {
       ErrorChecker.throwLogicException(
         Error.Code.InvalidChainID,
@@ -805,13 +796,11 @@ export class MasterWallet {
   }
 
   flushData() {
-    this._createdWallets = {};
     const keys = Object.keys(this._createdWallets);
     for (let i = 0; i < keys.length; i++) {
       const subWallet = this._createdWallets[keys[i]];
       if (subWallet !== null) {
-        // TODO
-        // subWallet.flushData();
+        subWallet.flushData();
       }
     }
   }

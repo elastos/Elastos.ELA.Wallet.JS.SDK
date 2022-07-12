@@ -1,7 +1,8 @@
 import { BrowserLocalStorage } from "./persistence/implementations/BrowserLocalStorage";
 import { WalletStorage } from "./persistence/WalletStorage";
 import { MainchainSubWallet } from "./wallet/MainchainSubWallet";
-import { MasterWallet } from "./wallet/MasterWallet";
+import { IDChainSubWallet } from "./wallet/IDChainSubWallet";
+import { MasterWallet, SubWalletInstance } from "./wallet/MasterWallet";
 import { MasterWalletManager } from "./wallet/MasterWalletManager";
 import { SubWallet } from "./wallet/SubWallet";
 import { HDKey, KeySpec } from "./walletcore/hdkey";
@@ -50,7 +51,8 @@ export {
   WalletErrorException,
   CRCProposalType,
   VoteResult,
-  CRCProposalTrackingType
+  CRCProposalTrackingType,
+  IDChainSubWallet
 };
 
 export type {
@@ -77,5 +79,6 @@ export type {
   UpgradeCodeProposalInfo,
   CRCProposalReviewInfo,
   CRCProposalTrackingInfo,
-  CRCProposalWithdrawInfo
+  CRCProposalWithdrawInfo,
+  SubWalletInstance
 };

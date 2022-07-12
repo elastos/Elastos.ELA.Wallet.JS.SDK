@@ -16,11 +16,10 @@ import {
   OutputArray,
   TransactionOutput
 } from "../transactions/TransactionOutput";
-import { bytes_t, size_t, uint256, uint32_t, uint8_t } from "../types";
+import { bytes_t, size_t, uint32_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { UTXOSet } from "./UTXO";
 import { CHAINID_MAINCHAIN } from "./WalletCommon";
-import { DeterministicKey } from "../walletcore/deterministickey";
 import {
   AccountBasicInfo,
   SignType as AccountSignType
@@ -32,16 +31,12 @@ export class Wallet extends Lockable {
   protected _walletID: string;
   protected _chainID: string;
   protected _subAccount: SubAccount;
-  //protected  _database: DatabaseManagerPtr;
 
   constructor(walletID: string, chainID: string, subAccount: SubAccount) {
     super();
     this._walletID = walletID + ":" + chainID;
     this._chainID = chainID;
     this._subAccount = subAccount;
-    //_database(database) {
-
-    //std::vector<std::string> txHashDPoS, txHashCRC, txHashProposal, txHashDID;
 
     this.loadUsedAddress();
   }

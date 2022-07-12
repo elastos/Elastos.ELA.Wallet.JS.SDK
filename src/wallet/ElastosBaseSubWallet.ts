@@ -84,14 +84,6 @@ export class ElastosBaseSubWallet
       "unsupport to create elastos based wallet"
     );
 
-    // TODO boost::filesystem::path subWalletDBPath = _parent->GetDataPath();
-    // TODO subWalletDBPath /= _info->GetChainID() + ".db";
-
-    /* TODO - replace the spvservice
-      _walletManager = WalletManagerPtr(
-      new SpvService(_parent->GetID(), _info->GetChainID(), subAccount, subWalletDBPath,
-      _config, netType)); */
-
     let chainID = info.getChainID();
     if (
       chainID != CHAINID_MAINCHAIN &&
@@ -108,13 +100,7 @@ export class ElastosBaseSubWallet
     this._wallet = new Wallet(parent.getID(), chainID, subAccount);
   }
 
-  /*const WalletManagerPtr &ElastosBaseSubWallet::GetWalletManager() const {
-        return _walletManager;
-    }
-
-    void ElastosBaseSubWallet::FlushData() {
-        _walletManager->DatabaseFlush();
-    }*/
+  flushData() {}
 
   destroy() {}
 
