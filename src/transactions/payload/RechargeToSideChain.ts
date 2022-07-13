@@ -8,17 +8,24 @@ import {
   size_t,
   uint8_t,
   bytes_t,
-  json,
   sizeof_uint256_t,
   uint256
 } from "../../types";
 import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
+
 export enum RechargeToSideChainVersion {
   V0,
   V1
 }
+
+export type RechargeToSideChainInfo = {
+  MerkleProof?: string;
+  MainChainTransaction?: string;
+  MainChainTxHash?: string;
+};
 
 export class RechargeToSideChain extends Payload {
   private _merkeProof: bytes_t;
@@ -110,14 +117,14 @@ export class RechargeToSideChain extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j = {};
+  toJson(version: uint8_t): RechargeToSideChainInfo {
+    let j = <RechargeToSideChainInfo>{};
 
     if (version == RechargeToSideChainVersion.V0) {
       j["MerkleProof"] = this._merkeProof.toString("hex");
       j["MainChainTransaction"] = this._mainChainTransaction.toString("hex");
     } else if (version == RechargeToSideChainVersion.V1) {
-      j["MainChainTxHash"] = this._mainChainTxHash.toString(16);
+      j["MainChainTxHash"] = get32BytesOfBNAsHexString(this._mainChainTxHash);
     } else {
       Log.error(
         "toJson: invalid recharge to side chain payload version = {}",
@@ -128,15 +135,15 @@ export class RechargeToSideChain extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: RechargeToSideChainInfo, version: uint8_t) {
     if (version == RechargeToSideChainVersion.V0) {
-      this._merkeProof = Buffer.from(j["MerkleProof"] as string, "hex");
+      this._merkeProof = Buffer.from(j["MerkleProof"], "hex");
       this._mainChainTransaction = Buffer.from(
-        j["MainChainTransaction"] as string,
+        j["MainChainTransaction"],
         "hex"
       );
     } else if (version == RechargeToSideChainVersion.V1) {
-      this._mainChainTxHash = new BigNumber(j["MainChainTxHash"] as string, 16);
+      this._mainChainTxHash = new BigNumber(j["MainChainTxHash"], 16);
     } else {
       Log.error(
         "fromJson: invalid recharge to side chain payload version = {}",

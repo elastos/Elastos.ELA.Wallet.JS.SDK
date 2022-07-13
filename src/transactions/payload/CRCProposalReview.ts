@@ -37,7 +37,7 @@ import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
 import { reverseHashString } from "../../common/utils";
-import { getBNHexString } from "../../common/bnutils";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 
 export const CRCProposalReviewDefaultVersion = 0;
 export const CRCProposalReviewVersion01 = 0x01;
@@ -236,13 +236,9 @@ export class CRCProposalReview extends Payload {
 
   toJsonUnsigned(version: uint8_t) {
     let j = <CRCProposalReviewInfo>{};
-    j[JsonKeyProposalHash] = reverseHashString(
-      getBNHexString(this._proposalHash)
-    );
+    j[JsonKeyProposalHash] = get32BytesOfBNAsHexString(this._proposalHash);
     j[JsonKeyVoteResult] = this._voteResult;
-    j[JsonKeyOpinionHash] = reverseHashString(
-      getBNHexString(this._opinionHash)
-    );
+    j[JsonKeyOpinionHash] = get32BytesOfBNAsHexString(this._opinionHash);
     if (version >= CRCProposalReviewVersion01) {
       // sync with dev branch of wallet c++ sdk
       j[JsonKeyOpinionData] = this._opinionData.toString("hex");

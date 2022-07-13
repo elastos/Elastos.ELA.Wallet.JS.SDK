@@ -7,7 +7,6 @@ import {
   size_t,
   uint8_t,
   bytes_t,
-  json,
   sizeof_uint256_t,
   uint256,
   uint32_t,
@@ -16,6 +15,14 @@ import {
 import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
+
+export type SideChainPowInfo = {
+  SideBlockHash: string;
+  SideGenesisHash: string;
+  BlockHeight: number;
+  SignedData: string;
+};
 
 export class SideChainPow extends Payload {
   private _sideBlockHash: uint256;
@@ -119,22 +126,22 @@ export class SideChainPow extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j = {};
+  toJson(version: uint8_t): SideChainPowInfo {
+    let j = <SideChainPowInfo>{};
 
-    j["SideBlockHash"] = this._sideBlockHash.toString(16);
-    j["SideGenesisHash"] = this._sideGenesisHash.toString(16);
+    j["SideBlockHash"] = get32BytesOfBNAsHexString(this._sideBlockHash);
+    j["SideGenesisHash"] = get32BytesOfBNAsHexString(this._sideGenesisHash);
     j["BlockHeight"] = this._blockHeight;
     j["SignedData"] = this._signedData.toString("hex");
 
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._sideBlockHash = new BigNumber(j["SideBlockHash"] as string, 16);
-    this._sideGenesisHash = new BigNumber(j["SideGenesisHash"] as string, 16);
-    this._blockHeight = j["BlockHeight"] as number;
-    this._signedData = Buffer.from(j["SignedData"] as string, "hex");
+  fromJson(j: SideChainPowInfo, version: uint8_t) {
+    this._sideBlockHash = new BigNumber(j["SideBlockHash"], 16);
+    this._sideGenesisHash = new BigNumber(j["SideGenesisHash"], 16);
+    this._blockHeight = j["BlockHeight"];
+    this._signedData = Buffer.from(j["SignedData"], "hex");
   }
 
   copyFromPayload(payload: Payload) {

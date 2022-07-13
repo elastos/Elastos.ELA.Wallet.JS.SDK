@@ -233,7 +233,7 @@ export class Address {
     did: boolean
   ) {
     ErrorChecker.checkLogic(
-      m > pubkeys.length || m == 0,
+      typeof m !== "number" || m > pubkeys.length || m == 0,
       Error.Code.MultiSignersCount,
       "Invalid m"
     );

@@ -25,7 +25,7 @@ import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
 import { ELAMessage } from "../ELAMessage";
-import { bytes_t, size_t, uint256, uint8_t } from "../types";
+import { bytes_t, size_t, uint8_t } from "../types";
 import { OP_1, SignType } from "../walletcore/Address";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 
@@ -61,7 +61,7 @@ export class Program extends ELAMessage implements JsonSerializer {
     return program;
   }
 
-  public verifySignature(md: uint256): boolean {
+  public verifySignature(md: string): boolean {
     let signatureCount: uint8_t = 0;
     let publicKeys: bytes_t[] = [];
 
@@ -79,11 +79,7 @@ export class Program extends ELAMessage implements JsonSerializer {
         let publicKey = publicKeys[i];
         if (
           signature &&
-          EcdsaSigner.verify(
-            publicKey,
-            signature,
-            Buffer.from(md.toString(16), "hex")
-          )
+          EcdsaSigner.verify(publicKey, signature, Buffer.from(md, "hex"))
         ) {
           verified = true;
           break;
@@ -120,7 +116,7 @@ export class Program extends ELAMessage implements JsonSerializer {
     return true;
   }
 
-  public getSignedInfo(md: uint256): SignedInfo {
+  public getSignedInfo(md: string): SignedInfo {
     let info = <SignedInfo>{};
     let publicKeys: bytes_t[] = [];
 
@@ -137,13 +133,7 @@ export class Program extends ELAMessage implements JsonSerializer {
     while (signature) {
       for (let i = 0; i < publicKeys.length; ++i) {
         let publicKey = publicKeys[i];
-        if (
-          EcdsaSigner.verify(
-            publicKey,
-            signature,
-            Buffer.from(md.toString(16), "hex")
-          )
-        ) {
+        if (EcdsaSigner.verify(publicKey, signature, Buffer.from(md, "hex"))) {
           signers.push(publicKeys[i].toString("hex"));
           break;
         }

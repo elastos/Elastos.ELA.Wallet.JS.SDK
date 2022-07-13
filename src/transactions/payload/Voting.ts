@@ -21,6 +21,7 @@
  */
 
 import { BigNumber } from "bignumber.js";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import {
@@ -281,7 +282,7 @@ export class RenewalVotesContent {
   }
 
   fromJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
-    rvc._referKey = new BigNumber(j["ReferKey"] as string, 16);
+    rvc._referKey = new BigNumber(j["ReferKey"], 16);
     let votesWithLockTime = new VotesWithLockTime();
 
     votesWithLockTime.fromJson(j["VoteInfo"], votesWithLockTime);
@@ -289,8 +290,7 @@ export class RenewalVotesContent {
   }
 
   toJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
-    // TODO
-    j["ReferKey"] = rvc._referKey.toString(16);
+    j["ReferKey"] = get32BytesOfBNAsHexString(rvc._referKey);
     let votesWithLockTime = new VotesWithLockTime();
     let voteInfo = <VotesWithLockTimeInfo>{};
     votesWithLockTime.toJson(voteInfo, votesWithLockTime);

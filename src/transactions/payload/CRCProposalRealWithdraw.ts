@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 import BigNumber from "bignumber.js";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import { size_t, uint8_t, uint256, sizeof_uint16_t } from "../../types";
@@ -74,7 +75,7 @@ export class CRCProposalRealWithdraw extends Payload {
     let j = <CRCProposalRealWithdrawInfo>{};
 
     for (let u of this._withdrawTxHashes) {
-      jarray.push(u.toString(16));
+      jarray.push(get32BytesOfBNAsHexString(u));
     }
 
     j["WithdrawTxHashes"] = jarray;

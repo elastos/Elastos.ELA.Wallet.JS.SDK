@@ -345,7 +345,7 @@ export class SubAccount {
       "Invalid transaction program"
     );
 
-    let md: uint256 = tx.getShaData();
+    let md = tx.getShaData();
     let programs = tx.getPrograms();
     for (let i = 0; i < programs.length; ++i) {
       let publicKeys: bytes_t[] = [];
@@ -377,11 +377,7 @@ export class SubAccount {
         signature = verifyStream.readVarBytes(signature);
         while (signature) {
           ErrorChecker.checkLogic(
-            EcdsaSigner.verify(
-              publicKey,
-              signature,
-              Buffer.from(md.toString(16), "hex")
-            ),
+            EcdsaSigner.verify(publicKey, signature, Buffer.from(md, "hex")),
             Error.Code.AlreadySigned,
             "Already signed"
           );
@@ -391,10 +387,7 @@ export class SubAccount {
       }
 
       let privateKey: bytes_t = rs.key.getPrivateKeyBytes();
-      signature = EcdsaSigner.sign(
-        privateKey,
-        Buffer.from(md.toString(16), "hex")
-      );
+      signature = EcdsaSigner.sign(privateKey, Buffer.from(md, "hex"));
       stream.writeVarBytes(signature);
       programs[i].setParameter(stream.getBytes());
     }

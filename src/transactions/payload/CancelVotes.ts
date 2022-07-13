@@ -25,6 +25,7 @@ import { ByteStream } from "../../common/bytestream";
 import { sizeof_uint256_t, uint256, uint8_t, size_t } from "../../types";
 import { Payload } from "./Payload";
 import { Log } from "../../common/Log";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 
 export type CancelVotesInfo = {
   ReferKeys: string[];
@@ -79,7 +80,7 @@ export class CancelVotes extends Payload {
     let j = <CancelVotesInfo>{};
     let tmp = [];
     for (let i = 0; i < this._referKeys.length; ++i) {
-      tmp.push(this._referKeys[i].toString(16));
+      tmp.push(get32BytesOfBNAsHexString(this._referKeys[i]));
     }
     j["ReferKeys"] = tmp;
     return j;

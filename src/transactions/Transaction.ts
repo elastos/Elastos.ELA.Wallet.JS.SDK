@@ -62,6 +62,8 @@ import { CRCProposalWithdraw } from "./payload/CRCProposalWithdraw";
 import { CRCProposalRealWithdraw } from "./payload/CRCProposalRealWithdraw";
 import { CRCAssetsRectify } from "./payload/CRCAssetsRectify";
 import { CRCouncilMemberClaimNode } from "./payload/CRCouncilMemberClaimNode";
+import { get32BytesOfBNAsHexString } from "../common/bnutils";
+import { reverseHashString } from "../common/utils";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -319,12 +321,10 @@ export class Transaction {
 
   // returns the transaction hash in the same byte order representation as chain transaction ids
   public getHashString(): string {
-    const hash = this.getHash().toString(16);
+    // Don't convert a BigNumber hash to a hex string directly because the hash string could miss the leading zeros
+    let hash = get32BytesOfBNAsHexString(this.getHash());
     // match every two hex digits, reverse the returned array, then join the array back into a String:
-    return hash
-      .match(/[a-fA-F0-9]{2}/g)
-      .reverse()
-      .join("");
+    return reverseHashString(hash);
   }
 
   public setHash(hash: uint256) {
@@ -483,7 +483,7 @@ export class Transaction {
 
   public getSignedInfo(): SignedInfo[] {
     let info = [];
-    let md: uint256 = this.getShaData();
+    let md = this.getShaData();
 
     for (let i = 0; i < this._programs.length; ++i) {
       info.push(this._programs[i].getSignedInfo(md));
@@ -500,7 +500,7 @@ export class Transaction {
 
     if (this._programs.length == 0) return false;
 
-    let md: uint256 = this.getShaData();
+    let md = this.getShaData();
 
     for (let i = 0; i < this._programs.length; ++i) {
       if (!this._programs[i].verifySignature(md)) return false;
@@ -815,11 +815,10 @@ export class Transaction {
     );
   }
 
-  getShaData(): uint256 {
+  getShaData(): string {
     let stream = new ByteStream();
     this.serializeUnsigned(stream);
-    const str = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(str, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   initPayload(type: uint8_t): Payload {

@@ -1,6 +1,6 @@
-import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
 import { ByteStream } from "./bytestream";
+import { reverseHashString } from "./utils";
 
 /**
  * TODO - VERIFY
@@ -50,7 +50,9 @@ export const newBNFromBuffer = (buffer: Buffer): BigNumber => {
   return bytestream.readUIntOfBytesAsBN(buffer.length);
 };
 
-export const getBNHexString = (bn: BigNumber): string => {
-  let bnBytes = getBNBytes(bn);
-  return bnBytes.toString("hex");
+// Handle a 32-bytes hash with a contain number of leading zeros
+export const get32BytesOfBNAsHexString = (bn: BigNumber): string => {
+  let stream = new ByteStream();
+  stream.writeBNAsUIntOfSize(bn, 32);
+  return reverseHashString(stream.getBytes().toString("hex"));
 };

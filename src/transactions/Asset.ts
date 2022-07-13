@@ -180,7 +180,8 @@ export class Asset extends ELAMessage implements JsonSerializer {
       let stream = new ByteStream();
       this.serialize(stream);
       this._hash = new BigNumber(
-        SHA256.hashTwice(stream.getBytes()).toString("hex")
+        SHA256.hashTwice(stream.getBytes()).toString("hex"),
+        16
       );
     }
     return this._hash;

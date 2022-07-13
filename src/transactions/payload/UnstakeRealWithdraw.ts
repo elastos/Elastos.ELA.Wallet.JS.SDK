@@ -21,6 +21,7 @@
  */
 
 import { BigNumber } from "bignumber.js";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
@@ -101,7 +102,7 @@ export class UnstakeRealWithdraw extends Payload {
   toJson(version: uint8_t): UnstakeRealWithdrawInfo {
     let j = <UnstakeRealWithdrawInfo>{};
 
-    j["RetVotesTxHash"] = this._retVotesTxHash.toString(16);
+    j["RetVotesTxHash"] = get32BytesOfBNAsHexString(this._retVotesTxHash);
     j["StakeAddress"] = Address.newFromProgramHash(this._stakeAddress).string();
     j["Value"] = this._value.toString();
     return j;

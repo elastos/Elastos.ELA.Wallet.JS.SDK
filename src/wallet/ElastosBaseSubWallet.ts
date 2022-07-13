@@ -24,6 +24,7 @@ import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import { AccountBasicInfo } from "../account/Account";
 import { PublickeysInfo, SubAccount } from "../account/SubAccount";
+import { get32BytesOfBNAsHexString } from "../common/bnutils";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { ChainConfig } from "../config";
@@ -344,7 +345,6 @@ export class ElastosBaseSubWallet
     // ArgInfo("tx: {}", tx.dump());
 
     let txn: Transaction = this.decodeTx(tx);
-    console.log("convertToRawTransaction txn...", txn);
     let stream = new ByteStream();
     txn.serialize(stream);
     let rawtx: string = stream.getBytes().toString("hex");
@@ -359,7 +359,7 @@ export class ElastosBaseSubWallet
     tx.serialize(stream);
     const hex = stream.getBytes();
     result["Algorithm"] = "base64";
-    result["ID"] = tx.getHash().toString(16).slice(0, 8);
+    result["ID"] = get32BytesOfBNAsHexString(tx.getHash()).slice(0, 8);
     result["Data"] = hex.toString("base64");
     result["ChainID"] = this.getChainID();
     result["Fee"] = tx.getFee().toString();
@@ -434,7 +434,7 @@ export class ElastosBaseSubWallet
 
   protected UTXOFromJson(utxo: UTXOSet, j: UTXOInput[]): boolean {
     for (let item of j) {
-      let utxoJson = item as UTXOInput;
+      let utxoJson = item;
       if (
         !("TxHash" in utxoJson) ||
         !("Index" in utxoJson) ||
@@ -447,17 +447,17 @@ export class ElastosBaseSubWallet
         );
       }
 
-      let hash: uint256 = new BigNumber(utxoJson["TxHash"] as string, 16);
+      let hash: uint256 = new BigNumber(utxoJson["TxHash"], 16);
       let n: uint16_t = utxoJson["Index"] as uint16_t;
 
-      let address = Address.newFromAddressString(utxoJson["Address"] as string);
+      let address = Address.newFromAddressString(utxoJson["Address"]);
       ErrorChecker.checkParam(
         !address.valid(),
         Error.Code.InvalidArgument,
         "invalid address of inputs"
       );
 
-      let amount = new BigNumber(utxoJson["Amount"] as string); // Base 10
+      let amount = new BigNumber(utxoJson["Amount"]); // Base 10
       ErrorChecker.checkParam(
         amount.lt(0),
         Error.Code.InvalidArgument,
@@ -475,16 +475,14 @@ export class ElastosBaseSubWallet
     outputsJson: OutputItem[]
   ): boolean {
     for (let outputJson of outputsJson) {
-      let amount = new BigNumber(outputJson["Amount"] as string);
+      let amount = new BigNumber(outputJson["Amount"]);
       ErrorChecker.checkParam(
         amount.lt(0),
         Error.Code.InvalidArgument,
         "invalid amount of outputs"
       );
 
-      let address = Address.newFromAddressString(
-        outputJson["Address"] as string
-      );
+      let address = Address.newFromAddressString(outputJson["Address"]);
       ErrorChecker.checkParam(
         !address.valid(),
         Error.Code.InvalidArgument,

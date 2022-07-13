@@ -61,7 +61,7 @@ export class DPoSV2ClaimReward extends Payload {
 
   toJsonUnsigned(version: uint8_t) {
     let j = <DPoSV2ClaimRewardInfo>{};
-    j["Amount"] = this._amount.toString(16);
+    j["Amount"] = this._amount.toString();
     return j;
   }
 

@@ -21,7 +21,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
-import { getBNHexString } from "../../common/bnutils";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
@@ -254,7 +254,7 @@ export class UpgradeCodeInfo {
     j["WorkingHeight"] = this._workingHeight;
     j["NodeVersion"] = this._nodeVersion;
     j["NodeDownloadUrl"] = this._nodeDownloadUrl;
-    j["NodeBinHash"] = this._nodeBinHash.toString(16);
+    j["NodeBinHash"] = get32BytesOfBNAsHexString(this._nodeBinHash);
     j["Force"] = this._force;
     return j;
   }
@@ -349,7 +349,7 @@ export class SideChainInfo {
     let j = <SideChainInfoJson>{};
     j["SideChainName"] = this._sideChainName;
     j["MagicNumber"] = this._magicNumber;
-    j["GenesisHash"] = this._genesisHash.toString(16);
+    j["GenesisHash"] = get32BytesOfBNAsHexString(this._genesisHash);
     j["ExchangeRate"] = this._exchangeRate.dividedBy(SELA_PER_ELA).toNumber();
     j["EffectiveHeight"] = this._effectiveHeight;
     j["ResourcePath"] = this._resourcePath;
@@ -766,18 +766,16 @@ export class CRCProposal extends Payload {
     return this._crCouncilMemberSignature;
   }
 
-  digestNormalOwnerUnsigned(version: uint8_t): uint256 {
+  digestNormalOwnerUnsigned(version: uint8_t) {
     let stream = new ByteStream();
     this.serializeOwnerUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestNormalCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestNormalCRCouncilMemberUnsigned(version: uint8_t) {
     let stream = new ByteStream();
     this.serializeCRCouncilMemberUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   estimateSize(version: uint8_t): size_t {
@@ -1150,12 +1148,14 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
 
-    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
+    j[JsonKeyTargetProposalHash] = get32BytesOfBNAsHexString(
+      this._targetProposalHash
+    );
     j[JsonKeyNewRecipient] = this._newRecipient.string();
     j[JsonKeyNewOwnerPublicKey] = this._newOwnerPublicKey.toString("hex");
 
@@ -1242,7 +1242,7 @@ export class CRCProposal extends Payload {
     }
 
     try {
-      const data = this.digestChangeOwnerUnsigned(version).toString(16);
+      const data = this.digestChangeOwnerUnsigned(version);
       if (
         !EcdsaSigner.verify(
           this._ownerPublicKey,
@@ -1277,18 +1277,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestChangeOwnerUnsigned(version: uint8_t): uint256 {
+  digestChangeOwnerUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeChangeOwnerUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestChangeOwnerCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeChangeOwnerCRCouncilMemberUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // terminate proposal
@@ -1423,12 +1421,14 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
 
-    j[JsonKeyTargetProposalHash] = this._targetProposalHash.toString(16);
+    j[JsonKeyTargetProposalHash] = get32BytesOfBNAsHexString(
+      this._targetProposalHash
+    );
     return j;
   }
 
@@ -1509,7 +1509,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(data.toString(16), "hex")
+          Buffer.from(data, "hex")
         )
       ) {
         Log.error("verify signature fail");
@@ -1528,19 +1528,17 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestTerminateProposalOwnerUnsigned(version: uint8_t): uint256 {
+  digestTerminateProposalOwnerUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeTerminateProposalUnsigned(stream, version);
 
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestTerminateProposalCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestTerminateProposalCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeTerminateProposalCRCouncilMemberUnsigned(stream, version);
-    const rs = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-    return new BigNumber(rs, 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // change secretary general
@@ -1694,7 +1692,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -1964,7 +1962,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -2219,7 +2217,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -2460,7 +2458,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = reverseHashString(getBNHexString(this._draftHash));
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -2538,7 +2536,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(rs.toString(16), "hex")
+          Buffer.from(rs, "hex")
         )
       ) {
         Log.error("change custom id fee verify owner signature fail");
@@ -2557,18 +2555,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestChangeCustomIDFeeOwnerUnsigned(version: uint8_t): uint256 {
+  digestChangeCustomIDFeeOwnerUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeChangeCustomIDFeeUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestChangeCustomIDFeeCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   serializeRegisterSidechainUnsigned(stream: ByteStream, version: uint8_t) {
@@ -2696,7 +2692,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -2920,7 +2916,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     j[JsonKeyUpgradeCodeInfo] = this._upgradeCodeInfo.toJson(version);
 
     return j;
@@ -2994,10 +2990,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(
-            this.digestUpgradeCodeUnsigned(version).toString(16),
-            "hex"
-          )
+          Buffer.from(this.digestUpgradeCodeUnsigned(version), "hex")
         )
       ) {
         Log.error("change upgrade code verify owner signature fail");
@@ -3016,18 +3009,16 @@ export class CRCProposal extends Payload {
     return true;
   }
 
-  digestUpgradeCodeUnsigned(version: uint8_t): uint256 {
+  digestUpgradeCodeUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeUpgradeCodeUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
-  digestUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): uint256 {
+  digestUpgradeCodeCRCouncilMemberUnsigned(version: uint8_t): string {
     let stream = new ByteStream();
     this.serializeUpgradeCodeCRCouncilMemberUnsigned(stream, version);
-    let rs = SHA256.encodeToBuffer(stream.getBytes());
-    return new BigNumber(rs.toString("hex"), 16);
+    return SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
   }
 
   // top serialize or deserialize
@@ -3136,7 +3127,7 @@ export class CRCProposal extends Payload {
     j[JsonKeyType] = this._type;
     j[JsonKeyCategoryData] = this._categoryData;
     j[JsonKeyOwnerPublicKey] = this._ownerPublicKey.toString("hex");
-    j[JsonKeyDraftHash] = this._draftHash.toString(16);
+    j[JsonKeyDraftHash] = get32BytesOfBNAsHexString(this._draftHash);
     if (version >= CRCProposalVersion01) {
       j[JsonKeyDraftData] = this.encodeDraftData(this._draftData);
     }
@@ -3331,10 +3322,7 @@ export class CRCProposal extends Payload {
         !EcdsaSigner.verify(
           this._ownerPublicKey,
           this._signature,
-          Buffer.from(
-            this.digestNormalOwnerUnsigned(version).toString(16),
-            "hex"
-          )
+          Buffer.from(this.digestNormalOwnerUnsigned(version), "hex")
         )
       ) {
         Log.error("verify owner signature fail");
@@ -3572,10 +3560,12 @@ export class CRCProposal extends Payload {
       Error.Code.ProposalContentTooLarge,
       "proposal origin content too large"
     );
-    let draftHashDecoded = SHA256.hashTwice(draftDataDecoded);
-    let reverseDraftHash = getBNHexString(draftHash);
+    let draftHashDecoded = reverseHashString(
+      SHA256.hashTwice(draftDataDecoded).toString("hex")
+    );
+
     ErrorChecker.checkParam(
-      reverseDraftHash != draftHashDecoded.toString("hex"),
+      !draftHash.eq(new BigNumber(draftHashDecoded, 16)),
       Error.Code.ProposalHashNotMatch,
       "proposal hash not match"
     );

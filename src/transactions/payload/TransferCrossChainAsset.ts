@@ -153,13 +153,10 @@ export class TransferCrossChainAsset extends Payload {
 
   serialize(ostream: ByteStream, version: uint8_t) {
     if (version == TransferCrossChainVersion) {
-      // size_t len = _info.size();
-      // ostream.WriteVarUint((uint64_t) len);
       ostream.writeVarUInt(this._info.length);
       for (let i = 0; i < this._info.length; ++i) {
         ostream.writeVarString(this._info[i].getCrossChainAddress());
         ostream.writeVarUInt(this._info[i].getOutputIndex());
-        // ostream.WriteUint64(_info[i]._crossChainAmount.getUint64());
         ostream.writeBNAsUIntOfSize(this._info[i].getCrossChainAmount(), 8);
       }
     } else if (version == TransferCrossChainVersionV1) {

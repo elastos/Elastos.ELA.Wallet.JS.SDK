@@ -45,7 +45,7 @@ export class CRCouncilMemberClaimNode extends Payload {
   private _nodePublicKey: bytes_t;
   private _crCouncilMemberDID: Address;
   private _crCouncilMemberSignature: bytes_t;
-  private _digestUnsigned: uint256;
+  private _digestUnsigned: string;
 
   estimateSize(version: uint8_t): size_t {
     let stream = new ByteStream();
@@ -207,12 +207,12 @@ export class CRCouncilMemberClaimNode extends Payload {
     return true;
   }
 
-  digestUnsigned(version: uint8_t): uint256 {
+  digestUnsigned(version: uint8_t): string {
     if (!this._digestUnsigned) {
       let stream = new ByteStream();
       this.serializeUnsigned(stream, version);
       let digest = SHA256.encodeToBuffer(stream.getBytes()).toString("hex");
-      this._digestUnsigned = new BigNumber(digest, 16);
+      this._digestUnsigned = digest;
     }
 
     return this._digestUnsigned;

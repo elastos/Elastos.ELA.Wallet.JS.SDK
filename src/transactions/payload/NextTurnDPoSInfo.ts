@@ -180,10 +180,10 @@ export class NextTurnDPoSInfo extends Payload {
   }
 
   fromJson(j: NextTurnDPoSInfoJson, version: uint8_t) {
-    this._workingHeight = j["WorkingHeight"] as number;
+    this._workingHeight = j["WorkingHeight"];
 
-    let crPubKeys = j["CRPublicKeys"] as [];
-    let dposPubKeys = j["DPoSPublicKeys"] as [];
+    let crPubKeys = j["CRPublicKeys"];
+    let dposPubKeys = j["DPoSPublicKeys"];
 
     for (let i = 0; i != crPubKeys.length; ++i) {
       let pubkey = Buffer.from(crPubKeys[i], "hex");

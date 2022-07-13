@@ -1,14 +1,21 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-import { Buffer } from "buffer";
-import { json, size_t, uint8_t, uint64_t, bytes_t } from "../../types";
+
+import { size_t, uint8_t, uint64_t, bytes_t } from "../../types";
 import { Payload } from "./Payload";
 import { Log } from "../../common/Log";
 import { Asset, AssetInfo, MaxPrecision } from "../Asset";
 import { uint168 } from "../../common/uint168";
 import { ByteStream } from "../../common/bytestream";
 import BigNumber from "bignumber.js";
+import { Address } from "../../walletcore/Address";
+
+export type RegisterAssetInfo = {
+  Asset: AssetInfo;
+  Amount: string;
+  Controller: string;
+};
 
 export class RegisterAsset extends Payload {
   private _asset: Asset;
@@ -47,7 +54,7 @@ export class RegisterAsset extends Payload {
 
   serialize(ostream: ByteStream, version: uint8_t) {
     this._asset.serialize(ostream);
-    ostream.writeBigNumber(this._amount);
+    ostream.writeBNAsUIntOfSize(this._amount, 8);
     ostream.writeBytes(this._controller.bytes());
   }
 
@@ -56,11 +63,13 @@ export class RegisterAsset extends Payload {
       Log.error("Payload register asset deserialize asset fail");
       return false;
     }
+
     this._amount = istream.readUIntOfBytesAsBN(8);
     if (!this._amount) {
       Log.error("Payload register asset deserialize amount fail");
       return false;
     }
+
     let controller: bytes_t;
     controller = istream.readBytes(controller, 21);
     if (!controller) {
@@ -71,21 +80,23 @@ export class RegisterAsset extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t): json {
-    let j: json = {};
+  toJson(version: uint8_t): RegisterAssetInfo {
+    let j = <RegisterAssetInfo>{};
 
     j["Asset"] = this._asset.toJson();
     j["Amount"] = this._amount.toString();
-    j["Controller"] = this._controller.bytes().toString("hex");
+    j["Controller"] = Address.newFromProgramHash(this._controller).string();
 
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._asset.fromJson(j["Asset"] as AssetInfo);
-    this._amount = new BigNumber(j["Amount"] as string);
-    let buffer = Buffer.from(j["Controller"] as string, "hex");
-    this._controller = uint168.newFrom21BytesBuffer(buffer);
+  fromJson(j: RegisterAssetInfo, version: uint8_t) {
+    this._asset = new Asset();
+    this._asset.fromJson(j["Asset"]);
+    this._amount = new BigNumber(j["Amount"]);
+    this._controller = Address.newFromAddressString(
+      j["Controller"]
+    ).programHash();
   }
 
   copyPayload(payload: Payload) {
@@ -111,9 +122,9 @@ export class RegisterAsset extends Payload {
     try {
       const p = payload as RegisterAsset;
       return (
-        this._asset == p._asset &&
-        this._amount == p._amount &&
-        this._controller == p._controller
+        this._asset.equals(p._asset) &&
+        this._amount.eq(p._amount) &&
+        this._controller.bytes().equals(p._controller.bytes())
       );
     } catch (e) {
       Log.error("payload is not instance of RegisterAsset");

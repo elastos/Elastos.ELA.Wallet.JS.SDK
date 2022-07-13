@@ -5,7 +5,6 @@ import BigNumber from "bignumber.js";
 import {
   size_t,
   uint8_t,
-  json,
   sizeof_uint256_t,
   uint256,
   uint32_t,
@@ -14,11 +13,19 @@ import {
 import { Payload } from "./Payload";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
+
+export type WithdrawFromSideChainInfo = {
+  BlockHeight: number;
+  GenesisBlockAddress: string;
+  SideChainTransactionHash: string[];
+};
 
 export class WithdrawFromSideChain extends Payload {
   private _blockHeight: uint32_t;
   private _genesisBlockAddress: string;
   private _sideChainTransactionHash: uint256[];
+
   consturctor() {
     this._blockHeight = 0;
     this._genesisBlockAddress = "";
@@ -131,20 +138,21 @@ export class WithdrawFromSideChain extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j = {};
+  toJson(version: uint8_t): WithdrawFromSideChainInfo {
+    let j = <WithdrawFromSideChainInfo>{};
 
     j["BlockHeight"] = this._blockHeight;
     j["GenesisBlockAddress"] = this._genesisBlockAddress;
     let hashes = [];
-    for (let i = 0; i < this._sideChainTransactionHash.length; ++i)
-      hashes.push(this._sideChainTransactionHash[i].toString(16));
+    for (let i = 0; i < this._sideChainTransactionHash.length; ++i) {
+      hashes.push(get32BytesOfBNAsHexString(this._sideChainTransactionHash[i]));
+    }
     j["SideChainTransactionHash"] = hashes;
 
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
+  fromJson(j: WithdrawFromSideChainInfo, version: uint8_t) {
     this._blockHeight = j["BlockHeight"] as number;
     this._genesisBlockAddress = j["GenesisBlockAddress"] as string;
 

@@ -1024,7 +1024,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   //////////////////////////////////////////////////
-  /*                      CRC                     */
+  /*                      CRC                    */
   //////////////////////////////////////////////////
 
   /**
@@ -1478,7 +1478,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = p.digestUnsigned(version).toString(16);
+    let digest = p.digestUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -1612,9 +1612,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       "invalid payload"
     );
 
-    let digest: string = proposal
-      .digestNormalOwnerUnsigned(version)
-      .toString(16);
+    let digest: string = proposal.digestNormalOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -1668,10 +1666,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       "invalid payload"
     );
 
-    let digest: string = proposal
-      .digestNormalCRCouncilMemberUnsigned(version)
-      .toString(16);
-
+    let digest: string = proposal.digestNormalCRCouncilMemberUnsigned(version);
     // ArgInfo("r => {}", digest);
     return digest;
   }
@@ -2394,9 +2389,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestChangeOwnerUnsigned(version)
-      .toString(16);
+    let digest: string = proposal.digestChangeOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2446,9 +2439,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal
-      .digestChangeOwnerCRCouncilMemberUnsigned(version)
-      .toString(16);
+    let digest = proposal.digestChangeOwnerCRCouncilMemberUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2575,9 +2566,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestTerminateProposalOwnerUnsigned(version)
-      .toString(16);
+    let digest: string = proposal.digestTerminateProposalOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -2624,9 +2613,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest = proposal
-      .digestTerminateProposalCRCouncilMemberUnsigned(version)
-      .toString(16);
+    let digest =
+      proposal.digestTerminateProposalCRCouncilMemberUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -3092,9 +3080,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestChangeCustomIDFeeOwnerUnsigned(version)
-      .toString(16);
+    let digest: string = proposal.digestChangeCustomIDFeeOwnerUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;
@@ -3144,9 +3130,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       );
     }
 
-    let digest: string = proposal
-      .digestChangeCustomIDFeeCRCouncilMemberUnsigned(version)
-      .toString(16);
+    let digest: string =
+      proposal.digestChangeCustomIDFeeCRCouncilMemberUnsigned(version);
 
     // ArgInfo("r => {}", digest);
     return digest;

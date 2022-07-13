@@ -247,7 +247,7 @@ export class CRInfo extends Payload {
 
     j["NickName"] = this._nickName;
     j["Url"] = this._url;
-    j["Location"] = this._location.toString(16);
+    j["Location"] = this._location.toString();
     if (j["Signature"]) {
       j["Signature"] = this._signature.toString("hex");
     } else {
@@ -262,7 +262,7 @@ export class CRInfo extends Payload {
     this._did = Address.newFromAddressString(j["DID"]).programHash();
     this._nickName = j["NickName"];
     this._url = j["Url"];
-    this._location = new BigNumber(j["Location"], 16);
+    this._location = new BigNumber(j["Location"]);
     this._signature = Buffer.from(j["Signature"], "hex");
   }
 

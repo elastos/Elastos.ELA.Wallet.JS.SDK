@@ -36,7 +36,7 @@ import { Log } from "../../common/Log";
 import { Payload } from "./Payload";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { uint168 } from "../../common/uint168";
-import { getBNHexString } from "../../common/bnutils";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 
 const JsonKeyProposalHash = "ProposalHash";
 const JsonKeyOwnerPubkey = "OwnerPublicKey";
@@ -188,7 +188,7 @@ export class CRCProposalWithdraw extends Payload {
 
   toJsonUnsigned(version: uint8_t): CRCProposalWithdrawInfo {
     let j = <CRCProposalWithdrawInfo>{};
-    j[JsonKeyProposalHash] = getBNHexString(this._proposalHash);
+    j[JsonKeyProposalHash] = get32BytesOfBNAsHexString(this._proposalHash);
     j[JsonKeyOwnerPubkey] = this._ownerPubkey.toString("hex");
     if (version == CRCProposalWithdrawVersion_01) {
       j[JsonKeyRecipient] = this._recipient.string();

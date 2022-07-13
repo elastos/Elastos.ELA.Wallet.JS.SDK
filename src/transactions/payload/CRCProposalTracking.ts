@@ -34,10 +34,9 @@ import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Log } from "../../common/Log";
-import { BASE64 as Base64 } from "../../walletcore/base64";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { reverseHashString } from "../../common/utils";
-import { getBNHexString } from "../../common/bnutils";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 
 export const MESSAGE_DATA_MAX_SIZE = 800 * 1024;
 export const OPINION_DATA_MAX_SIZE = 200 * 1024;
@@ -430,8 +429,8 @@ export class CRCProposalTracking extends Payload {
 
   toJsonOwnerUnsigned(version: uint8_t): CRCProposalTrackingInfo {
     let j = <CRCProposalTrackingInfo>{};
-    j[JsonKeyProposalHash] = getBNHexString(this._proposalHash);
-    j[JsonKeyMessageHash] = getBNHexString(this._messageHash);
+    j[JsonKeyProposalHash] = get32BytesOfBNAsHexString(this._proposalHash);
+    j[JsonKeyMessageHash] = get32BytesOfBNAsHexString(this._messageHash);
     if (version >= CRCProposalTrackingVersion01) {
       j[JsonKeyMessageData] = this._messageData.toString("hex");
     }
@@ -480,7 +479,7 @@ export class CRCProposalTracking extends Payload {
     let j = this.toJsonNewOwnerUnsigned(version);
     j[JsonKeyNewOwnerSignature] = this._newOwnerSign.toString("hex");
     j[JsonKeyType] = this._type;
-    j[JsonKeySecretaryGeneralOpinionHash] = getBNHexString(
+    j[JsonKeySecretaryGeneralOpinionHash] = get32BytesOfBNAsHexString(
       this._secretaryGeneralOpinionHash
     );
     if (version >= CRCProposalTrackingVersion01) {

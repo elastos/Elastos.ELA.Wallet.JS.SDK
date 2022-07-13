@@ -6,7 +6,6 @@ import BigNumber from "bignumber.js";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import {
-  json,
   size_t,
   uint8_t,
   bytes_t,
@@ -15,6 +14,13 @@ import {
 } from "../../types";
 import { Error, ErrorChecker } from "../../common/ErrorChecker";
 import { Payload } from "./Payload";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
+
+export type ValueItemInfo = {
+  DataHash: string;
+  Proof: string;
+  Info: string;
+};
 
 export class ValueItem {
   DataHash: uint256;
@@ -35,6 +41,11 @@ export class ValueItem {
     );
   }
 }
+
+export type SignContentInfo = {
+  Path: string;
+  Values: ValueItemInfo[];
+};
 
 export class SignContent {
   Path: string;
@@ -67,6 +78,12 @@ export class SignContent {
     return this.Path == sc.Path && this.isEqualValues(sc.Values);
   }
 }
+
+export type RegisterIdentificationInfo = {
+  Id: string;
+  Sign: string;
+  Contents: SignContentInfo[];
+};
 
 export class RegisterIdentification extends Payload {
   private _id: string;
@@ -229,8 +246,8 @@ export class RegisterIdentification extends Payload {
     return true;
   }
 
-  toJson(version: uint8_t) {
-    let j = {};
+  toJson(version: uint8_t): RegisterIdentificationInfo {
+    let j = <RegisterIdentificationInfo>{};
     j["Id"] = this._id;
     j["Sign"] = this._sign.toString("hex");
 
@@ -242,7 +259,9 @@ export class RegisterIdentification extends Payload {
       let values = [];
       for (let k = 0; k < this._contents[i].Values.length; ++k) {
         let value = {};
-        value["DataHash"] = this._contents[i].Values[k].DataHash.toString(16);
+        value["DataHash"] = get32BytesOfBNAsHexString(
+          this._contents[i].Values[k].DataHash
+        );
         value["Proof"] = this._contents[i].Values[k].Proof;
         value["Info"] = this._contents[i].Values[k].Info;
         values.push(value);
@@ -255,22 +274,22 @@ export class RegisterIdentification extends Payload {
     return j;
   }
 
-  fromJson(j: json, version: uint8_t) {
-    this._id = j["Id"] as string;
-    if (j["Sign"]) this._sign = Buffer.from(j["Sign"] as string, "hex");
+  fromJson(j: RegisterIdentificationInfo, version: uint8_t) {
+    this._id = j["Id"];
+    if (j["Sign"]) this._sign = Buffer.from(j["Sign"], "hex");
 
-    let contents = j["Contents"] as [];
+    let contents = j["Contents"];
 
     for (let i = 0; i < contents.length; ++i) {
       let content = new SignContent();
-      content.Path = contents[i]["Path"] as string;
+      content.Path = contents[i]["Path"];
 
-      let values = contents[i]["Values"] as [];
+      let values = contents[i]["Values"];
       for (let k = 0; k < values.length; ++k) {
         let value = new ValueItem();
-        value.DataHash = new BigNumber(values[k]["DataHash"] as string, 16);
+        value.DataHash = new BigNumber(values[k]["DataHash"], 16);
         value.Proof = values[k]["Proof"] as string;
-        if (values[k]["Info"]) value.Info = values[k]["Info"] as string;
+        if (values[k]["Info"]) value.Info = values[k]["Info"];
         content.Values.push(value);
       }
 

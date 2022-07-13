@@ -25,6 +25,7 @@ import { uint256, uint8_t, size_t, sizeof_uint256_t } from "../../types";
 import { Payload } from "./Payload";
 import { Log } from "../../common/Log";
 import BigNumber from "bignumber.js";
+import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 
 export type DPoSV2ClaimRewardRealWithdrawType = {
   WithdrawTxHashes: string[];
@@ -79,7 +80,7 @@ export class DPoSV2ClaimRewardRealWithdraw extends Payload {
     let hashes = [];
     let j = <DPoSV2ClaimRewardRealWithdrawType>{};
     for (let hash of this._withdrawTxHashes) {
-      hashes.push(hash.toString(6));
+      hashes.push(get32BytesOfBNAsHexString(hash));
     }
     j["WithdrawTxHashes"] = hashes;
     return j;
@@ -90,7 +91,7 @@ export class DPoSV2ClaimRewardRealWithdraw extends Payload {
 
     this._withdrawTxHashes = [];
     for (let i = 0; i < hashes.length; ++i) {
-      this._withdrawTxHashes.push(new BigNumber(hashes[i]));
+      this._withdrawTxHashes.push(new BigNumber(hashes[i], 16));
     }
   }
 
