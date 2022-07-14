@@ -40,7 +40,8 @@ import {
   VoteResult,
   CRCProposalTrackingInfo,
   CRCProposalTrackingType,
-  CRCProposalWithdrawInfo
+  CRCProposalWithdrawInfo,
+  PayloadStakeInfo
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -1432,6 +1433,62 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(info.length).toEqual(1);
     expect(info[0].SignType).toEqual("Standard");
     expect(info[0].Signers.length).toEqual(1);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test createStakeTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-39",
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    let subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+
+    subWallet.getAddresses(0, 1, false);
+
+    const inputs = [
+      {
+        Address: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L",
+        Amount: "999999988000",
+        TxHash:
+          "f7ef97040667cda4bdc08a8a8c49029e86422b43e15796ad84782f59271392e3",
+        Index: 1
+      }
+    ];
+
+    const fee = "10000";
+    const memo = "stake transaction";
+
+    const payload: PayloadStakeInfo = {
+      Version: 0,
+      // TODO
+      // The address should start with S, but it's ok for test
+      StakeAddress: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L"
+    };
+    const lockAddress = "XWCiyXM1bQyGTawoaYKx9PjRkMUGGocWub"; // ESC-testnet lock address
+    const amount = "200000000";
+    const tx = subWallet.createStakeTransaction(
+      inputs,
+      payload,
+      lockAddress,
+      amount,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     expect(info[0].Signers[0]).toEqual(
       "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
     );

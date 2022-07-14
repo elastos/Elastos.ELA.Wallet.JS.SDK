@@ -38,6 +38,7 @@ import {
 import { CRCProposalWithdrawInfo } from "./transactions/payload/CRCProposalWithdraw";
 import { Address } from "./walletcore/Address";
 import { get32BytesOfBNAsHexString } from "./common/bnutils";
+import { PayloadStakeInfo } from "./transactions/payload/OutputPayload/PayloadStake";
 
 export {
   Address,
@@ -82,5 +83,6 @@ export type {
   CRCProposalReviewInfo,
   CRCProposalTrackingInfo,
   CRCProposalWithdrawInfo,
-  SubWalletInstance
+  SubWalletInstance,
+  PayloadStakeInfo
 };

@@ -64,6 +64,13 @@ import { CRCAssetsRectify } from "./payload/CRCAssetsRectify";
 import { CRCouncilMemberClaimNode } from "./payload/CRCouncilMemberClaimNode";
 import { get32BytesOfBNAsHexString } from "../common/bnutils";
 import { reverseHashString } from "../common/utils";
+import { Stake } from "./payload/Stake";
+import { DPoSV2ClaimReward } from "./payload/DPoSV2ClaimReward";
+import { DPoSV2ClaimRewardRealWithdraw } from "./payload/DPoSV2ClaimRewardRealWithdraw";
+import { Voting } from "./payload/Voting";
+import { CancelVotes } from "./payload/CancelVotes";
+import { Unstake } from "./payload/Unstake";
+import { UnstakeRealWithdraw } from "./payload/UnstakeRealWithdraw";
 
 export enum TransactionType {
   coinBase = 0x00,
@@ -878,6 +885,20 @@ export class Transaction {
       payload = new CRCAssetsRectify();
     } else if (type == TransactionType.crCouncilMemberClaimNode) {
       payload = new CRCouncilMemberClaimNode();
+    } else if (type == TransactionType.DposV2ClaimReward) {
+      payload = new DPoSV2ClaimReward();
+    } else if (type == TransactionType.DposV2ClaimRewardRealWithdraw) {
+      payload = new DPoSV2ClaimRewardRealWithdraw();
+    } else if (type == TransactionType.Stake) {
+      payload = new Stake();
+    } else if (type == TransactionType.Voting) {
+      payload = new Voting();
+    } else if (type == TransactionType.CancelVotes) {
+      payload = new CancelVotes();
+    } else if (type == TransactionType.Unstake) {
+      payload = new Unstake();
+    } else if (type == TransactionType.UnstakeRealWithdraw) {
+      payload = new UnstakeRealWithdraw();
     }
 
     return payload;

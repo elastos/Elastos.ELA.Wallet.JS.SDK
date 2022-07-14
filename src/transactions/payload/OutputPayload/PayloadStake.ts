@@ -39,7 +39,7 @@ export class PayloadStake extends OutputPayload {
 
   deserialize(stream: ByteStream): boolean {
     this._version = stream.readUInt8();
-    if (!this._version) {
+    if (!this._version && this._version !== 0) {
       Log.error("output payload stake deserialize version");
       return false;
     }
@@ -66,9 +66,9 @@ export class PayloadStake extends OutputPayload {
 
   fromJson(j: PayloadStakeInfo) {
     this._version = j["Version"];
-
-    let addr = j["StakeAddress"];
-    this._stakeAddress = Address.newFromAddressString(addr).programHash();
+    this._stakeAddress = Address.newFromAddressString(
+      j["StakeAddress"]
+    ).programHash();
   }
 
   copyOutputPayload(payload: OutputPayload) {

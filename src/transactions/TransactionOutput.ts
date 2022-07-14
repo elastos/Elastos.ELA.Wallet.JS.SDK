@@ -1,14 +1,10 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
-import {
-  getBNBytes,
-  getBNHexBytes,
-  getBNsize,
-  newBNFromHexBytes
-} from "../common/bnutils";
+import { getBNBytes, getBNsize, newBNFromBuffer } from "../common/bnutils";
 import { ByteStream } from "../common/bytestream";
 import { JsonSerializer } from "../common/JsonSerializer";
 import { Log } from "../common/Log";
@@ -30,6 +26,7 @@ import { OutputPayload } from "./payload/OutputPayload/OutputPayload";
 import { PayloadDefault } from "./payload/OutputPayload/PayloadDefault";
 import { PayloadVote } from "./payload/OutputPayload/PayloadVote";
 import { PayloadCrossChain } from "./payload/OutputPayload/PayloadCrossChain";
+import { PayloadStake } from "./payload/OutputPayload/PayloadStake";
 
 enum TxVersion {
   Default = 0x00,
@@ -131,13 +128,13 @@ export class TransactionOutput implements JsonSerializer {
     let size = 0;
     let stream = new ByteStream();
 
-    size += getBNsize(this._assetID);
+    size += sizeof_uint256_t();
     if (this._assetID == Asset.getELAAssetID()) {
       size += 8;
     } else {
-      let amountBytes: bytes_t = getBNHexBytes(this._amount);
-      size += stream.writeVarUInt(amountBytes.length);
-      size += amountBytes.length;
+      let len = getBNsize(this._amount);
+      size += stream.writeVarUInt(len);
+      size += len;
     }
 
     size += 4;
@@ -147,11 +144,12 @@ export class TransactionOutput implements JsonSerializer {
   }
 
   public serialize(ostream: ByteStream, txVersion: uint8_t) {
-    ostream.writeBytes(getBNBytes(this._assetID));
+    // ostream.writeBytes(getBNBytes(this._assetID));
+    ostream.writeBNAsUIntOfSize(this._assetID, 32);
     if (Asset.getELAAssetID().eq(this._assetID)) {
       ostream.writeBNAsUIntOfSize(this._amount, 8);
     } else {
-      ostream.writeVarBytes(getBNHexBytes(this._amount));
+      ostream.writeVarBytes(getBNBytes(this._amount));
     }
 
     ostream.writeUInt32(this._outputLock);
@@ -182,7 +180,7 @@ export class TransactionOutput implements JsonSerializer {
         Log.error("deserialize output BN amount error");
         return false;
       }
-      this._amount = newBNFromHexBytes(bytes);
+      this._amount = newBNFromBuffer(bytes);
     }
 
     this._outputLock = istream.readUInt32();
@@ -197,8 +195,9 @@ export class TransactionOutput implements JsonSerializer {
       Log.error("deserialize output program hash error");
       return false;
     }
-    this._address = new Address();
-    this._address.setProgramHash(uint168.newFrom21BytesBuffer(programHash));
+    this._address = Address.newFromProgramHash(
+      uint168.newFrom21BytesBuffer(programHash)
+    );
 
     if (txVersion >= TxVersion.V09) {
       this._outputType = istream.readUInt8();
@@ -265,6 +264,9 @@ export class TransactionOutput implements JsonSerializer {
         break;
       case Type.CrossChain:
         payload = new PayloadCrossChain();
+        break;
+      case Type.Stake:
+        payload = new PayloadStake();
         break;
       default:
         payload = null;
