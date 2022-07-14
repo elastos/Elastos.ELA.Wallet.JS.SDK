@@ -99,10 +99,10 @@ export class DPoSV2ClaimRewardRealWithdraw extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       let p = payload as DPoSV2ClaimRewardRealWithdraw;
-      this.newFromDPoSV2ClaimRewardRealWithdraw(p);
+      this.copyDPoSV2ClaimRewardRealWithdraw(p);
     } catch (e) {
       Log.error("payload is not instance of DPoSV2ClaimRewardRealWithdraw");
     }
@@ -110,7 +110,7 @@ export class DPoSV2ClaimRewardRealWithdraw extends Payload {
     return this;
   }
 
-  newFromDPoSV2ClaimRewardRealWithdraw(payload: DPoSV2ClaimRewardRealWithdraw) {
+  copyDPoSV2ClaimRewardRealWithdraw(payload: DPoSV2ClaimRewardRealWithdraw) {
     this._withdrawTxHashes = payload._withdrawTxHashes;
     return this;
   }

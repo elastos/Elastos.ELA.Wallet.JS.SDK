@@ -46,7 +46,7 @@ export class Stake extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       let p = payload as Stake;
       this.newFromStake(p);

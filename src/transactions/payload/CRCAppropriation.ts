@@ -28,8 +28,7 @@ import { Payload } from "./Payload";
 export class CRCAppropriation extends Payload {
   newFromCRCAppropriation(payload: CRCAppropriation) {
     const rs = new CRCAppropriation();
-    rs.copyCRCAppropriation(payload);
-    return rs;
+    return rs.copyCRCAppropriation(payload);
   }
 
   estimateSize(version: uint8_t) {
@@ -48,7 +47,7 @@ export class CRCAppropriation extends Payload {
 
   fromJson(j = {}, version: uint8_t) {}
 
-  copyPayload(payload: CRCAppropriation) {
+  copyPayload(payload: Payload) {
     try {
       const payloadCRCAppropriation = payload as CRCAppropriation;
       this.copyCRCAppropriation(payloadCRCAppropriation);

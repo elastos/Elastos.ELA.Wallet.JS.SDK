@@ -6,6 +6,7 @@ import { Buffer } from "buffer";
 import { bytes_t, size_t, uint8_t } from "../../types";
 import { ByteStream } from "../../common/bytestream";
 import { Payload } from "./Payload";
+import { Log } from "../../common/Log";
 
 export type CoinBaseInfo = { CoinBaseData: string };
 
@@ -18,9 +19,10 @@ export class CoinBase extends Payload {
     return coinBase;
   }
 
-  // CoinBase::CoinBase(const CoinBase &payload) {
-  // 	operator=(payload);
-  // }
+  static newFromCoinBase(payload: CoinBase) {
+    let coinBase = new CoinBase();
+    return coinBase.copyCoinbase(payload);
+  }
 
   setCoinBaseData(coinBaseData: bytes_t) {
     this._coinBaseData = coinBaseData;
@@ -59,26 +61,25 @@ export class CoinBase extends Payload {
     this._coinBaseData = Buffer.from(j["CoinBaseData"], "hex");
   }
 
-  /*IPayload &CoinBase::operator=(const IPayload &payload) {
-	try {
-		const CoinBase &payloadCoinBase = dynamic_cast<const CoinBase &>(payload);
-		operator=(payloadCoinBase);
-	} catch (const std::bad_cast &e) {
-		Log::error("payload is not instance of CoinBase");
-	}
+  public copyPayload(payload: Payload) {
+    try {
+      const payloadCoinBase = payload as CoinBase;
+      this.copyCoinbase(payloadCoinBase);
+    } catch (e) {
+      Log.error("payload is not instance of CoinBase");
+    }
 
-	return *this;
-}*/
+    return this;
+  }
 
-  public static newFromCoinbase(payload: CoinBase): CoinBase {
-    let coinBase = new CoinBase();
-    coinBase._coinBaseData = payload._coinBaseData;
-    return coinBase;
+  public copyCoinbase(payload: CoinBase): CoinBase {
+    this._coinBaseData = payload._coinBaseData;
+    return this;
   }
 
   public equals(payload: Payload, version: uint8_t): boolean {
     if (!(payload instanceof CoinBase)) return false;
 
-    return this._coinBaseData == payload._coinBaseData;
+    return this._coinBaseData.equals(payload._coinBaseData);
   }
 }

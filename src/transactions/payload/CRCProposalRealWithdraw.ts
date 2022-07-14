@@ -58,6 +58,7 @@ export class CRCProposalRealWithdraw extends Payload {
     }
 
     let hash: uint256;
+    this._withdrawTxHashes = [];
     for (let i = 0; i < size.toNumber(); ++i) {
       hash = stream.readUIntOfBytesAsBN(32);
       if (!hash) {

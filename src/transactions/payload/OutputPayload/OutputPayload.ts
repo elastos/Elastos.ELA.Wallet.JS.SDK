@@ -21,7 +21,7 @@ export abstract class OutputPayload
   public abstract toJson(): json;
   public abstract fromJson(j: json);
 
-  // TODO virtual IOutputPayload &operator=(const IOutputPayload &payload) = 0;
+  public abstract copyOutputPayload(payload: OutputPayload);
 
   public abstract equals(payload: OutputPayload): boolean;
 }

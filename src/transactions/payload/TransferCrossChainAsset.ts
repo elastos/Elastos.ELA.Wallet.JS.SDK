@@ -238,13 +238,19 @@ export class TransferCrossChainAsset extends Payload {
     }
   }
 
-  copyTransferCrossChainAsset(payload: TransferCrossChainAsset) {
+  copyPayload(payload: Payload) {
     try {
-      this._info = payload._info;
+      const payloadTransferCrossChainAsset = payload as TransferCrossChainAsset;
+      this.copyTransferCrossChainAsset(payloadTransferCrossChainAsset);
     } catch (e) {
       Log.error("payload is not instance of TransferCrossChainAsset");
     }
 
+    return this;
+  }
+
+  copyTransferCrossChainAsset(payload: TransferCrossChainAsset) {
+    this._info = payload._info;
     return this;
   }
 

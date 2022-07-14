@@ -433,10 +433,10 @@ export class Voting extends Payload {
     return true;
   }
 
-  copyFormPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as Voting;
-      this.newFromVoting(p);
+      this.copyVoting(p);
     } catch (e) {
       Log.error("payload is not instance of Voting");
     }
@@ -444,7 +444,7 @@ export class Voting extends Payload {
     return this;
   }
 
-  newFromVoting(payload: Voting) {
+  copyVoting(payload: Voting) {
     this._contents = payload._contents;
     this._renewalVotesContent = payload._renewalVotesContent;
     return this;

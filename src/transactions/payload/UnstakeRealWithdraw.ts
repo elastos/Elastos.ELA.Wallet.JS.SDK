@@ -120,10 +120,10 @@ export class UnstakeRealWithdraw extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as UnstakeRealWithdraw;
-      this.newFromUnstakeRealWithdraw(p);
+      this.copyUnstakeRealWithdraw(p);
     } catch (e) {
       Log.error("payload is not instance of UnstakeRealWithdraw");
     }
@@ -131,7 +131,7 @@ export class UnstakeRealWithdraw extends Payload {
     return this;
   }
 
-  newFromUnstakeRealWithdraw(payload: UnstakeRealWithdraw) {
+  copyUnstakeRealWithdraw(payload: UnstakeRealWithdraw) {
     this._retVotesTxHash = payload._retVotesTxHash;
     this._stakeAddress = payload._stakeAddress;
     this._value = payload._value;

@@ -19,12 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import BigNumber from "bignumber.js";
+
 import { Buffer } from "buffer";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
-import { bytes_t, size_t, uint256, uint8_t } from "../../types";
+import { bytes_t, size_t, uint8_t } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { EcdsaSigner } from "../../walletcore/ecdsasigner";
 import { SHA256 } from "../../walletcore/sha256";
@@ -193,7 +193,7 @@ export class CRCouncilMemberClaimNode extends Payload {
   isValidUnsigned(version: uint8_t): boolean {
     try {
       // Key key(CTElastos, _nodePublicKey);
-      let key = EcdsaSigner.getKeyFromPublic(this._nodePublicKey);
+      EcdsaSigner.getKeyFromPublic(this._nodePublicKey);
     } catch (e) {
       Log.error("invalid node pubkey");
       return false;

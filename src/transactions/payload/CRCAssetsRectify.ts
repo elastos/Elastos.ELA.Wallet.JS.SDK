@@ -44,7 +44,7 @@ export class CRCAssetsRectify extends Payload {
 
   fromJson(j = {}, version: uint8_t) {}
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as CRCAssetsRectify;
       this.copyCRCAssetsRectify(p);

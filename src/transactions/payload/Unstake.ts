@@ -166,10 +166,10 @@ export class Unstake extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as Unstake;
-      this.newFromUnstake(p);
+      this.copyUnstake(p);
     } catch (e) {
       Log.error("payload is not instance of Unstake");
     }
@@ -177,7 +177,7 @@ export class Unstake extends Payload {
     return this;
   }
 
-  newFromUnstake(payload: Unstake) {
+  copyUnstake(payload: Unstake) {
     this._toAddr = payload._toAddr;
     this._code = payload._code;
     this._value = payload._value;

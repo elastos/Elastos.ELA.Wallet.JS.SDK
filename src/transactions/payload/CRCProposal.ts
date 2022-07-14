@@ -865,9 +865,9 @@ export class CRCProposal extends Payload {
 
   deserializeOwnerUnsigned(stream: ByteStream, version: uint8_t): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize categoryData");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -1009,9 +1009,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize categoryData");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -1307,9 +1307,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize terminate proposal category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -1560,9 +1560,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -1845,9 +1845,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize reserved custom id category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -2091,9 +2091,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize receive custom category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -2348,9 +2348,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize change custom id category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -2585,9 +2585,9 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.warn("deserialize change custom id category data");
-      // return false;
+      return false;
     }
     this._categoryData = categoryData;
 
@@ -2823,7 +2823,7 @@ export class CRCProposal extends Payload {
     version: uint8_t
   ): boolean {
     let categoryData = stream.readVarString();
-    if (!categoryData) {
+    if (!categoryData && categoryData !== "") {
       Log.error("deserialize upgrade code category data");
       return false;
     }
@@ -3534,8 +3534,6 @@ export class CRCProposal extends Payload {
     return this;
   }
 
-  // should ask how to deal with '#define'
-  // #define DraftData_Hexstring
   private encodeDraftData(draftData: bytes_t, hexStr = true): string {
     if (hexStr) {
       return draftData.toString("hex");
@@ -3572,12 +3570,13 @@ export class CRCProposal extends Payload {
     return draftDataDecoded;
   }
 
-  private isEqualBudgets(budges: Budget[]): boolean {
-    if (this._budgets.length !== budges.length) {
+  // Each element of the array budgets is sorted in budget's stage
+  private isEqualBudgets(budgets: Budget[]): boolean {
+    if (this._budgets.length !== budgets.length) {
       return false;
     }
-    for (let i = 0; i < budges.length; ++i) {
-      if (!this._budgets[i].equals(budges[i])) {
+    for (let i = 0; i < budgets.length; ++i) {
+      if (!this._budgets[i].equals(budgets[i])) {
         return false;
       }
     }
@@ -3588,23 +3587,41 @@ export class CRCProposal extends Payload {
     if (this._reservedCustomIDList.length !== reservedCustomIDList.length) {
       return false;
     }
+    let equal = false;
     for (let i = 0; i < reservedCustomIDList.length; ++i) {
-      if (this._reservedCustomIDList[i] !== reservedCustomIDList[i]) {
+      for (let j = 0; j < this._reservedCustomIDList.length; ++j) {
+        if (this._reservedCustomIDList[j] === reservedCustomIDList[i]) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
         return false;
       }
     }
-    return true;
+    return equal;
   }
 
   private isEqualReceivedCustomIDList(receivedCustomIDList: string[]): boolean {
     if (this._receivedCustomIDList.length !== receivedCustomIDList.length) {
       return false;
     }
+    let equal = false;
     for (let i = 0; i < receivedCustomIDList.length; ++i) {
-      if (this._receivedCustomIDList[i] !== receivedCustomIDList[i]) {
+      for (let j = 0; j < this._receivedCustomIDList.length; ++j) {
+        if (this._receivedCustomIDList[j] === receivedCustomIDList[i]) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
         return false;
       }
     }
-    return true;
+    return equal;
   }
 }

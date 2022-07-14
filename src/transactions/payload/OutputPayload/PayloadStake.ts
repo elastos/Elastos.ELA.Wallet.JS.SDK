@@ -71,10 +71,10 @@ export class PayloadStake extends OutputPayload {
     this._stakeAddress = Address.newFromAddressString(addr).programHash();
   }
 
-  copyFromOutputPayload(payload: OutputPayload) {
+  copyOutputPayload(payload: OutputPayload) {
     try {
       let p = payload as PayloadStake;
-      this.newFromPayloadStake(p);
+      this.copyPayloadStake(p);
     } catch (e) {
       Log.error("payload is not instance of PayloadStake");
     }
@@ -82,7 +82,7 @@ export class PayloadStake extends OutputPayload {
     return this;
   }
 
-  newFromPayloadStake(payload: PayloadStake) {
+  copyPayloadStake(payload: PayloadStake) {
     this._version = payload._version;
     this._stakeAddress = payload._stakeAddress;
 

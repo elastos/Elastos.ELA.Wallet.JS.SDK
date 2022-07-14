@@ -124,10 +124,10 @@ export class DPoSV2ClaimReward extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as DPoSV2ClaimReward;
-      this.newFromDPoSV2ClaimReward(p);
+      this.copyDPoSV2ClaimReward(p);
     } catch (e) {
       Log.error("payload is not instance of DPoSV2ClaimReward");
     }
@@ -135,7 +135,7 @@ export class DPoSV2ClaimReward extends Payload {
     return this;
   }
 
-  newFromDPoSV2ClaimReward(payload: DPoSV2ClaimReward) {
+  copyDPoSV2ClaimReward(payload: DPoSV2ClaimReward) {
     this._amount = payload._amount;
     this._signature = payload._signature;
     return this;

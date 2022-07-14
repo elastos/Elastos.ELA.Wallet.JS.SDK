@@ -31,7 +31,7 @@ export class Record extends Payload {
 
   static newFromRecord(payload: Record) {
     const record = new Record();
-    record.copyFromRecord(payload);
+    record.copyRecord(payload);
     return record;
   }
 
@@ -98,10 +98,10 @@ export class Record extends Payload {
     this._recordData = Buffer.from(j["RecordData"], "hex");
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const payloadRecord = payload as Record;
-      this.copyFromRecord(payloadRecord);
+      this.copyRecord(payloadRecord);
     } catch (e) {
       Log.error("payload is not instance of Record");
     }
@@ -109,7 +109,7 @@ export class Record extends Payload {
     return this;
   }
 
-  copyFromRecord(payload: Record) {
+  copyRecord(payload: Record) {
     this._recordData = payload._recordData;
     this._recordType = payload._recordType;
 

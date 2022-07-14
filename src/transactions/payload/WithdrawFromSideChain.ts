@@ -33,7 +33,7 @@ export class WithdrawFromSideChain extends Payload {
 
   static newFromWithdrawFromSideChain(payload: WithdrawFromSideChain) {
     const rs = new WithdrawFromSideChain();
-    rs.copyFromWithdrawFromSideChain(payload);
+    rs.copyWithdrawFromSideChain(payload);
     return rs;
   }
 
@@ -162,10 +162,10 @@ export class WithdrawFromSideChain extends Payload {
     }
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const payloadWithDrawAsset = payload as WithdrawFromSideChain;
-      this.copyFromWithdrawFromSideChain(payloadWithDrawAsset);
+      this.copyWithdrawFromSideChain(payloadWithDrawAsset);
     } catch (e) {
       Log.error("payload is not instance of WithdrawFromSideChain");
     }
@@ -173,7 +173,7 @@ export class WithdrawFromSideChain extends Payload {
     return this;
   }
 
-  copyFromWithdrawFromSideChain(payload: WithdrawFromSideChain) {
+  copyWithdrawFromSideChain(payload: WithdrawFromSideChain) {
     this._blockHeight = payload._blockHeight;
     this._genesisBlockAddress = payload._genesisBlockAddress;
     this._sideChainTransactionHash = payload._sideChainTransactionHash;

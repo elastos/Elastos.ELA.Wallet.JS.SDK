@@ -27,6 +27,8 @@ export class PayloadDefault extends OutputPayload {
 
   public fromJson(j: json) {}
 
+  public copyOutputPayload(payload: OutputPayload) {}
+
   public equals(payload: OutputPayload): boolean {
     return payload instanceof OutputPayload;
   }

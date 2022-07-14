@@ -1340,10 +1340,10 @@ export class DIDInfo extends Payload {
     return verifiedSign;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       let didInfo = payload as DIDInfo;
-      this.copyFromDIDInfo(didInfo);
+      this.copyDIDInfo(didInfo);
     } catch (e) {
       Log.error("payload is not instance of CRInfo");
     }
@@ -1351,7 +1351,7 @@ export class DIDInfo extends Payload {
     return this;
   }
 
-  copyFromDIDInfo(payload: DIDInfo): DIDInfo {
+  copyDIDInfo(payload: DIDInfo): DIDInfo {
     this._header = payload._header;
     this._payload = payload._payload;
     this._proof = payload._proof;

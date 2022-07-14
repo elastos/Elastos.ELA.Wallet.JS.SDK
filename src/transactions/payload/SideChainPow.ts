@@ -1,6 +1,7 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
 import {
@@ -36,7 +37,7 @@ export class SideChainPow extends Payload {
 
   static newFromSideChainPow(payload: SideChainPow) {
     const sideChainPow = new SideChainPow();
-    sideChainPow.copyFromSideChainPow(payload);
+    sideChainPow.copySideChainPow(payload);
     return sideChainPow;
   }
 
@@ -144,10 +145,10 @@ export class SideChainPow extends Payload {
     this._signedData = Buffer.from(j["SignedData"], "hex");
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const payloadSideMining = payload as SideChainPow;
-      this.copyFromSideChainPow(payloadSideMining);
+      this.copySideChainPow(payloadSideMining);
     } catch (e) {
       Log.error("payload is not instance of SideChainPow");
     }
@@ -155,7 +156,7 @@ export class SideChainPow extends Payload {
     return this;
   }
 
-  copyFromSideChainPow(payload: SideChainPow) {
+  copySideChainPow(payload: SideChainPow) {
     this._sideBlockHash = payload._sideBlockHash;
     this._sideGenesisHash = payload._sideGenesisHash;
     this._blockHeight = payload._blockHeight;

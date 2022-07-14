@@ -43,7 +43,9 @@ export class CancelVotes extends Payload {
     let size = 0;
 
     size += stream.writeVarUInt(this._referKeys.length);
-    for (let h of this._referKeys) size += sizeof_uint256_t();
+    for (let i = 0; i < this._referKeys.length; i++) {
+      size += sizeof_uint256_t();
+    }
 
     return size;
   }
@@ -58,11 +60,11 @@ export class CancelVotes extends Payload {
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     let size = stream.readVarUInt();
-
-    if (!size) {
+    if (!size || (size && size.isZero())) {
       Log.error("CancelVotes deserialize size");
       return false;
     }
+
     this._referKeys = [];
     for (let i = 0; i < size.toNumber(); ++i) {
       let h = stream.readUIntOfBytesAsBN(32);
@@ -89,7 +91,7 @@ export class CancelVotes extends Payload {
   fromJson(j: CancelVotesInfo, version: uint8_t) {
     this._referKeys = [];
     for (let i = 0; i < j["ReferKeys"].length; i++) {
-      this._referKeys.push(new BigNumber(j["ReferKeys"][i]));
+      this._referKeys.push(new BigNumber(j["ReferKeys"][i], 16));
     }
   }
 
@@ -97,10 +99,10 @@ export class CancelVotes extends Payload {
     return true;
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as CancelVotes;
-      this.newFromCancelVotes(p);
+      this.copyCancelVotes(p);
     } catch (e) {
       Log.error("payload is not instance of CancelVotes");
     }
@@ -108,7 +110,7 @@ export class CancelVotes extends Payload {
     return this;
   }
 
-  newFromCancelVotes(payload: CancelVotes) {
+  copyCancelVotes(payload: CancelVotes) {
     this._referKeys = payload._referKeys;
     return this;
   }
@@ -119,10 +121,21 @@ export class CancelVotes extends Payload {
       if (this._referKeys.length != p._referKeys.length) {
         return false;
       }
-
+      let equal = false;
       for (let i = 0; i < this._referKeys.length; ++i) {
-        if (!this._referKeys[i].eq(p._referKeys[i])) return false;
+        for (let j = 0; j < p._referKeys.length; ++j) {
+          if (this._referKeys[j].eq(p._referKeys[i])) {
+            equal = true;
+            break;
+          } else {
+            equal = false;
+          }
+        }
+        if (equal === false) {
+          return false;
+        }
       }
+      return equal;
     } catch (e) {
       Log.error("payload is not instance of CancelVotes");
       return false;

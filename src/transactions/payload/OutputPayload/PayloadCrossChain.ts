@@ -151,6 +151,17 @@ export class PayloadCrossChain extends OutputPayload {
     this._targetData = Buffer.from(j["TargetData"], "hex");
   }
 
+  public copyOutputPayload(payload: OutputPayload) {
+    try {
+      const payloadCrossChain = payload as PayloadCrossChain;
+      this.copyPayloadCrossChain(payloadCrossChain);
+    } catch (e) {
+      Log.error("payload is not instance of PayloadVote");
+    }
+
+    return this;
+  }
+
   copyPayloadCrossChain(payload: PayloadCrossChain) {
     try {
       this._version = payload._version;

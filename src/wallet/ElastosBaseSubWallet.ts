@@ -448,7 +448,7 @@ export class ElastosBaseSubWallet
       }
 
       let hash: uint256 = new BigNumber(utxoJson["TxHash"], 16);
-      let n: uint16_t = utxoJson["Index"] as uint16_t;
+      let n: uint16_t = utxoJson["Index"];
 
       let address = Address.newFromAddressString(utxoJson["Address"]);
       ErrorChecker.checkParam(

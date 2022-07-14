@@ -28,7 +28,7 @@ export abstract class Payload {
 
   abstract fromJson(j: JSONValue, version: uint8_t);
 
-  //abstract IPayload & operator=(const IPayload &payload) = 0;
+  abstract copyPayload(payload: Payload);
 
   abstract equals(payload: Payload, version: uint8_t): boolean;
 }

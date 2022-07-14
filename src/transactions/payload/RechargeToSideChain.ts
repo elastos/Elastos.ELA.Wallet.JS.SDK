@@ -46,7 +46,7 @@ export class RechargeToSideChain extends Payload {
 
   newFromRechargeToSideChain(payload: RechargeToSideChain) {
     const rechargeToSideChain = new RechargeToSideChain();
-    rechargeToSideChain.copyFromRechargeToSideChain(payload);
+    rechargeToSideChain.copyRechargeToSideChain(payload);
     return rechargeToSideChain;
   }
 
@@ -152,10 +152,10 @@ export class RechargeToSideChain extends Payload {
     }
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const payloadRecharge = payload as RechargeToSideChain;
-      this.copyFromRechargeToSideChain(payloadRecharge);
+      this.copyRechargeToSideChain(payloadRecharge);
     } catch (e) {
       Log.error("payload is not instance of RechargeToSideChain");
     }
@@ -163,7 +163,7 @@ export class RechargeToSideChain extends Payload {
     return this;
   }
 
-  copyFromRechargeToSideChain(payload: RechargeToSideChain) {
+  copyRechargeToSideChain(payload: RechargeToSideChain) {
     this._merkeProof = Buffer.alloc(payload._merkeProof.length);
     payload._merkeProof.copy(this._merkeProof);
 

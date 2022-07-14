@@ -196,7 +196,7 @@ export class NextTurnDPoSInfo extends Payload {
     }
   }
 
-  copyFromPayload(payload: Payload) {
+  copyPayload(payload: Payload) {
     try {
       const p = payload as NextTurnDPoSInfo;
       this.copyNextTurnDPoSInfo(p);

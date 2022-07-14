@@ -28,12 +28,18 @@ export class TransferAsset extends Payload {
 
   public fromJson(j: json, version: uint8_t) {}
 
-  copyTransferAsset(payload: TransferAsset): TransferAsset {
+  copyPayload(payload: Payload) {
     try {
-      return this;
+      const payloadTransferAsset = payload as TransferAsset;
+      this.copyTransferAsset(payloadTransferAsset);
     } catch (e) {
       Log.error("payload is not instance of TransferAsset");
     }
+
+    return this;
+  }
+
+  copyTransferAsset(payload: TransferAsset): TransferAsset {
     return this;
   }
 
