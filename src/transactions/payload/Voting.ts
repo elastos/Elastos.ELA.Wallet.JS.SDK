@@ -36,6 +36,7 @@ import {
   uint256,
   sizeof_uint256_t
 } from "../../types";
+import { VoteContentType } from "./OutputPayload/PayloadVote";
 import { Payload } from "./Payload";
 
 export const VoteVersion = 0;
@@ -43,7 +44,7 @@ export const RenewalVoteVersion = 1;
 
 export type VotesWithLockTimeInfo = {
   Candidate?: string;
-  Votes: string;
+  Votes: number;
   Locktime: number;
 };
 
@@ -97,7 +98,7 @@ export class VotesWithLockTime {
       return false;
     }
 
-    this._lockTime = stream.readUInt32(this._lockTime);
+    this._lockTime = stream.readUInt32();
     if (!this._lockTime) {
       Log.error("VotesWithLockTime deserialize locktime");
       return false;
@@ -115,17 +116,15 @@ export class VotesWithLockTime {
   }
 
   fromJson(j: VotesWithLockTimeInfo, v: VotesWithLockTime) {
-    v._candidate = Buffer.from(j["Candidate"], "hex");
+    v._candidate = Buffer.from(j["Candidate"]);
     v._votes = new BigNumber(j["Votes"]);
     v._lockTime = j["Locktime"];
   }
 
   toJson(j: VotesWithLockTimeInfo, v: VotesWithLockTime) {
-    j = {
-      Candidate: v._candidate.toString("hex"),
-      Votes: v._votes.toString(),
-      Locktime: v._lockTime
-    };
+    j["Candidate"] = v._candidate.toString();
+    j["Votes"] = v._votes.toNumber();
+    j["Locktime"] = v._lockTime;
   }
 }
 
@@ -169,7 +168,7 @@ export class VotesContent {
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
     this._voteType = stream.readByte();
-    if (!this._voteType) {
+    if (!this._voteType && this._voteType !== VoteContentType.Delegate) {
       Log.error("deserialize VotesContent vote type");
       return false;
     }
@@ -180,6 +179,7 @@ export class VotesContent {
       return false;
     }
 
+    this._votesInfo = [];
     for (let i = 0; i < size.toNumber(); ++i) {
       let vinfo = new VotesWithLockTime();
       if (!vinfo.deserialize(stream, version)) {
@@ -205,7 +205,7 @@ export class VotesContent {
   }
 
   fromJson(j: VotesContentInfo, vc: VotesContent) {
-    vc._voteType = j["VoteType"] as number;
+    vc._voteType = j["VoteType"];
     let votesInfo = [];
     let voteInfo = new VotesWithLockTime();
     for (let i = 0; i < j["VotesInfo"].length; i++) {
@@ -266,6 +266,7 @@ export class RenewalVotesContent {
       return false;
     }
 
+    this._voteInfo = new VotesWithLockTime();
     if (!this._voteInfo.deserialize(stream, version)) {
       Log.error("RenewalVotesContent deserialize vote info");
       return false;
@@ -284,14 +285,13 @@ export class RenewalVotesContent {
   fromJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
     rvc._referKey = new BigNumber(j["ReferKey"], 16);
     let votesWithLockTime = new VotesWithLockTime();
-
     votesWithLockTime.fromJson(j["VoteInfo"], votesWithLockTime);
     rvc._voteInfo = votesWithLockTime;
   }
 
   toJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
     j["ReferKey"] = get32BytesOfBNAsHexString(rvc._referKey);
-    let votesWithLockTime = new VotesWithLockTime();
+    let votesWithLockTime = rvc._voteInfo;
     let voteInfo = <VotesWithLockTimeInfo>{};
     votesWithLockTime.toJson(voteInfo, votesWithLockTime);
     j["VoteInfo"] = voteInfo;
@@ -299,6 +299,7 @@ export class RenewalVotesContent {
 }
 
 export type VotingInfo = {
+  Version?: number;
   Contents?: VotesContentInfo[];
   RenewalVotesContent?: RenewalVotesContentInfo[];
 };
@@ -337,20 +338,25 @@ export class Voting extends Payload {
   serialize(stream: ByteStream, version: uint8_t) {
     if (version == VoteVersion) {
       stream.writeVarUInt(this._contents.length);
-      for (let vc of this._contents) vc.serialize(stream, version);
+      for (let vc of this._contents) {
+        vc.serialize(stream, version);
+      }
     } else if (version == RenewalVoteVersion) {
       stream.writeVarUInt(this._renewalVotesContent.length);
-      for (let rvc of this._renewalVotesContent) rvc.serialize(stream, version);
+      for (let rvc of this._renewalVotesContent) {
+        rvc.serialize(stream, version);
+      }
     }
   }
 
   deserialize(stream: ByteStream, version: uint8_t) {
-    let size = stream.readVarUInt();
     if (version == VoteVersion) {
+      let size = stream.readVarUInt();
       if (!size) {
         Log.error("voting deserialize contents size");
         return false;
       }
+      this._contents = [];
       for (let i = 0; i < size.toNumber(); ++i) {
         let vc = new VotesContent();
         if (!vc.deserialize(stream, version)) {
@@ -360,11 +366,12 @@ export class Voting extends Payload {
         this._contents.push(vc);
       }
     } else if (version == RenewalVoteVersion) {
-      size = stream.readVarUInt();
+      let size = stream.readVarUInt();
       if (!size) {
         Log.error("voting deserialize RenewalVotesContent size");
         return false;
       }
+      this._renewalVotesContent = [];
       for (let i = 0; i < size.toNumber(); ++i) {
         let rvc = new RenewalVotesContent();
         if (!rvc.deserialize(stream, version)) {
@@ -409,7 +416,6 @@ export class Voting extends Payload {
       let contents = [];
       for (let i = 0; i < j["Contents"].length; ++i) {
         let votesContent = new VotesContent();
-
         votesContent.fromJson(j["Contents"][i], votesContent);
         contents.push(votesContent);
       }
@@ -419,9 +425,9 @@ export class Voting extends Payload {
       for (let i = 0; i < j["RenewalVotesContent"].length; ++i) {
         let renewalVotesContent = new RenewalVotesContent();
 
-        renewalVotesContent.toJson(
+        renewalVotesContent.fromJson(
           j["RenewalVotesContent"][i],
-          this._renewalVotesContent[i]
+          renewalVotesContent
         );
         contents.push(renewalVotesContent);
       }

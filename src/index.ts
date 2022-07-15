@@ -13,7 +13,10 @@ import { SignedInfo } from "./transactions/Program";
 import { EncodedTx } from "./wallet/IElastosBaseSubWallet";
 import { SigningPublicKeyInfo } from "./wallet/ElastosBaseSubWallet";
 import { LocalStoreInfo } from "./persistence/LocalStore";
-import { VoteContentInfo } from "./transactions/payload/OutputPayload/PayloadVote";
+import {
+  VoteContentInfo,
+  VoteContentType
+} from "./transactions/payload/OutputPayload/PayloadVote";
 import { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
 import { CRCouncilMemberClaimNodeInfo } from "./transactions/payload/CRCouncilMemberClaimNode";
 import {
@@ -52,6 +55,7 @@ export {
   MainchainSubWallet,
   WalletErrorException,
   CRCProposalType,
+  VoteContentType,
   VoteResult,
   CRCProposalTrackingType,
   IDChainSubWallet,

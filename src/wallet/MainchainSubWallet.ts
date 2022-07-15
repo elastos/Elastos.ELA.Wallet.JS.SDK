@@ -3614,10 +3614,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param payload
    * if version is 0x00
    * {
-   *   "Version": 0x0, // uint8_t
+   *   "Version": 0x00, // uint8_t
    *   "Contents": [
    *     {
-   *       "VoteType": 0x0, // uint8_t
+   *       "VoteType": 0x00, // uint8_t
    *       "VotesInfo": [
    *         {
    *           "Candidate": "...", // string
