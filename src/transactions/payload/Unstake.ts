@@ -98,7 +98,7 @@ export class Unstake extends Payload {
   toJsonUnsigned(version: uint8_t): UnstakeInfo {
     let j = <UnstakeInfo>{};
     j["ToAddress"] = Address.newFromProgramHash(this._toAddr).string();
-    j["Code"] = this._code.toString("hex");
+    j["Code"] = this._code.toString();
     j["Value"] = this._value.toString();
     return j;
   }

@@ -3702,10 +3702,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * {
    *   "Amount": "100000000" // Bigint string in SELA, 1 ELA = 100000000 SELA
    * }
-   * @return
+   * @return digest of the payload which will be signed
    */
   getDPoSV2ClaimRewardDigest(payload: DPoSV2ClaimRewardInfo): string {
-    let wallet = this.getWallet();
+    // let wallet = this.getWallet();
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
