@@ -38,7 +38,6 @@ import {
   TransferCrossChainAsset
 } from "../transactions/payload/TransferCrossChainAsset";
 import { TransactionType } from "../transactions/Transaction";
-import { DEPOSIT_MIN_ELA } from "./MainchainSubWallet";
 import { ELA_SIDECHAIN_DESTROY_ADDR, Address } from "../walletcore/Address";
 import { DEPOSIT_OR_WITHDRAW_FEE } from "./SubWallet";
 
@@ -72,7 +71,6 @@ export class SidechainSubWallet extends ElastosBaseSubWallet {
 
     ErrorChecker.checkBigIntAmount(amount);
     let bgAmount = new BigNumber(amount);
-    let minAmount = new BigNumber(DEPOSIT_MIN_ELA);
     let feeAmount = new BigNumber(fee);
 
     let payload: Payload;

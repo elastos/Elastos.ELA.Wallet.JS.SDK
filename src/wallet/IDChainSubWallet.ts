@@ -182,7 +182,7 @@ export class IDChainSubWallet extends SidechainSubWallet {
   getDID(
     index: uint32_t,
     count: uint32_t,
-    internal: boolean
+    internal = false
   ): { DID: string[] } {
     // ArgInfo("{} {}", this.getWallet().getWalletID(), GetFunName());
     // ArgInfo("index: {}", index);
@@ -222,7 +222,7 @@ export class IDChainSubWallet extends SidechainSubWallet {
   getCID(
     index: uint32_t,
     count: uint32_t,
-    internal: boolean
+    internal = false
   ): { CID: string[] } {
     // ArgInfo("{} {}", this.getWallet()->getWalletID(), GetFunName());
     // ArgInfo("index: {}", index);
