@@ -322,9 +322,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param url            URL of producer.
    * @param ipAddress      IP address of node. This argument is deprecated.
    * @param location       Location code.
-   * @param stakeUntil     The block height when your staking expires. It is required in DPoS 2.0 version.
    * @param payPasswd      Pay password is using for signing the payload with
    *                       the owner private key.
+   * @param stakeUntil     The block height when your staking expires. It is required in DPoS 2.0 version.
    *
    * @return               The payload in JSON format.
    */
@@ -335,8 +335,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     url: string,
     ipAddress: string,
     location: uint64_t,
-    stakeUntil: uint32_t,
-    payPasswd: string
+    payPasswd: string,
+    stakeUntil?: uint32_t
   ) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("ownerPubKey: {}", ownerPublicKey);
@@ -513,7 +513,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       memo,
       feeAmount
     );
-
+    tx.setPayloadVersion(version);
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 

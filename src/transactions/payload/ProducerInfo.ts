@@ -269,7 +269,7 @@ export class ProducerInfo extends Payload {
     j["Location"] = this._location.toString(16);
     j["Address"] = this._address;
     if (version === ProducerInfoDposV2Version) {
-      j["stakeUntil"] = this._StakeUntil;
+      j["StakeUntil"] = this._StakeUntil;
     }
     j["Signature"] = this._signature.toString("hex");
     return j;

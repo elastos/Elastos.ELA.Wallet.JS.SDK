@@ -1473,11 +1473,9 @@ describe("Mainchain SubWallet Transaction Tests", () => {
 
     const payload: PayloadStakeInfo = {
       Version: 0,
-      // TODO
-      // The address should start with S, but it's ok for test
-      StakeAddress: "EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L"
+      StakeAddress: "SSen11Uvta3tLoXGpKoS7qjnE2RfcZSZaS"
     };
-    const lockAddress = "XWCiyXM1bQyGTawoaYKx9PjRkMUGGocWub"; // ESC-testnet lock address
+    const lockAddress = "SNmCKtp1NmPfjwEo4m8PbgirDfYss1NUyT";
     const amount = "200000000";
     const tx = subWallet.createStakeTransaction(
       inputs,
