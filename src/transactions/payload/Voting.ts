@@ -308,12 +308,14 @@ export class Voting extends Payload {
   private _contents: VotesContent[]; // 投票
   private _renewalVotesContent: RenewalVotesContent[]; // 续期
 
-  newFromParams(
+  static newFromParams(
     contents: VotesContent[],
     renewalVotesContent: RenewalVotesContent[]
   ) {
-    this._contents = contents;
-    this._renewalVotesContent = renewalVotesContent;
+    let voting = new Voting();
+    voting._contents = contents;
+    voting._renewalVotesContent = renewalVotesContent;
+    return voting;
   }
 
   estimateSize(version: uint8_t) {

@@ -116,7 +116,6 @@ export class PayloadCrossChain extends OutputPayload {
       return false;
     }
 
-    // not sure
     let amount = stream.readUIntOfBytesAsBN(8);
     if (!amount) {
       Log.error("deser op amount");

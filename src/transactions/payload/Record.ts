@@ -55,8 +55,9 @@ export class Record extends Payload {
     let size = 0;
     let stream = new ByteStream();
 
-    size += stream.writeVarUInt(this._recordType.length);
-    size += this._recordType.length;
+    let recordType = Buffer.from(this._recordType, "utf8");
+    size += stream.writeVarUInt(recordType.length);
+    size += recordType.length;
     size += stream.writeVarUInt(this._recordData.length);
     size += this._recordData.length;
 
@@ -76,11 +77,13 @@ export class Record extends Payload {
     }
     this._recordType = recordType;
 
-    if (!istream.readVarBytes(this._recordData)) {
+    let recordData: bytes_t;
+    recordData = istream.readVarBytes(recordData);
+    if (!recordData) {
       Log.error("Payload record deserialize data fail");
       return false;
     }
-
+    this._recordData = recordData;
     return true;
   }
 

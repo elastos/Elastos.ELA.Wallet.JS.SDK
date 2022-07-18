@@ -28,14 +28,17 @@ export class RegisterAsset extends Payload {
     this._asset = new Asset();
   }
 
-  newFromParams(asset: Asset, amount: uint64_t, controller: uint168) {
-    this._amount = amount;
-    this._asset = asset;
-    this._controller = controller;
+  static newFromParams(asset: Asset, amount: uint64_t, controller: uint168) {
+    let registerAsset = new RegisterAsset();
+    registerAsset._amount = amount;
+    registerAsset._asset = asset;
+    registerAsset._controller = controller;
+    return registerAsset;
   }
 
-  newFromRegisterAsset(payload: RegisterAsset) {
-    this.copyRegisterAsset(payload);
+  static newFromRegisterAsset(payload: RegisterAsset) {
+    let registerAsset = new RegisterAsset();
+    return registerAsset.copyRegisterAsset(payload);
   }
 
   isValid(version: uint8_t): boolean {

@@ -30,6 +30,7 @@ export class SideChainPow extends Payload {
   private _sideGenesisHash: uint256;
   private _blockHeight: uint32_t;
   private _signedData: bytes_t;
+
   constructor() {
     super();
     this._blockHeight = 0;

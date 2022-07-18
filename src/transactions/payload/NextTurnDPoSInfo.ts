@@ -59,7 +59,7 @@ export class NextTurnDPoSInfo extends Payload {
     return nextTurnDPOSInfo;
   }
 
-  newFromNextTurnDPoSInfo(payload: NextTurnDPoSInfo) {
+  static newFromNextTurnDPoSInfo(payload: NextTurnDPoSInfo) {
     const nextTurnDPOSInfo = new NextTurnDPoSInfo();
     nextTurnDPOSInfo.copyNextTurnDPoSInfo(payload);
     return nextTurnDPOSInfo;
@@ -123,7 +123,8 @@ export class NextTurnDPoSInfo extends Payload {
   }
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
-    if (!stream.readUInt32(this._workingHeight)) {
+    this._workingHeight = stream.readUInt32();
+    if (!this._workingHeight) {
       Log.error("deserialize working height");
       return false;
     }
@@ -133,6 +134,7 @@ export class NextTurnDPoSInfo extends Payload {
       Log.error("deserialize crPubKey length");
       return false;
     }
+    this._crPublicKeys = [];
     for (let i = 0; i < len.toNumber(); ++i) {
       let pubkey: bytes_t;
       pubkey = stream.readVarBytes(pubkey);
@@ -148,9 +150,11 @@ export class NextTurnDPoSInfo extends Payload {
       Log.error("deserialize dpos pubkey length");
       return false;
     }
+    this._dposPublicKeys = [];
     for (let i = 0; i < len.toNumber(); ++i) {
       let pubkey: bytes_t;
-      if (!stream.readVarBytes(pubkey)) {
+      pubkey = stream.readVarBytes(pubkey);
+      if (!pubkey) {
         Log.error("deserialize dpos pubkey");
         return false;
       }
@@ -181,15 +185,16 @@ export class NextTurnDPoSInfo extends Payload {
 
   fromJson(j: NextTurnDPoSInfoJson, version: uint8_t) {
     this._workingHeight = j["WorkingHeight"];
-
     let crPubKeys = j["CRPublicKeys"];
     let dposPubKeys = j["DPoSPublicKeys"];
 
+    this._crPublicKeys = [];
     for (let i = 0; i != crPubKeys.length; ++i) {
       let pubkey = Buffer.from(crPubKeys[i], "hex");
       this._crPublicKeys.push(pubkey);
     }
 
+    this._dposPublicKeys = [];
     for (let i = 0; i != dposPubKeys.length; ++i) {
       let pubkey = Buffer.from(dposPubKeys[i], "hex");
       this._dposPublicKeys.push(pubkey);
@@ -218,28 +223,44 @@ export class NextTurnDPoSInfo extends Payload {
     if (this._crPublicKeys.length !== crPublicKeys.length) {
       return false;
     }
-    this._crPublicKeys.sort((a, b) => a.compare(b));
-    crPublicKeys.sort((a, b) => a.compare(b));
+
+    let equal = false;
     for (let i = 0; i < crPublicKeys.length; ++i) {
-      if (!this._crPublicKeys[i].equals(crPublicKeys[i])) {
+      for (let j = 0; j < this._crPublicKeys.length; ++j) {
+        if (this._crPublicKeys[j].equals(crPublicKeys[i])) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
         return false;
       }
     }
-    return true;
+    return equal;
   }
 
   private isEqualDPoSPublicKeys(dposPublicKeys: bytes_t[]): boolean {
     if (this._dposPublicKeys.length !== dposPublicKeys.length) {
       return false;
     }
-    this._dposPublicKeys.sort((a, b) => a.compare(b));
-    dposPublicKeys.sort((a, b) => a.compare(b));
+
+    let equal = false;
     for (let i = 0; i < dposPublicKeys.length; ++i) {
-      if (!this._dposPublicKeys[i].equals(dposPublicKeys[i])) {
+      for (let j = 0; j < this._dposPublicKeys.length; ++j) {
+        if (this._dposPublicKeys[j].equals(dposPublicKeys[i])) {
+          equal = true;
+          break;
+        } else {
+          equal = false;
+        }
+      }
+      if (equal === false) {
         return false;
       }
     }
-    return true;
+    return equal;
   }
 
   equals(payload: Payload, version: uint8_t): boolean {

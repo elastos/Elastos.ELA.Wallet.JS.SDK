@@ -41,7 +41,7 @@ export class ProducerInfo extends Payload {
   private _StakeUntil: uint32_t;
   private _signature: bytes_t;
 
-  newFromParams(
+  static newFromParams(
     ownerPublicKey: bytes_t,
     nodePublicKey: bytes_t,
     nickName: string,
@@ -51,20 +51,23 @@ export class ProducerInfo extends Payload {
     stakeUntil: number,
     signature: bytes_t
   ) {
-    this._ownerPublicKey = ownerPublicKey;
-    this._nodePublicKey = nodePublicKey;
-    this._nickName = nickName;
-    this._url = url;
-    this._location = location;
-    this._address = address;
+    let producerInfo = new ProducerInfo();
+    producerInfo._ownerPublicKey = ownerPublicKey;
+    producerInfo._nodePublicKey = nodePublicKey;
+    producerInfo._nickName = nickName;
+    producerInfo._url = url;
+    producerInfo._location = location;
+    producerInfo._address = address;
     if (stakeUntil) {
-      this._StakeUntil = stakeUntil;
+      producerInfo._StakeUntil = stakeUntil;
     }
-    this._signature = signature;
+    producerInfo._signature = signature;
+    return producerInfo;
   }
 
   newFromProducerInfo(payload: ProducerInfo) {
-    this.copyProducerInfo(payload);
+    let producerInfo = new ProducerInfo();
+    return producerInfo.copyProducerInfo(payload);
   }
 
   destroy() {}

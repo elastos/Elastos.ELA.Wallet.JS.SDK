@@ -48,7 +48,7 @@ export class Unstake extends Payload {
   private _value: uint64_t;
   private _signature: bytes_t;
 
-  newFromParams(
+  static newFromParams(
     toAddr: uint168,
     code: bytes_t,
     value: uint64_t,

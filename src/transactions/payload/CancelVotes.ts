@@ -34,8 +34,10 @@ export type CancelVotesInfo = {
 export class CancelVotes extends Payload {
   private _referKeys: uint256[];
 
-  newFromParams(referKeys: uint256[]) {
-    this._referKeys = referKeys;
+  static newFromParams(referKeys: uint256[]) {
+    let cancelVotes = new CancelVotes();
+    cancelVotes._referKeys = referKeys;
+    return cancelVotes;
   }
 
   estimateSize(version: uint8_t): size_t {

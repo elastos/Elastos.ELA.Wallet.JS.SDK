@@ -123,7 +123,6 @@ export class CRCProposalWithdraw extends Payload {
 
     if (version == CRCProposalWithdrawVersion_01) {
       stream.writeBytes(this._recipient.programHash().bytes());
-      // WAS stream.WriteUint64(_amount.getUint64());
       stream.writeBNAsUIntOfSize(this._amount, 8);
     }
   }

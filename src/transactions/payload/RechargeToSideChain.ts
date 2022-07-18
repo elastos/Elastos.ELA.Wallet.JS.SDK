@@ -44,7 +44,7 @@ export class RechargeToSideChain extends Payload {
     return rechargeToSideChain;
   }
 
-  newFromRechargeToSideChain(payload: RechargeToSideChain) {
+  static newFromRechargeToSideChain(payload: RechargeToSideChain) {
     const rechargeToSideChain = new RechargeToSideChain();
     rechargeToSideChain.copyRechargeToSideChain(payload);
     return rechargeToSideChain;

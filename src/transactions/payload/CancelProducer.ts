@@ -14,13 +14,17 @@ export class CancelProducer extends Payload {
   private _publicKey: bytes_t;
   private _signature: bytes_t;
 
-  newFromParams(pubkey: bytes_t, sign: bytes_t) {
-    this._publicKey = pubkey;
-    this._signature = sign;
+  static newFromParams(pubkey: bytes_t, sign: bytes_t) {
+    let cancelProducer = new CancelProducer();
+    cancelProducer._publicKey = pubkey;
+    cancelProducer._signature = sign;
+    return cancelProducer;
   }
 
-  newFromCancelProducer(payload: CancelProducer) {
-    this.copyCancelProducer(payload);
+  static newFromCancelProducer(payload: CancelProducer) {
+    let cancelProducer = new CancelProducer();
+    cancelProducer.copyCancelProducer(payload);
+    return cancelProducer;
   }
 
   destroy() {}

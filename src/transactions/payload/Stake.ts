@@ -49,7 +49,7 @@ export class Stake extends Payload {
   copyPayload(payload: Payload) {
     try {
       let p = payload as Stake;
-      this.newFromStake(p);
+      this.copyStake(p);
     } catch (e) {
       Log.error("payload is not instance of Stake");
     }
@@ -57,7 +57,7 @@ export class Stake extends Payload {
     return this;
   }
 
-  newFromStake(payload: Stake) {
+  copyStake(payload: Stake) {
     return this;
   }
 

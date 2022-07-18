@@ -1,6 +1,7 @@
 // Copyright (c) 2012-2022 The Elastos Open Source Project
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 import BigNumber from "bignumber.js";
 import {
   size_t,
@@ -123,6 +124,7 @@ export class WithdrawFromSideChain extends Payload {
       return false;
     }
 
+    this._sideChainTransactionHash = [];
     for (let i = 0; i < len.toNumber(); ++i) {
       let hash = istream.readUIntOfBytesAsBN(32);
       if (!hash) {
@@ -153,10 +155,11 @@ export class WithdrawFromSideChain extends Payload {
   }
 
   fromJson(j: WithdrawFromSideChainInfo, version: uint8_t) {
-    this._blockHeight = j["BlockHeight"] as number;
-    this._genesisBlockAddress = j["GenesisBlockAddress"] as string;
+    this._blockHeight = j["BlockHeight"];
+    this._genesisBlockAddress = j["GenesisBlockAddress"];
 
-    let hashes = j["SideChainTransactionHash"] as [];
+    let hashes = j["SideChainTransactionHash"];
+    this._sideChainTransactionHash = [];
     for (let i = 0; i < hashes.length; ++i) {
       this._sideChainTransactionHash.push(new BigNumber(hashes[i], 16));
     }
@@ -184,17 +187,25 @@ export class WithdrawFromSideChain extends Payload {
   equals(payload: Payload, version: uint8_t): boolean {
     try {
       const p = payload as WithdrawFromSideChain;
-      let isEqualHash = true;
-      for (let i = 0; i < this._sideChainTransactionHash.length; ++i) {
-        if (
-          !this._sideChainTransactionHash[i].eq(p._sideChainTransactionHash[i])
-        ) {
-          return (isEqualHash = false);
+      let equal = false;
+      for (let i = 0; i < p._sideChainTransactionHash.length; ++i) {
+        for (let j = 0; j < this._sideChainTransactionHash.length; ++j) {
+          if (
+            this._sideChainTransactionHash[j].eq(p._sideChainTransactionHash[i])
+          ) {
+            equal = true;
+            break;
+          } else {
+            equal = false;
+          }
+        }
+        if (equal === false) {
+          return false;
         }
       }
-      if (!isEqualHash) return false;
 
       return (
+        equal &&
         this._blockHeight == p._blockHeight &&
         this._genesisBlockAddress == p._genesisBlockAddress
       );

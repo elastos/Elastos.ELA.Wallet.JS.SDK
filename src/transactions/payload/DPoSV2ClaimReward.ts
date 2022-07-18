@@ -39,9 +39,11 @@ export class DPoSV2ClaimReward extends Payload {
   private _amount: uint64_t;
   private _signature: bytes_t;
 
-  newFromParams(amount: uint64_t, signature: bytes_t) {
-    this._amount = amount;
-    this._signature = signature;
+  static newFromParams(amount: uint64_t, signature: bytes_t) {
+    let claimReward = new DPoSV2ClaimReward();
+    claimReward._amount = amount;
+    claimReward._signature = signature;
+    return claimReward;
   }
 
   serializeUnsigned(stream: ByteStream, version: uint8_t) {

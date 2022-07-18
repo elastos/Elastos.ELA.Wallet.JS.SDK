@@ -34,8 +34,10 @@ export type DPoSV2ClaimRewardRealWithdrawInfo = {
 export class DPoSV2ClaimRewardRealWithdraw extends Payload {
   private _withdrawTxHashes: uint256[];
 
-  newFromParams(withdrawTxHashes: uint256[]) {
-    this._withdrawTxHashes = withdrawTxHashes;
+  static newFromParams(withdrawTxHashes: uint256[]) {
+    let claimReward = new DPoSV2ClaimRewardRealWithdraw();
+    claimReward._withdrawTxHashes = withdrawTxHashes;
+    return claimReward;
   }
 
   estimateSize(version: uint8_t): size_t {

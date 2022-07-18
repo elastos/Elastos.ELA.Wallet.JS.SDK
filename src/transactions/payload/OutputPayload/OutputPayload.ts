@@ -19,7 +19,7 @@ export abstract class OutputPayload
   }
 
   public abstract toJson(): json;
-  public abstract fromJson(j: json);
+  public abstract fromJson(j: json): void;
 
   public abstract copyOutputPayload(payload: OutputPayload);
 

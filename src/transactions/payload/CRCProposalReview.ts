@@ -138,12 +138,8 @@ export class CRCProposalReview extends Payload {
   estimateSize(version: uint8_t): size_t {
     let stream = new ByteStream();
     let size: size_t = 0;
-
-    // size += this._proposalHash.size();
     size += sizeof_uint256_t();
-    // size += sizeof(uint8_t);
     size += sizeof_uint8_t();
-    // size += this._opinionHash.size();
     size += sizeof_uint256_t();
     if (version >= CRCProposalReviewVersion01) {
       size += stream.writeVarUInt(this._opinionData.length);
