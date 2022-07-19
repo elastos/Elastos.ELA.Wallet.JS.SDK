@@ -91,10 +91,16 @@ export class CandidateVotes {
 }
 
 export enum VoteContentType {
+  // Delegate indicates the vote content is for producer.
   Delegate,
+  // CRC indicates the vote content is for CRC.
   CRC,
+  // Proposal indicates the vote content is for reject proposal.
   CRCProposal,
+  // Reject indicates the vote content is for impeachment.
   CRCImpeachment,
+  // DposV2 indicates the vote content is for dpos 2.0 pledge address.
+  DposV2,
   Max
 }
 

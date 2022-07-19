@@ -99,7 +99,7 @@ export class VotesWithLockTime {
     }
 
     this._lockTime = stream.readUInt32();
-    if (!this._lockTime) {
+    if (!this._lockTime && this._lockTime !== 0) {
       Log.error("VotesWithLockTime deserialize locktime");
       return false;
     }

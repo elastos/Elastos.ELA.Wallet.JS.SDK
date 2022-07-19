@@ -51,6 +51,7 @@ export class SubAccount {
   private _depositAddress: Address;
   private _ownerAddress: Address;
   private _crDepositAddress: Address;
+  private _stakeAddress: Address;
 
   private _parent: Account;
 
@@ -66,6 +67,12 @@ export class SubAccount {
         Prefix.PrefixDeposit,
         ownerPubKey
       );
+
+      this._stakeAddress = Address.newWithPubKey(
+        Prefix.PrefixDPoSV2,
+        ownerPubKey
+      );
+
       this._ownerAddress = Address.newWithPubKey(
         Prefix.PrefixStandard,
         ownerPubKey
@@ -98,6 +105,14 @@ export class SubAccount {
       this._depositAddress &&
       this._depositAddress.valid() &&
       this._depositAddress.equals(address)
+    );
+  }
+
+  isOwnerStakeAddress(address: Address): boolean {
+    return (
+      this._stakeAddress &&
+      this._stakeAddress.valid() &&
+      this._stakeAddress.equals(address)
     );
   }
 
@@ -443,6 +458,10 @@ export class SubAccount {
     if (this.isProducerDepositAddress(addr)) {
       // "44'/0'/1'/0/0";
       return (code = this._depositAddress.redeemScript());
+    }
+
+    if (this.isOwnerStakeAddress(addr)) {
+      return (code = this._stakeAddress.redeemScript());
     }
 
     if (this.isOwnerAddress(addr)) {

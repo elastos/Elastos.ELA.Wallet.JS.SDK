@@ -93,10 +93,12 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const voteContents: VoteContentInfo[] = [
       {
         Type: "CRCImpeachment",
+        // The keys of Candidates are CR council members' cids
         Candidates: { innnNZJLqmJ8uKfVHKFxhdqVtvipNHzmZs: "100000000" }
       },
       {
         Type: "CRCProposal",
+        // The keys of Candidates are CR proposals' cids
         Candidates: {
           "109780cf45c7a6178ad674ac647545b47b10c2c3e3b0020266d0707e5ca8af7c":
             "100000000"
@@ -104,6 +106,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       },
       {
         Type: "Delegate",
+        // The keys of Candidates are DPoS nodes' owner public keys
         Candidates: {
           "031f7a5a6bf3b2450cd9da4048d00a8ef1cb4912b5057535f65f3cc0e0c36f13b4":
             "100000000"
@@ -111,6 +114,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       },
       {
         Type: "CRC",
+        // The keys of Candidates are CR candidates' cids
         Candidates: {
           iXviwqspCcLFw3waXKyQFbeP82Cfg3S9Je: "1000", // CR10
           ifzo3Fx82sUb6BAqw6K9ok8trvfKPfFwTL: "1000" // CR11

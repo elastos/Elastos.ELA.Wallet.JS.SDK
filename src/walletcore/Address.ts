@@ -40,7 +40,8 @@ export enum Prefix {
   PrefixCRExpenses = 0x1c,
   PrefixDeposit = 0x1f,
   PrefixIDChain = 0x67,
-  PrefixDestroy = 0
+  PrefixDestroy = 0,
+  PrefixDPoSV2 = 0x3f
 }
 
 export type AddressArray = Address[];
@@ -140,6 +141,7 @@ export class Address {
       case Prefix.PrefixIDChain:
       case Prefix.PrefixStandard:
       case Prefix.PrefixDeposit:
+      case Prefix.PrefixDPoSV2:
         type = SignType.SignTypeStandard;
         break;
       case Prefix.PrefixCrossChain:
@@ -288,7 +290,8 @@ export class Address {
       this.programHashPrefix() == Prefix.PrefixMultiSign ||
       this.programHashPrefix() == Prefix.PrefixIDChain ||
       this.programHashPrefix() == Prefix.PrefixDestroy ||
-      this.programHashPrefix() == Prefix.PrefixCRExpenses
+      this.programHashPrefix() == Prefix.PrefixCRExpenses ||
+      this.programHashPrefix() == Prefix.PrefixDPoSV2
     ) {
       this._isValid = true;
     } else {

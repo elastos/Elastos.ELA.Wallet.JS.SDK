@@ -756,6 +756,28 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return addr;
   }
 
+  /**
+   * Get stake address of owner.
+   */
+  getOwnerStakeAddress(): string {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
+
+    let addrPtr = wallet.getOwnerStakeAddress();
+    let addr: string = addrPtr.string();
+
+    // ArgInfo("r => {}", addr);
+    return addr;
+  }
+
+  /**
+   * Get code of stake address of owner.
+   */
+  getCodeofOwnerStakeAddress(): Buffer {
+    let wallet = this.getWallet();
+    return wallet.getCodeofOwnerStakeAddress();
+  }
+
   voteAmountFromJson(voteAmount: BigNumber, j: string): boolean {
     ErrorChecker.checkParam(
       typeof j !== "string",
