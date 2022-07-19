@@ -46,8 +46,8 @@ import { VotingInfo } from "./transactions/payload/Voting";
 import { UnstakeInfo } from "./transactions/payload/Unstake";
 import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward";
 import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
-import { DPoSV2ClaimRewardRealWithdraw } from "./transactions/payload/DPoSV2ClaimRewardRealWithdraw";
-import { CRCProposalRealWithdraw } from "./transactions/payload/CRCProposalRealWithdraw";
+
+export * from "./transactions/payload";
 
 export {
   Address,
@@ -65,9 +65,7 @@ export {
   VoteResult,
   CRCProposalTrackingType,
   IDChainSubWallet,
-  get32BytesOfBNAsHexString,
-  DPoSV2ClaimRewardRealWithdraw,
-  CRCProposalRealWithdraw
+  get32BytesOfBNAsHexString
 };
 
 export type {
