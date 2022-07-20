@@ -1477,7 +1477,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
 
     const payload: PayloadStakeInfo = {
       Version: 0,
-      StakeAddress: "SSen11Uvta3tLoXGpKoS7qjnE2RfcZSZaS"
+      StakeAddress: "SjTp237HTsMweUnP5rednVLSRW41YoQrfr"
     };
     const lockAddress = "SNmCKtp1NmPfjwEo4m8PbgirDfYss1NUyT";
     const amount = "200000000";

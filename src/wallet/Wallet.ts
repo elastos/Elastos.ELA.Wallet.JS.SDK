@@ -162,16 +162,22 @@ export class Wallet extends Lockable {
   }
 
   getOwnerStakeAddress(): Address {
-    // boost::mutex::scoped_lock scopedLock(lock);
-    return Address.newWithPubKey(
-      Prefix.PrefixDPoSV2,
-      this._subAccount.ownerPubKey()
-    );
-  }
+    let info = this._subAccount.getBasicInfo();
+    let publicKeys: string[] | PublickeysInfo;
+    if (info["Account"]["Type"] === "Standard") {
+      publicKeys = this._subAccount.getPublickeys(0, 1, false) as string[];
+      return Address.newWithPubKey(
+        Prefix.PrefixDPoSV2,
+        Buffer.from(publicKeys[0], "hex")
+      );
+    }
 
-  getCodeofOwnerStakeAddress(): Buffer {
-    let stakeAddress = this.getOwnerStakeAddress();
-    return this._subAccount.getCode(stakeAddress);
+    let keys = [];
+    publicKeys = this._subAccount.getPublickeys(0, 1, false) as PublickeysInfo;
+    for (let i = 0; i < publicKeys["pubkeys"].length; i++) {
+      keys.push(Buffer.from(publicKeys[i], "hex"));
+    }
+    return Address.newWithPubKeys(Prefix.PrefixDPoSV2, keys, publicKeys["m"]);
   }
 
   getCROwnerDepositAddress(): Address {

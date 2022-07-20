@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
 import { Log } from "../common/Log";

@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 import { SignedInfo } from "../transactions/Program";
 import { OutputItem } from "./ElastosBaseSubWallet";
 import { ISubWallet } from "./ISubWallet";

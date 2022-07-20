@@ -98,14 +98,14 @@ export class Unstake extends Payload {
   toJsonUnsigned(version: uint8_t): UnstakeInfo {
     let j = <UnstakeInfo>{};
     j["ToAddress"] = Address.newFromProgramHash(this._toAddr).string();
-    j["Code"] = this._code.toString();
+    j["Code"] = this._code.toString("hex");
     j["Value"] = this._value.toString();
     return j;
   }
 
   fromJsonUnsigned(j: UnstakeInfo, version: uint8_t) {
     this._toAddr = Address.newFromAddressString(j["ToAddress"]).programHash();
-    this._code = Buffer.from(j["Code"]);
+    this._code = Buffer.from(j["Code"], "hex");
     this._value = new BigNumber(j["Value"]);
   }
 
