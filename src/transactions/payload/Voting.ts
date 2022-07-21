@@ -24,6 +24,7 @@ import { BigNumber } from "bignumber.js";
 import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
+import { uint168 } from "../../common/uint168";
 import {
   bytes_t,
   uint64_t,
@@ -36,6 +37,7 @@ import {
   uint256,
   sizeof_uint256_t
 } from "../../types";
+import { Address } from "../../walletcore/Address";
 import { VoteContentType } from "./OutputPayload/PayloadVote";
 import { Payload } from "./Payload";
 
@@ -115,16 +117,30 @@ export class VotesWithLockTime {
     );
   }
 
-  fromJson(j: VotesWithLockTimeInfo, v: VotesWithLockTime) {
-    v._candidate = Buffer.from(j["Candidate"]);
-    v._votes = new BigNumber(j["Votes"]);
-    v._lockTime = j["Locktime"];
+  fromJson(j: VotesWithLockTimeInfo) {
+    if (j["Candidate"].length === 34) {
+      this._candidate = Address.newFromAddressString(j["Candidate"])
+        .programHash()
+        .bytes();
+    } else {
+      this._candidate = Buffer.from(j["Candidate"], "hex");
+    }
+    this._votes = new BigNumber(j["Votes"]);
+    this._lockTime = j["Locktime"];
   }
 
-  toJson(j: VotesWithLockTimeInfo, v: VotesWithLockTime) {
-    j["Candidate"] = v._candidate.toString();
-    j["Votes"] = v._votes.toString();
-    j["Locktime"] = v._lockTime;
+  toJson(): VotesWithLockTimeInfo {
+    let j = <VotesWithLockTimeInfo>{};
+    if (this._candidate.length === 21) {
+      j["Candidate"] = Address.newFromProgramHash(
+        uint168.newFrom21BytesBuffer(this._candidate)
+      ).string();
+    } else {
+      j["Candidate"] = this._candidate.toString("hex");
+    }
+    j["Votes"] = this._votes.toString();
+    j["Locktime"] = this._lockTime;
+    return;
   }
 }
 
@@ -207,9 +223,10 @@ export class VotesContent {
   fromJson(j: VotesContentInfo, vc: VotesContent) {
     vc._voteType = j["VoteType"];
     let votesInfo = [];
-    let voteInfo = new VotesWithLockTime();
     for (let i = 0; i < j["VotesInfo"].length; i++) {
-      voteInfo.fromJson(j["VotesInfo"][i], voteInfo);
+      let info = j["VotesInfo"][i];
+      let voteInfo = new VotesWithLockTime();
+      voteInfo.fromJson(info);
       votesInfo.push(voteInfo);
     }
     vc._votesInfo = votesInfo;
@@ -218,11 +235,8 @@ export class VotesContent {
   toJson(j: VotesContentInfo, vc: VotesContent) {
     j["VoteType"] = vc._voteType;
     let votesInfo = [];
-    let voteInfo = new VotesWithLockTime();
     for (let i = 0; i < vc._votesInfo.length; i++) {
-      let j = <VotesWithLockTimeInfo>{};
-      voteInfo.toJson(j, vc._votesInfo[i]);
-      votesInfo.push(j);
+      votesInfo.push(vc._votesInfo[i].toJson());
     }
     j["VotesInfo"] = votesInfo;
   }
@@ -285,16 +299,13 @@ export class RenewalVotesContent {
   fromJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
     rvc._referKey = new BigNumber(j["ReferKey"], 16);
     let votesWithLockTime = new VotesWithLockTime();
-    votesWithLockTime.fromJson(j["VoteInfo"], votesWithLockTime);
+    votesWithLockTime.fromJson(j["VoteInfo"]);
     rvc._voteInfo = votesWithLockTime;
   }
 
   toJson(j: RenewalVotesContentInfo, rvc: RenewalVotesContent) {
     j["ReferKey"] = get32BytesOfBNAsHexString(rvc._referKey);
-    let votesWithLockTime = rvc._voteInfo;
-    let voteInfo = <VotesWithLockTimeInfo>{};
-    votesWithLockTime.toJson(voteInfo, votesWithLockTime);
-    j["VoteInfo"] = voteInfo;
+    j["VoteInfo"] = rvc._voteInfo.toJson();
   }
 }
 
