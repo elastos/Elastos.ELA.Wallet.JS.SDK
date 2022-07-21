@@ -44,7 +44,7 @@ export const RenewalVoteVersion = 1;
 
 export type VotesWithLockTimeInfo = {
   Candidate?: string;
-  Votes: number;
+  Votes: string;
   Locktime: number;
 };
 
@@ -123,7 +123,7 @@ export class VotesWithLockTime {
 
   toJson(j: VotesWithLockTimeInfo, v: VotesWithLockTime) {
     j["Candidate"] = v._candidate.toString();
-    j["Votes"] = v._votes.toNumber();
+    j["Votes"] = v._votes.toString();
     j["Locktime"] = v._lockTime;
   }
 }

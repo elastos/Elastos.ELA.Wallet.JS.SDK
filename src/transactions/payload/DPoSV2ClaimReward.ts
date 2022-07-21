@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 import { BigNumber } from "bignumber.js";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";

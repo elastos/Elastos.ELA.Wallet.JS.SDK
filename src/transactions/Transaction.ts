@@ -68,7 +68,7 @@ import { Stake } from "./payload/Stake";
 import { DPoSV2ClaimReward } from "./payload/DPoSV2ClaimReward";
 import { DPoSV2ClaimRewardRealWithdraw } from "./payload/DPoSV2ClaimRewardRealWithdraw";
 import { Voting } from "./payload/Voting";
-import { CancelVotes } from "./payload/CancelVotes";
+// import { CancelVotes } from "./payload/CancelVotes";
 import { Unstake } from "./payload/Unstake";
 import { UnstakeRealWithdraw } from "./payload/UnstakeRealWithdraw";
 
@@ -894,8 +894,9 @@ export class Transaction {
       payload = new Stake();
     } else if (type == TransactionType.Voting) {
       payload = new Voting();
-    } else if (type == TransactionType.CancelVotes) {
-      payload = new CancelVotes();
+      // This type of transaction is removed
+      // } else if (type == TransactionType.CancelVotes) {
+      //   payload = new CancelVotes();
     } else if (type == TransactionType.Unstake) {
       payload = new Unstake();
     } else if (type == TransactionType.UnstakeRealWithdraw) {

@@ -3644,7 +3644,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *       "VotesInfo": [
    *         {
    *           "Candidate": "...", // string
-   *           "Votes": 100000, // uint64_t
+   *           "Votes": "100000", // uint64_t
    *           "Locktime": 1000000 // uint32_t
    *         },
    *         ...
@@ -3662,7 +3662,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *       "ReferKey": "0x...", // uint256 string
    *       "VoteInfo": {
    *         "Candidate": "...", // string
-   *         "Votes": 10000, // uint64_t
+   *         "Votes": "10000", // uint64_t
    *         "Locktime": 100000000 // uint32_t
    *       }
    *     },
