@@ -172,12 +172,17 @@ export class Wallet extends Lockable {
       );
     }
 
-    let keys = [];
     publicKeys = this._subAccount.getPublickeys(0, 1, false) as PublickeysInfo;
-    for (let i = 0; i < publicKeys["pubkeys"].length; i++) {
-      keys.push(Buffer.from(publicKeys[i], "hex"));
+    let pubKeys = [];
+    let keys = publicKeys["pubkeys"][0]["all"];
+    for (let i = 0; i < keys.length; i++) {
+      pubKeys.push(Buffer.from(keys[i], "hex"));
     }
-    return Address.newWithPubKeys(Prefix.PrefixDPoSV2, keys, publicKeys["m"]);
+    return Address.newWithPubKeys(
+      Prefix.PrefixDPoSV2,
+      pubKeys,
+      publicKeys["m"]
+    );
   }
 
   getCROwnerDepositAddress(): Address {

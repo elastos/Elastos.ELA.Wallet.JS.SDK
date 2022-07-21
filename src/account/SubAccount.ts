@@ -25,7 +25,7 @@ import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
 import { Transaction } from "../transactions/Transaction";
-import { bytes_t, size_t, uint256, uint32_t } from "../types";
+import { bytes_t, size_t, uint32_t } from "../types";
 import { Address, AddressArray, Prefix, SignType } from "../walletcore/Address";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import {
@@ -145,7 +145,7 @@ export class SubAccount {
       ? SEQUENCE_INTERNAL_CHAIN
       : SEQUENCE_EXTERNAL_CHAIN;
     if (this._parent.getSignType() == AccountSignType.MultiSign) {
-      let allKeychains: HDKey[];
+      let allKeychains: HDKey[] = [];
       let mineKeychain: HDKey;
 
       if (count > 0) {
@@ -160,12 +160,12 @@ export class SubAccount {
         count = 0;
         Log.error("keychains is empty when derivate address");
       }
-      let jout: PublickeysInfo;
+      let jout = <PublickeysInfo>{};
       jout["m"] = this._parent.getM();
-      let jpubkeys: PublickeyItem[];
+      let jpubkeys: PublickeyItem[] = [];
       while (count--) {
-        let pubkeys: string[];
-        let j: PublickeyItem;
+        let pubkeys: string[] = [];
+        let j = <PublickeyItem>{};
         for (let signer of allKeychains) {
           pubkeys.push(
             signer.deriveWithIndex(index).getPublicKeyBytes().toString("hex")
@@ -184,7 +184,7 @@ export class SubAccount {
       return jout;
     } else {
       let keychain: HDKey = this._parent.masterPubKey().deriveWithIndex(chain);
-      let jout = [];
+      let jout: string[] = [];
       while (count--) {
         jout.push(
           keychain

@@ -3812,6 +3812,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   /**
+   * This API is removed.
    * @param inputs UTXO which will be used. eg
    * [
    *   {
@@ -3833,6 +3834,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param memo Remark string
    * @return
    */
+  /*
   createCancelVotesTransaction(
     inputs: UTXOInput[],
     payload: CancelVotesInfo,
@@ -3876,6 +3878,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("r => {}", result.dump());
     return result;
   }
+  */
 
   /**
    * @param payload
@@ -3957,7 +3960,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let feeAmount = new BigNumber(fee);
 
     let tx = wallet.createTransaction(
-      TransactionType.CancelVotes,
+      TransactionType.Unstake,
       p,
       utxo,
       [],

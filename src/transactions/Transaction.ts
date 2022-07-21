@@ -121,9 +121,9 @@ export enum TransactionType {
   DposV2ClaimRewardRealWithdraw = 0x61,
   Stake = 0x62,
   Voting = 0x63,
-  CancelVotes = 0x64,
-  Unstake = 0x65,
-  UnstakeRealWithdraw = 0x66,
+  // CancelVotes = 0x64, // removed
+  Unstake = 0x64,
+  UnstakeRealWithdraw = 0x65,
   // DPoS2.0 end
 
   TypeMaxCount
@@ -616,6 +616,7 @@ export class Transaction {
     for (let i = 0; i < this._programs.length; i++) {
       this._programs[i].serialize(ostream);
     }
+    ostream.shrink();
   }
 
   public serializeUnsigned(ostream: ByteStream) {
