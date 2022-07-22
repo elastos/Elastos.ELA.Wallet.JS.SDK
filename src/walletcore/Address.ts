@@ -268,7 +268,11 @@ export class Address {
         bytes.writeBytes(sortedSigners[i]);
       }
       bytes.writeUInt8(OP_1 + sortedSigners.length - 1);
-      bytes.writeUInt8(this.prefixToSignType(prefix));
+      if (prefix === Prefix.PrefixDPoSV2) {
+        bytes.writeUInt8(SignType.SignTypeMultiSign);
+      } else {
+        bytes.writeUInt8(this.prefixToSignType(prefix));
+      }
     }
     this._code = bytes.getBytes();
   }
