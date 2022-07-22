@@ -42,7 +42,10 @@ import {
   CRCProposalTrackingType,
   CRCProposalWithdrawInfo,
   PayloadStakeInfo,
-  UnstakeInfo
+  UnstakeInfo,
+  VotesContentInfo,
+  VotingInfo,
+  VoteContentType
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -1539,6 +1542,172 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const memo = "unstake transaction";
 
     const tx = subWallet.createUnstakeTransaction(inputs, payload, fee, memo);
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test createDPoSV2VoteTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-41";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+    masterWallet.getAccount();
+
+    const subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    console.log("addresses...", addresses);
+
+    // input address's public key should be same with the stake address's
+    const inputsJson = [
+      {
+        Address: addresses[0],
+        Amount: "999980000",
+        TxHash:
+          "d314430d34e928c53a6d5a23d845f59bdf8f47b12f06722685df00d52e65eeb6",
+        Index: 0
+      }
+    ];
+
+    const voteContents: VotesContentInfo[] = [
+      {
+        VoteType: VoteContentType.Delegate,
+        VotesInfo: [
+          {
+            Candidate:
+              "02c0d2306673cbebac19cf594a2f95e0bfe0ec6ce10e293f54bc77cdeb0edf9ae7",
+            Votes: "100000000",
+            Locktime: 0
+          }
+        ]
+      },
+      {
+        VoteType: VoteContentType.CRCProposal,
+        VotesInfo: [
+          {
+            Candidate:
+              "ca88d13a3e2a28719873da2dd0512ea9ab97f83f4a348ed5c9232b94b809ec45",
+            Votes: "1000000000",
+            Locktime: 0
+          }
+        ]
+      },
+      {
+        VoteType: VoteContentType.CRCImpeachment,
+        VotesInfo: [
+          {
+            Candidate: "iWWPzYbCny9Pbjdb7nCdvSdr1M1mcgvYUv",
+            Votes: "100000000",
+            Locktime: 0
+          },
+          {
+            Candidate: "igDiSLhyGD23YAB4r9fJ9w8wcQ5HLWAnQE",
+            Votes: "100000000",
+            Locktime: 0
+          }
+        ]
+      },
+      {
+        VoteType: VoteContentType.DposV2,
+        VotesInfo: [
+          {
+            Candidate:
+              "0217f1279db6e4b3d6b5c0e06041dee6be1f5145daf7c83db88755af7cd3b653b0",
+            Votes: "100000000",
+            Locktime: 15550
+          }
+        ]
+      }
+    ];
+    const fee = "10000";
+    const memo = "the vote transaction";
+    const payload: VotingInfo = {
+      Version: 0,
+      Contents: voteContents
+    };
+
+    const tx: EncodedTx = subWallet.createDPoSV2VoteTransaction(
+      inputsJson,
+      payload,
+      fee,
+      memo
+    );
+
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info[0].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test DPoSV2 renewal vote Transaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-42";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+    masterWallet.getAccount();
+
+    const subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    console.log("addresses...", addresses);
+
+    // input address's public key should be same with the stake address's
+    const inputsJson = [
+      {
+        Address: addresses[0],
+        Amount: "999980000",
+        TxHash:
+          "d314430d34e928c53a6d5a23d845f59bdf8f47b12f06722685df00d52e65eeb6",
+        Index: 0
+      }
+    ];
+
+    // get referkey from the rpc getalldetaileddposv2votes
+    const payload = {
+      Version: 1,
+      RenewalVotesContent: [
+        {
+          ReferKey:
+            "a9cf4c4dce306964bf8dc032980324763c14574eed6059f6d865a4608e5ac61e",
+          VoteInfo: {
+            Candidate:
+              "0217f1279db6e4b3d6b5c0e06041dee6be1f5145daf7c83db88755af7cd3b653b0",
+            Votes: "100000000",
+            Locktime: 15500
+          }
+        }
+      ]
+    };
+    const fee = "10000";
+    const memo = "renewal vote transaction";
+    const tx: EncodedTx = subWallet.createDPoSV2VoteTransaction(
+      inputsJson,
+      payload,
+      fee,
+      memo
+    );
     const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     expect(info[0].Signers[0]).toEqual(

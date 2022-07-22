@@ -42,7 +42,7 @@ import { CRCProposalWithdrawInfo } from "./transactions/payload/CRCProposalWithd
 import { Address } from "./walletcore/Address";
 import { get32BytesOfBNAsHexString } from "./common/bnutils";
 import { PayloadStakeInfo } from "./transactions/payload/OutputPayload/PayloadStake";
-import { VotingInfo } from "./transactions/payload/Voting";
+import { VotingInfo, VotesContentInfo } from "./transactions/payload/Voting";
 import { UnstakeInfo } from "./transactions/payload/Unstake";
 import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward";
 import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
@@ -98,6 +98,7 @@ export type {
   SubWalletInstance,
   PayloadStakeInfo,
   VotingInfo,
+  VotesContentInfo,
   UnstakeInfo,
   DPoSV2ClaimRewardInfo,
   CancelVotesInfo

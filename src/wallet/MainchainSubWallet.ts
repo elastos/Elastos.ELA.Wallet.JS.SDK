@@ -335,8 +335,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     url: string,
     ipAddress: string,
     location: uint64_t,
-    payPasswd: string,
-    stakeUntil?: uint32_t
+    stakeUntil: uint32_t,
+    payPasswd: string
   ) {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("ownerPubKey: {}", ownerPublicKey);
@@ -514,6 +514,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       feeAmount
     );
     tx.setPayloadVersion(version);
+
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
 
@@ -580,6 +581,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       memo,
       feeAmount
     );
+    tx.setPayloadVersion(version);
+
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());

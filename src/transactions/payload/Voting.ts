@@ -25,6 +25,7 @@ import { get32BytesOfBNAsHexString } from "../../common/bnutils";
 import { ByteStream } from "../../common/bytestream";
 import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
+import { reverseHashString } from "../../common/utils";
 import {
   bytes_t,
   uint64_t,
@@ -118,10 +119,15 @@ export class VotesWithLockTime {
   }
 
   fromJson(j: VotesWithLockTimeInfo) {
+    // Handle the CRC and CRCImpeachment vote types
     if (j["Candidate"].length === 34) {
       this._candidate = Address.newFromAddressString(j["Candidate"])
         .programHash()
         .bytes();
+      // Handle the CRCProposal vote type
+    } else if (j["Candidate"].length === 64) {
+      this._candidate = Buffer.from(reverseHashString(j["Candidate"]), "hex");
+      // Handle the Delegate and DposV2 vote types
     } else {
       this._candidate = Buffer.from(j["Candidate"], "hex");
     }
