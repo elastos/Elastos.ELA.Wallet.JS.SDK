@@ -178,6 +178,7 @@ export class Wallet extends Lockable {
     for (let i = 0; i < keys.length; i++) {
       pubKeys.push(Buffer.from(keys[i], "hex"));
     }
+
     return Address.newWithPubKeys(
       Prefix.PrefixDPoSV2,
       pubKeys,
@@ -283,8 +284,27 @@ export class Wallet extends Lockable {
     payPasswd: string
   ): Promise<string> {
     // boost::mutex::scoped_lock scopedLock(lock);
-    const privateKey: bytes_t | null = await this._subAccount.getKeyWithAddress(
+    const privateKey = await this._subAccount.getKeyWithAddress(
       addr,
+      payPasswd
+    );
+
+    if (privateKey) {
+      const signature = EcdsaSigner.sign(
+        privateKey,
+        Buffer.from(digest, "hex")
+      );
+      return signature.toString("hex");
+    }
+  }
+
+  async signDigestWithPublicKeys(
+    publicKeys: string[],
+    digest: string,
+    payPasswd: string
+  ): Promise<string> {
+    const privateKey = await this._subAccount.getPrivateKeyWithPublicKeys(
+      publicKeys,
       payPasswd
     );
 

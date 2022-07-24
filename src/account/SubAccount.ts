@@ -394,10 +394,7 @@ export class SubAccount {
     }
   }
 
-  async getKeyWithAddress(
-    addr: Address,
-    payPasswd: string
-  ): Promise<bytes_t | null> {
+  async getKeyWithAddress(addr: Address, payPasswd: string): Promise<bytes_t> {
     const rootKey = await this._parent.rootKey(payPasswd);
     if (this._parent.getSignType() != AccountSignType.MultiSign) {
       for (let [key, value] of this._chainAddressCached) {
@@ -425,7 +422,29 @@ export class SubAccount {
       Error.Code.PrivateKeyNotFound,
       "private key not found"
     );
-    return null;
+  }
+
+  async getPrivateKeyWithPublicKeys(
+    publicKeys: string[],
+    payPasswd: string
+  ): Promise<bytes_t> {
+    if (this._parent.getSignType() === AccountSignType.MultiSign) {
+      let pubKeys = [];
+      for (let i = 0; i < publicKeys.length; i++) {
+        pubKeys.push(Buffer.from(publicKeys[i], "hex"));
+      }
+      let rs = await this.findPrivateKey(
+        SignType.SignTypeMultiSign,
+        pubKeys,
+        payPasswd
+      );
+      if (rs.found) return rs.key.getPrivateKeyBytes();
+    }
+
+    ErrorChecker.throwLogicException(
+      Error.Code.PrivateKeyNotFound,
+      "private key not found"
+    );
   }
 
   async deriveOwnerKey(payPasswd: string): Promise<HDKey> {

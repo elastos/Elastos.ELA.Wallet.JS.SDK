@@ -47,6 +47,7 @@ import { UnstakeInfo } from "./transactions/payload/Unstake";
 import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward";
 import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
 import { SHA256 } from "./walletcore/sha256";
+import { ByteStream } from "./common/bytestream";
 
 export * from "./transactions/payload";
 
@@ -67,7 +68,8 @@ export {
   CRCProposalTrackingType,
   IDChainSubWallet,
   get32BytesOfBNAsHexString,
-  SHA256
+  SHA256,
+  ByteStream
 };
 
 export type {

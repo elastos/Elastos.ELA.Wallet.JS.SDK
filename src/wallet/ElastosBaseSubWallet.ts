@@ -261,6 +261,24 @@ export class ElastosBaseSubWallet
     return signature;
   }
 
+  async signDigestWithPublicKeys(
+    publicKeys: string[],
+    digest: string,
+    payPassword: string
+  ) {
+    ErrorChecker.checkParam(
+      digest.length != 64,
+      Error.Code.InvalidArgument,
+      "invalid digest"
+    );
+    const signature: string = await this._wallet.signDigestWithPublicKeys(
+      publicKeys,
+      digest,
+      payPassword
+    );
+    return signature;
+  }
+
   verifyDigest(publicKey: string, digest: string, signature: string): boolean {
     const r: boolean = EcdsaSigner.verify(
       publicKey,
@@ -294,7 +312,7 @@ export class ElastosBaseSubWallet
       ? SEQUENCE_INTERNAL_CHAIN
       : SEQUENCE_EXTERNAL_CHAIN;
 
-    // len means the max value the index(in the derived path) could be
+    // The len means the max value of the index (in the derived path) could be
     const len = this.getWallet().getChainAddressCachedAmount(chain);
     if (!len) return;
 
