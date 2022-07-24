@@ -5,8 +5,10 @@
 // import * as fs from "fs";
 // import { ErrorChecker, Error } from "../common/ErrorChecker";
 // import { SjclFile, SjclFileInfo } from "./SjclFile";
+
 import { ElaNewWalletJson, ElaNewWalletInfo } from "./ElaNewWalletJson";
 import { AESDecrypt, AESEncrypt } from "./aes";
+import { KeystoreStorage } from "../persistence/KeystoreStorage";
 
 // const AES_DEFAULT_ITER = 10000;
 // const AES_DEFAULT_KS = 128;
@@ -28,13 +30,13 @@ export class KeyStore {
     return this._walletJson;
   }
 
-  open(path: string, password: string) {
-    // TODO
-    // const data = fs.readFileSync(path, {
-    //   encoding: "utf8",
-    //   flag: "r"
-    // });
-    // return this.import(JSON.parse(data), password);
+  async open(
+    keystoreStorage: KeystoreStorage,
+    storageID: string,
+    password: string
+  ) {
+    let data = await keystoreStorage.loadStore(storageID);
+    return this.import(data, password);
   }
 
   importReadonly(j: ElaNewWalletInfo) {
@@ -71,11 +73,16 @@ export class KeyStore {
     return true;
   }
 
-  save(path: string, password: string, withPrivKey: boolean): boolean {
-    // TODO
-    // let json = this.export(password, withPrivKey);
-    // fs.writeFileSync(path, JSON.stringify(json, null, 2));
-    return true;
+  async save(
+    keystoreStorage: KeystoreStorage,
+    storageID: string,
+    password: string,
+    withPrivKey: boolean
+  ) {
+    let data = this.export(password, withPrivKey);
+    await keystoreStorage.saveStore(storageID, data);
+
+    return Promise.resolve(true);
   }
 
   exportReadonly() {
