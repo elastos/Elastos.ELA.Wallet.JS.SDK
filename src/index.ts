@@ -49,7 +49,7 @@ import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
 import { SHA256 } from "./walletcore/sha256";
 import { ByteStream } from "./common/bytestream";
 import { KeystoreBrowserLocalStorage } from "./persistence/implementations/KeystoreBrowserLocalStorage";
-import { KeystoreInfo } from "./walletcore/keystore";
+import { KeystoreInfo, KeyStore } from "./walletcore/keystore";
 
 export * from "./transactions/payload";
 
@@ -72,7 +72,8 @@ export {
   get32BytesOfBNAsHexString,
   SHA256,
   ByteStream,
-  KeystoreBrowserLocalStorage
+  KeystoreBrowserLocalStorage,
+  KeyStore
 };
 
 export type {
