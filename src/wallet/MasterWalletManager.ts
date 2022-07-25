@@ -34,7 +34,7 @@ import {
 import { WalletStorage } from "../persistence/WalletStorage";
 import { time_t, uint32_t } from "../types";
 import { Base58Check } from "../walletcore/base58";
-import { KeyStoreInfo } from "../walletcore/keystore";
+import { KeystoreInfo } from "../walletcore/keystore";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 import { MasterWallet } from "./MasterWallet";
@@ -650,7 +650,7 @@ export class MasterWalletManager {
    */
   async importWalletWithKeystore(
     masterWalletID: string,
-    keystoreContent: KeyStoreInfo,
+    keystoreContent: KeystoreInfo,
     backupPassword: string,
     payPassword: string
   ) {

@@ -62,7 +62,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       netType,
       netConfig
     );
-    expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
   });
 
   test("test createVoteTransaction", async () => {

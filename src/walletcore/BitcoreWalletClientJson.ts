@@ -204,7 +204,7 @@ export class BitcoreWalletClientJson {
     this._requestPrivKey = j["requestPrivKey"] ? j["requestPrivKey"] : "";
     this._requestPubKey = j["requestPubKey"] ? j["requestPubKey"] : "";
     this._copayerId = j["copayerId"] ? j["copayerId"] : "";
-    this._publicKeyRing = j["publicKeyRing"];
+    this._publicKeyRing = j["publicKeyRing"] ? j["publicKeyRing"] : [];
     this._walletId = j["walletId"] ? j["walletId"] : "";
     this._walletName = j["walletName"] ? j["walletName"] : "";
     this._m = j["m"] ? j["m"] : 0;

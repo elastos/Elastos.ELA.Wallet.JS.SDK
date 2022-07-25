@@ -38,7 +38,7 @@ import {
 } from "../wallet/WalletCommon";
 import { Address } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
-import { KeyStore, KeyStoreInfo } from "../walletcore/keystore";
+import { KeyStore, KeystoreInfo } from "../walletcore/keystore";
 import { Mnemonic } from "../walletcore/mnemonic";
 import { PublicKeyRing } from "../walletcore/publickeyring";
 // import { EthSidechainSubWallet } from "./EthSidechainSubWallet";
@@ -150,7 +150,7 @@ export class MasterWallet {
 
   public static async newFromKeystore(
     id: string,
-    keystoreContent: KeyStoreInfo,
+    keystoreContent: KeystoreInfo,
     backupPassword: string,
     payPasswd: string,
     config: Config,
@@ -163,7 +163,7 @@ export class MasterWallet {
     masterWallet._id = id;
     masterWallet._config = config;
 
-    masterWallet._account = Account.newFromKeyStore(
+    masterWallet._account = Account.newFromKeystore(
       id,
       storage,
       keystore,
@@ -536,7 +536,7 @@ export class MasterWallet {
   async exportKeystore(
     backupPassword: string,
     payPassword: string
-  ): Promise<KeyStoreInfo> {
+  ): Promise<KeystoreInfo> {
     // ArgInfo("{} {}", _id, GetFunName());
     // ArgInfo("backupPassword: *");
     // ArgInfo("payPassword: *");
@@ -546,12 +546,9 @@ export class MasterWallet {
     this._account.setSubWalletInfoList(coinInfo);
     await this._account.save();
 
-    let j = <KeyStoreInfo>{};
-    // TODO
-    const keyStore: KeyStore = await this._account.exportKeystore(payPassword);
-    j = keyStore.export(backupPassword, true);
-
-    // ArgInfo("r => *");
+    let j = <KeystoreInfo>{};
+    const keystore: KeyStore = await this._account.exportKeystore(payPassword);
+    j = keystore.export(backupPassword, true);
     return j;
   }
 

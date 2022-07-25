@@ -48,6 +48,8 @@ import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward"
 import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
 import { SHA256 } from "./walletcore/sha256";
 import { ByteStream } from "./common/bytestream";
+import { KeystoreBrowserLocalStorage } from "./persistence/implementations/KeystoreBrowserLocalStorage";
+import { KeystoreInfo } from "./walletcore/keystore";
 
 export * from "./transactions/payload";
 
@@ -69,7 +71,8 @@ export {
   IDChainSubWallet,
   get32BytesOfBNAsHexString,
   SHA256,
-  ByteStream
+  ByteStream,
+  KeystoreBrowserLocalStorage
 };
 
 export type {
@@ -103,5 +106,6 @@ export type {
   VotesContentInfo,
   UnstakeInfo,
   DPoSV2ClaimRewardInfo,
-  CancelVotesInfo
+  CancelVotesInfo,
+  KeystoreInfo
 };

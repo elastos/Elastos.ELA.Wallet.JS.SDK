@@ -13,7 +13,7 @@ import { KeystoreStorage } from "../persistence/KeystoreStorage";
 // const AES_DEFAULT_ITER = 10000;
 // const AES_DEFAULT_KS = 128;
 
-export type KeyStoreInfo = {
+export type KeystoreInfo = {
   ciphertext: string;
 };
 
@@ -21,9 +21,9 @@ export class KeyStore {
   private _walletJson: ElaNewWalletJson;
 
   static newFromParams(walletjson: ElaNewWalletJson) {
-    let keyStore = new KeyStore();
-    keyStore._walletJson = walletjson;
-    return keyStore;
+    let keystore = new KeyStore();
+    keystore._walletJson = walletjson;
+    return keystore;
   }
 
   walletJson(): ElaNewWalletJson {
@@ -44,7 +44,7 @@ export class KeyStore {
     return true;
   }
 
-  import(json: KeyStoreInfo, passwd: string) {
+  import(json: KeystoreInfo, passwd: string) {
     // let sjcl = new SjclFile();
 
     // sjcl.fromJson(json);
@@ -68,6 +68,7 @@ export class KeyStore {
     // );
 
     let content = AESDecrypt(json["ciphertext"], passwd);
+    this._walletJson = new ElaNewWalletJson();
     this._walletJson.fromJson(JSON.parse(content));
 
     return true;

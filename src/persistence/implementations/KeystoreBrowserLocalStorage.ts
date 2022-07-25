@@ -1,13 +1,13 @@
 import { KeystoreStorage } from "../KeystoreStorage";
-import { KeyStoreInfo } from "../../walletcore/keystore";
+import { KeystoreInfo } from "../../walletcore/keystore";
 
-export class KeyStoreBrowserLocalStorage implements KeystoreStorage {
-  loadStore(storageID: string): Promise<KeyStoreInfo> {
+export class KeystoreBrowserLocalStorage implements KeystoreStorage {
+  loadStore(storageID: string): Promise<KeystoreInfo> {
     let data = localStorage.getItem(storageID);
     return Promise.resolve(data && JSON.parse(data));
   }
 
-  saveStore(storageID: string, j: KeyStoreInfo): Promise<void> {
+  saveStore(storageID: string, j: KeystoreInfo): Promise<void> {
     const data = localStorage.getItem("keystoreIDs");
     if (data) {
       const storageIDs = JSON.parse(data);

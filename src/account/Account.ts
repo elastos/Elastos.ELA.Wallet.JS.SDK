@@ -344,7 +344,7 @@ export class Account {
       "Too much signers"
     );
 
-    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
+    const encryptedSeed: string = AESEncrypt(seed.toString("hex"), payPasswd);
 
     const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
     const privateKey = rootkey.serializeBase58();
@@ -447,13 +447,10 @@ export class Account {
       "Too much signers"
     );
 
-    const encryptedMnemonic: string = AESEncrypt(
-      Buffer.from(mnemonic),
-      payPasswd
-    );
+    const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
 
     const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
-    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
+    const encryptedSeed: string = AESEncrypt(seed.toString("hex"), payPasswd);
 
     const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
     const ethkey: HDKey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
@@ -545,7 +542,7 @@ export class Account {
     let account = new Account();
 
     const seed: Buffer = Mnemonic.toSeed(mnemonic, passphrase);
-    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
+    const encryptedSeed: string = AESEncrypt(seed.toString("hex"), payPasswd);
 
     const rootkey: HDKey = HDKey.fromMnemonic(
       mnemonic,
@@ -653,7 +650,7 @@ export class Account {
 
     const rootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Elastos);
 
-    const encryptedSeed: string = AESEncrypt(seed, payPasswd);
+    const encryptedSeed: string = AESEncrypt(seed.toString("hex"), payPasswd);
 
     const stdrootkey: HDKey = HDKey.fromMasterSeed(seed, KeySpec.Bitcoin);
     const ethkey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
@@ -675,7 +672,7 @@ export class Account {
 
     let encryptedMnemonic = "";
     if (mnemonic) {
-      encryptedMnemonic = AESEncrypt(Buffer.from(mnemonic), payPasswd);
+      encryptedMnemonic = AESEncrypt(mnemonic, payPasswd);
     }
 
     const encryptedxPrvKey: string = AESEncrypt(
@@ -745,17 +742,11 @@ export class Account {
     singlePrivateKey: string,
     passwd: string
   ) {
-    const singlePrvKey = Buffer.from(singlePrivateKey);
-    const encryptedSinglePrvKey: string = AESEncrypt(
-      singlePrvKey.toString("hex"),
-      passwd
+    const encryptedSinglePrvKey: string = AESEncrypt(singlePrivateKey, passwd);
+    const k: HDKey = HDKey.deserializeBase58(
+      singlePrivateKey,
+      KeySpec.Ethereum
     );
-
-    const deterministicKey = DeterministicKey.fromExtendedKey(
-      Base58Check.encode(singlePrvKey),
-      DeterministicKey.ETHEREUM_VERSIONS
-    );
-    const k: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Ethereum);
 
     const secp256 = new Secp256(Secp256.CURVE_K1);
     const ethscPubKey: string = secp256
@@ -804,7 +795,7 @@ export class Account {
     return account;
   }
 
-  public static newFromKeyStore(
+  public static newFromKeystore(
     id: string,
     storage: WalletStorage,
     ks: KeyStore,
@@ -814,54 +805,44 @@ export class Account {
 
     const account = new Account();
     account._localstore = new LocalStore(storage, id);
-    let bytes: Buffer;
-    let str: string;
-
     account._localstore.setReadonly(true);
     if (json.xPrivKey()) {
-      bytes = Base58Check.decode(json.xPrivKey());
-      const deterministicKey = new DeterministicKey(
-        DeterministicKey.ELASTOS_VERSIONS
-      );
-      const rootkey: HDKey = HDKey.fromKey(deterministicKey, KeySpec.Elastos);
-
-      const encrypedPrivKey: string = AESEncrypt(bytes, payPasswd);
+      const encrypedPrivKey: string = AESEncrypt(json.xPrivKey(), payPasswd);
       account._localstore.setxPrivKey(encrypedPrivKey);
       account._localstore.setReadonly(false);
     }
 
     if (json.mnemonic()) {
-      const mnemonic = json.mnemonic();
-      const encryptedMnemonic: string = AESEncrypt(
-        Buffer.from(mnemonic),
-        payPasswd
-      );
+      const encryptedMnemonic: string = AESEncrypt(json.mnemonic(), payPasswd);
       account._localstore.setMnemonic(encryptedMnemonic);
       account._localstore.setReadonly(false);
     }
 
     if (json.requestPrivKey()) {
-      bytes = Buffer.from(json.requestPrivKey(), "hex");
-      account._localstore.setRequestPrivKey(AESEncrypt(bytes, payPasswd));
+      account._localstore.setRequestPrivKey(
+        AESEncrypt(json.requestPrivKey(), payPasswd)
+      );
       account._localstore.setReadonly(false);
     }
 
     if (json.getSeed()) {
-      bytes = Buffer.from(json.getSeed(), "hex");
-      account._localstore.setSeed(AESEncrypt(bytes, payPasswd));
+      account._localstore.setSeed(AESEncrypt(json.getSeed(), payPasswd));
       account._localstore.setReadonly(false);
     }
 
     if (json.getSinglePrivateKey()) {
-      bytes = Buffer.from(json.getSinglePrivateKey(), "hex");
-      account._localstore.setSinglePrivateKey(AESEncrypt(bytes, payPasswd));
+      account._localstore.setSinglePrivateKey(
+        AESEncrypt(json.getSinglePrivateKey(), payPasswd)
+      );
       account._localstore.setReadonly(false);
     }
 
     let publicKeyRings = [];
-    for (let item of json.getPublicKeyRing()) {
-      let publicKeyRing = new PublicKeyRing();
-      publicKeyRings.push(publicKeyRing.fromJson(item));
+    if (json.getPublicKeyRing()) {
+      for (let item of json.getPublicKeyRing()) {
+        let publicKeyRing = new PublicKeyRing();
+        publicKeyRings.push(publicKeyRing.fromJson(item));
+      }
     }
 
     account._localstore.setxPubKeyBitcoin(json.getxPubKeyBitcoin());
@@ -1188,28 +1169,44 @@ export class Account {
       this.init();
     }
 
-    let bytes: bytes_t;
+    let bytes = "";
     let json = new ElaNewWalletJson();
     if (!this._localstore.readonly()) {
-      bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
-      if (!bytes.length) {
-        json.setxPrivKey(Base58Check.encode(bytes));
+      if (this._localstore.getxPrivKey()) {
+        bytes = AESDecrypt(this._localstore.getxPrivKey(), payPasswd);
+      }
+      if (bytes.length > 0) {
+        json.setxPrivKey(bytes);
       }
 
-      bytes = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
-      json.setMnemonic(bytes.toString());
-      if (!bytes.length) {
+      if (!this._localstore.getMnemonic()) {
+        json.setMnemonic("");
         json.setHasPassPhrase(false);
+      } else {
+        let mnemonic = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
+        json.setMnemonic(mnemonic);
       }
 
-      bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPasswd);
-      json.setRequestPrivKey(bytes.toString("hex"));
+      if (!this._localstore.getRequestPrivKey()) {
+        bytes = "";
+      } else {
+        bytes = AESDecrypt(this._localstore.getRequestPrivKey(), payPasswd);
+      }
+      json.setRequestPrivKey(bytes);
 
-      bytes = AESDecrypt(this._localstore.getSeed(), payPasswd);
-      json.setSeed(bytes.toString("hex"));
+      if (!this._localstore.getSeed()) {
+        json.setSeed("");
+      } else {
+        let seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
+        json.setSeed(seed);
+      }
 
-      bytes = AESDecrypt(this._localstore.getSinglePrivateKey(), payPasswd);
-      json.setSinglePrivateKey(bytes.toString("hex"));
+      if (!this._localstore.getSinglePrivateKey()) {
+        bytes = "";
+      } else {
+        bytes = AESDecrypt(this._localstore.getSinglePrivateKey(), payPasswd);
+      }
+      json.setSinglePrivateKey(bytes);
     }
 
     json.setOwnerPubKey(this._localstore.getOwnerPubKey());
@@ -1512,12 +1509,11 @@ export class Account {
       this.init();
     }
 
-    let m: string;
+    let m = "";
 
     const encryptedMnemonic = this._localstore.getMnemonic();
     if (encryptedMnemonic) {
-      const bytes = AESDecrypt(encryptedMnemonic, payPasswd);
-      m = bytes.toString();
+      m = AESDecrypt(encryptedMnemonic, payPasswd);
     }
 
     return Promise.resolve(m);
@@ -1541,7 +1537,10 @@ export class Account {
       (!this._localstore.hasPassPhrase() ||
         (this._localstore.hasPassPhrase() && this._localstore.getPassPhrase()))
     ) {
-      const mnemonic = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
+      const mnemonic: string = AESDecrypt(
+        this._localstore.getMnemonic(),
+        payPasswd
+      );
 
       const passphrase: string = AESDecrypt(
         this._localstore.getPassPhrase(),
@@ -1549,7 +1548,7 @@ export class Account {
       );
 
       seed = Mnemonic.toSeed(mnemonic, passphrase);
-      this._localstore.setSeed(AESEncrypt(seed, payPasswd));
+      this._localstore.setSeed(AESEncrypt(seed.toString("hex"), payPasswd));
       haveSeed = true;
 
       if (this._localstore.getPassPhrase()) {
@@ -1558,8 +1557,7 @@ export class Account {
 
       this._localstore.setPassPhrase("");
     } else if (this._localstore.getSeed()) {
-      const bytes = AESDecrypt(this._localstore.getSeed(), payPasswd);
-      seed = bytes;
+      seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
       haveSeed = true;
     }
 
@@ -1675,22 +1673,23 @@ export class Account {
   }
 
   getSeed(payPasswd: string): Buffer {
-    const seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
-    return seed;
+    let seed = AESDecrypt(this._localstore.getSeed(), payPasswd);
+    return Buffer.from(seed, "hex");
   }
 
   getETHSCPubKey(): Buffer {
-    const pubkey = Buffer.from(this._localstore.getETHSCPrimaryPubKey());
-    return pubkey;
+    let pubkey = this._localstore.getETHSCPrimaryPubKey();
+    return Buffer.from(pubkey, "hex");
   }
 
   getRipplePubKey(): Buffer {
-    const pubkey = Buffer.from(this._localstore.getRipplePrimaryPubKey());
-    return pubkey;
+    let pubkey = this._localstore.getRipplePrimaryPubKey();
+    return Buffer.from(pubkey, "hex");
   }
 
-  getSinglePrivateKey(passwd: string) {
-    return AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
+  getSinglePrivateKey(passwd: string): Buffer {
+    let privateKey = AESDecrypt(this._localstore.getSinglePrivateKey(), passwd);
+    return Base58Check.decode(privateKey);
   }
 
   hasMnemonic(): boolean {

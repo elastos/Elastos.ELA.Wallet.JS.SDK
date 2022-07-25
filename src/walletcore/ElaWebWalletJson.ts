@@ -31,17 +31,13 @@ export class ElaWebWalletJson extends BitcoreWalletClientJson {
   }
 
   toJson(withPrivKey: boolean) {
-    let j = this.toJson(withPrivKey);
-
+    let j = super.toJson(withPrivKey);
     if (withPrivKey) j["mnemonic"] = this._mnemonic;
-
-    return j;
+    return j as ElaWebWalletInfo;
   }
 
   fromJson(j: BitcoreWalletClientInfo) {
-    let bitcoreWalletClientJson = new BitcoreWalletClientJson();
-    bitcoreWalletClientJson.fromJson(j);
-
+    super.fromJson(j);
     if (j["mnemonic"]) this._mnemonic = j["mnemonic"];
   }
 }

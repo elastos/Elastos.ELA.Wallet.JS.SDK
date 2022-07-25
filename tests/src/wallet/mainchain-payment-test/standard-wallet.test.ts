@@ -26,7 +26,8 @@ import {
   BrowserLocalStorage,
   EncodedTx,
   SignedInfo,
-  MainchainSubWallet
+  MainchainSubWallet,
+  KeystoreInfo
 } from "@elastosfoundation/wallet-js-sdk";
 
 describe("Standard Wallet Payment Tests", () => {
@@ -42,7 +43,6 @@ describe("Standard Wallet Payment Tests", () => {
       netType,
       netConfig
     );
-    expect(masterWalletManager).toBeInstanceOf(MasterWalletManager);
   });
 
   test("use a single-address wallet to create and sign a transaction", async () => {
@@ -192,6 +192,71 @@ describe("Standard Wallet Payment Tests", () => {
     expect(signedInfo[1].SignType).toEqual("Standard");
     expect(signedInfo[1].Signers.length).toEqual(1);
     expect(signedInfo[1].Signers[0]).toEqual(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("use a single-address wallet to create and sign a transaction", async () => {
+    const masterWalletID = "master-wallet-id-43";
+    let seed = `3c6f6c0a5aba9e1456a827587f36a45430812ef04aa8cac4774a7d533ecb486dca476c004ae65271305f8907128583d2112e1648a902d44e61d942b02121c2a4`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWallet = await masterWalletManager.importWalletWithSeed(
+      masterWalletID,
+      seed,
+      passwd,
+      singleAddress,
+      "",
+      passphrase
+    );
+
+    let backupPassword = "11111111";
+    let keystoreInfo: KeystoreInfo = await masterWallet.exportKeystore(
+      backupPassword,
+      passwd
+    );
+
+    await masterWalletManager.destroyWallet(masterWalletID);
+
+    const masterWallet1 = await masterWalletManager.importWalletWithKeystore(
+      "master-wallet-id-44",
+      keystoreInfo,
+      backupPassword,
+      passwd
+    );
+
+    const subWallet = (await masterWallet1.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    const inputsJson = [
+      {
+        Address: addresses[0],
+        Amount: "999970000",
+        TxHash:
+          "d13bb3b0b0032886661e40adf5fec9807f9452e0a38ef9b6e73f5bbc5df55207",
+        Index: 0
+      }
+    ];
+    const outputsJson = [
+      {
+        Address: "8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop",
+        Amount: "200000000"
+      }
+    ];
+    const fee = "10000";
+    const memo = "keystore";
+
+    const tx: EncodedTx = subWallet.createTransaction(
+      inputsJson,
+      outputsJson,
+      fee,
+      memo
+    );
+    const signedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info[0].Signers[0]).toEqual(
       "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
     );
   });
