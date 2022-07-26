@@ -215,6 +215,7 @@ export class SubAccount {
     let derivateCount =
       index + count > addrChain.length ? index + count - addrChain.length : 0;
     if (this._parent.getSignType() == AccountSignType.MultiSign) {
+      // The derivation path m'/45'/cosigner_index/chain/index
       let keychains: HDKey[] = [];
       if (derivateCount > 0) {
         for (let keychain of this._parent.multiSignCosigner()) {
@@ -422,6 +423,35 @@ export class SubAccount {
       Error.Code.PrivateKeyNotFound,
       "private key not found"
     );
+  }
+
+  /**
+   * Get the private key corresponding with a public key which is one of
+   * element in an array of public key which is used to generate the first
+   * external address of a multisig wallet.
+   * @param index The index number of a public key
+   * @param payPasswd The pay password
+   * @return A private key
+   */
+  async getPrivateKeyWithCosingerIndex(
+    index: number,
+    payPasswd: string
+  ): Promise<bytes_t> {
+    const rootKey = await this._parent.rootKey(payPasswd);
+    const privateKey = rootKey
+      .deriveWithPath("m/45'")
+      .deriveWithIndex(index)
+      .deriveWithIndex(0)
+      .deriveWithIndex(0)
+      .getPrivateKeyBytes();
+
+    if (!privateKey) {
+      ErrorChecker.throwLogicException(
+        Error.Code.PrivateKeyNotFound,
+        "private key not found"
+      );
+    }
+    return privateKey;
   }
 
   async getPrivateKeyWithPublicKeys(

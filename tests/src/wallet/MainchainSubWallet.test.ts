@@ -45,7 +45,8 @@ import {
   UnstakeInfo,
   VotesContentInfo,
   VotingInfo,
-  VoteContentType
+  VoteContentType,
+  ByteStream
 } from "@elastosfoundation/wallet-js-sdk";
 import BigNumber from "bignumber.js";
 
@@ -1478,9 +1479,12 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const fee = "10000";
     const memo = "stake transaction";
 
+    let stakeAddr = subWallet.getOwnerStakeAddress();
+    expect(stakeAddr).toBe("SjTp237HTsMweUnP5rednVLSRW41YoQrfr");
+
     const payload: PayloadStakeInfo = {
       Version: 0,
-      StakeAddress: "SjTp237HTsMweUnP5rednVLSRW41YoQrfr"
+      StakeAddress: stakeAddr
     };
     const lockAddress = "SNmCKtp1NmPfjwEo4m8PbgirDfYss1NUyT";
     const amount = "200000000";
@@ -1548,7 +1552,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("test createDPoSV2VoteTransaction", async () => {
+  test("test DPoSV2 vote transaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -1567,7 +1571,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "ELA"
     )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
-    console.log("addresses...", addresses);
 
     // input address's public key should be same with the stake address's
     const inputsJson = [
@@ -1651,7 +1654,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("test DPoSV2 renewal vote Transaction", async () => {
+  test("test DPoSV2 renewal votes transaction", async () => {
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
     const passphrase = "";
     const passwd = "11111111";
@@ -1670,7 +1673,6 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "ELA"
     )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
-    console.log("addresses...", addresses);
 
     // input address's public key should be same with the stake address's
     const inputsJson = [
@@ -1711,6 +1713,164 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     expect(info[0].Signers[0]).toEqual(
       "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test DPoSV2 unstake tx with a multisig wallet", async () => {
+    const passphrase = "";
+    const payPassword = "11111111";
+    const singleAddress = false;
+
+    const masterWalletID = "master-wallet-id-4";
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+
+    const xPubKey = masterWallet.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey).toBe(
+      "xpub68yaz1bGWJkFwmWwotAyWXrWdMuQLnjzhs2wEAFtWuVcqpRBnXfLttDaEkP4YtwyPFBf2eAjHk7kjpAUnn7gzkcwfeznsN6F9LqRSFdfEKx"
+    );
+    const subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    expect(addresses[0]).toBe("EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L");
+
+    const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-5",
+      mnemonic1,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+
+    const subWallet1 = (await masterWallet1.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses1 = subWallet1.getAddresses(0, 1, false);
+    expect(addresses1[0]).toBe("EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw");
+    const xPubKey1 = masterWallet1.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey1).toBe(
+      "xpub69AWKAuw1yonLo3Kueatxg1pK1Tbpkqj4b58TBNJbpsfEfEXXA6CBwxEekKSjGDgiHDqC5XKvhYTAYH9qmyYfzsujTUUBC2q2Zx71KmMs3B"
+    );
+
+    const mnemonic2 = `cheap exotic web cabbage discover camera vanish damage version allow merge scheme`;
+    const masterWallet2 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-6",
+      mnemonic2,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+
+    const subWallet2 = (await masterWallet2.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses2 = subWallet2.getAddresses(0, 1, false);
+    expect(addresses2[0]).toBe("EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo");
+
+    const xPubKey2 = masterWallet2.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey2).toBe(
+      "xpub67uvyrCFhKSTqmmv9TsrPc5S85DvdPS8Vg2xCfXr8ALB8YCyRo2hUwLxt6H2pT6GrinwVFFmUuAJijSsUKi9ze5FKmz1PtFapTSUXk6GBR5"
+    );
+
+    const mnemonic3 = `multiple always junk crash fun exist stumble shift over benefit fun toe`;
+    const cosigners = [xPubKey, xPubKey1, xPubKey2];
+    const m = 3;
+    const masterWallet3 =
+      await masterWalletManager.createMultiSignMasterWalletWithMnemonic(
+        "master-wallet-id-7",
+        mnemonic3,
+        passphrase,
+        payPassword,
+        cosigners,
+        m,
+        false
+      );
+
+    const subWallet3 = (await masterWallet3.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses3 = subWallet3.getAddresses(0, 1, false);
+    expect(addresses3[0]).toBe("8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop");
+
+    let code = subWallet3.getCodeofOwnerStakeAddress();
+    let codeStr = `53210238275ffaffdc38f9e6b64ac27583b66f825b9dcdb86984d3cc0a72f8e557ca8921023ceb84fc0655dfdefe56b2292411429c45fc8a8ac98ed8fca23d59ef744f60ab2102ba6d6332cc4b2d499c24b7516a891a9021924fed5028380df6714438476b718a210337a4fac5255cae5d3e4c3c85608c2f340117c1eceb527d485e865ffdd1e4ac2754ae`;
+    expect(code).toBe(codeStr);
+
+    const inputs = [
+      {
+        Address: addresses3[0],
+        Amount: "99899970000",
+        TxHash:
+          "a97d068531440dc990ec9dffa17a011829e0a1a258ac5661ff5181444bc9f55d",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "multisign stake transaction";
+
+    let payload: UnstakeInfo = {
+      ToAddress: "8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop",
+      Code: code,
+      Value: "1000000"
+    };
+
+    let digest = subWallet3.unstakeDigest(payload);
+
+    const publicKeyInfo = masterWallet3.getPubKeyInfo();
+    expect(publicKeyInfo.xPubKeyHDPM).toBe(
+      "xpub69FELQsaiWdLw9x2rFjsykXA7zKAko3s56a8eaGov7qoJ2MztJwzLYYcgaxBDLaPqFHUZZqGcfxzUVV4ohFP9ai3EspLESWEUVwUwhqZxpv"
+    );
+    let signature3 = await subWallet3.signDigestWithxPubKey(
+      publicKeyInfo.xPubKeyHDPM,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let signature1 = await subWallet1.signDigestWithxPubKey(
+      xPubKey1,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let signature2 = await subWallet2.signDigestWithxPubKey(
+      xPubKey2,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let istream = new ByteStream();
+    istream.writeVarBytes(Buffer.from(signature3, "hex"));
+    istream.writeVarBytes(Buffer.from(signature1, "hex"));
+    istream.writeVarBytes(Buffer.from(signature2, "hex"));
+    let signature = istream.getBytes().toString("hex");
+    payload.Signature = signature;
+
+    const tx = subWallet3.createUnstakeTransaction(inputs, payload, fee, memo);
+    const signedTx3 = await subWallet3.signTransaction(tx, payPassword);
+    const signedTx1 = await subWallet1.signTransaction(signedTx3, payPassword);
+    const signedTx2 = await subWallet2.signTransaction(signedTx1, payPassword);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx2);
+    expect(info[0].Signers.length).toBe(3);
+    expect(info[0].Signers[0]).toBe(
+      "02ba6d6332cc4b2d499c24b7516a891a9021924fed5028380df6714438476b718a"
+    );
+    expect(info[0].Signers[1]).toBe(
+      "023ceb84fc0655dfdefe56b2292411429c45fc8a8ac98ed8fca23d59ef744f60ab"
+    );
+    expect(info[0].Signers[2]).toBe(
+      "0337a4fac5255cae5d3e4c3c85608c2f340117c1eceb527d485e865ffdd1e4ac27"
     );
   });
 });

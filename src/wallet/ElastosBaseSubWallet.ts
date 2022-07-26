@@ -261,6 +261,45 @@ export class ElastosBaseSubWallet
     return signature;
   }
 
+  async signDigestWithxPubKey(
+    xPubKey: string,
+    xPubKeys: string[],
+    digest: string,
+    payPassword: string
+  ): Promise<string> {
+    ErrorChecker.checkParam(
+      digest.length != 64,
+      Error.Code.InvalidArgument,
+      "invalid digest"
+    );
+
+    let sortedSigners = [];
+    for (let i = 0; i < xPubKeys.length; ++i) {
+      let hdKey = HDKey.deserializeBase58(xPubKeys[i], KeySpec.Elastos);
+      let pubKey = hdKey.getPublicKeyBytes().toString("hex");
+      sortedSigners.push({ pubKey, xPubKey: xPubKeys[i] });
+    }
+
+    sortedSigners.sort((a, b) => a.pubKey.localeCompare(b.pubKey));
+    let cosignerIndex = sortedSigners.findIndex(
+      (item) => item.xPubKey === xPubKey
+    );
+
+    ErrorChecker.checkParam(
+      cosignerIndex === -1,
+      Error.Code.InvalidArgument,
+      "Can not find the index of xPubKey in xPubKeys"
+    );
+
+    let wallet = this.getWallet();
+    const signature: string = await wallet.signDigestWithCosignerIndex(
+      cosignerIndex,
+      digest,
+      payPassword
+    );
+    return signature;
+  }
+
   async signDigestWithPublicKeys(
     publicKeys: string[],
     digest: string,
@@ -302,7 +341,7 @@ export class ElastosBaseSubWallet
   }
 
   // get the matched public key from a extended key(xPubKey)
-  // with the derived path m'/45'/cosigner_index/chain/index
+  // with the derivation path m'/45'/cosigner_index/chain/index
   public matchSigningPublicKeys(
     encodedTx: EncodedTx,
     xPubKeys: string[],

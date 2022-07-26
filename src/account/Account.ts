@@ -176,6 +176,7 @@ export class Account {
             .localeCompare(b.getPublicKeyBytes().toString("hex"));
         });
 
+        // The derivation path m'/45'/cosigner_index
         for (let i = 0; i < sortedSigners.length; ++i) {
           let tmp = sortedSigners[i].deriveWithIndex(i);
           if (

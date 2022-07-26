@@ -298,6 +298,25 @@ export class Wallet extends Lockable {
     }
   }
 
+  async signDigestWithCosignerIndex(
+    index: number,
+    digest: string,
+    payPasswd: string
+  ): Promise<string> {
+    const privateKey = await this._subAccount.getPrivateKeyWithCosingerIndex(
+      index,
+      payPasswd
+    );
+
+    if (privateKey) {
+      const signature = EcdsaSigner.sign(
+        privateKey,
+        Buffer.from(digest, "hex")
+      );
+      return signature.toString("hex");
+    }
+  }
+
   async signDigestWithPublicKeys(
     publicKeys: string[],
     digest: string,
