@@ -1721,7 +1721,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const payPassword = "11111111";
     const singleAddress = false;
 
-    const masterWalletID = "master-wallet-id-4";
+    const masterWalletID = "master-wallet-id-43";
     const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
 
     const masterWallet = await masterWalletManager.createMasterWallet(
@@ -1744,7 +1744,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
 
     const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
     const masterWallet1 = await masterWalletManager.createMasterWallet(
-      "master-wallet-id-5",
+      "master-wallet-id-44",
       mnemonic1,
       passphrase,
       payPassword,
@@ -1763,7 +1763,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
 
     const mnemonic2 = `cheap exotic web cabbage discover camera vanish damage version allow merge scheme`;
     const masterWallet2 = await masterWalletManager.createMasterWallet(
-      "master-wallet-id-6",
+      "master-wallet-id-45",
       mnemonic2,
       passphrase,
       payPassword,
@@ -1786,7 +1786,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const m = 3;
     const masterWallet3 =
       await masterWalletManager.createMultiSignMasterWalletWithMnemonic(
-        "master-wallet-id-7",
+        "master-wallet-id-46",
         mnemonic3,
         passphrase,
         payPassword,
@@ -1871,6 +1871,54 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
     expect(info[0].Signers[2]).toBe(
       "0337a4fac5255cae5d3e4c3c85608c2f340117c1eceb527d485e865ffdd1e4ac27"
+    );
+  });
+
+  test("test createDPoSV2ClaimRewardTransaction", async () => {
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+    const passphrase = "";
+    const passwd = "11111111";
+    const singleAddress = true;
+    const masterWalletID = "master-wallet-id-47";
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      passwd,
+      singleAddress
+    );
+
+    const subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    // Use the rpc dposv2rewardinfo to check your rewards
+    let digest = subWallet.getDPoSV2ClaimRewardDigest({ Amount: "100000000" });
+    let signature = await subWallet.signDigest(addresses[0], digest, passwd);
+    let payload = { Amount: "100000000", Signature: signature };
+
+    const inputs = [
+      {
+        Address: addresses[0],
+        Amount: "799960000",
+        TxHash:
+          "58997f685cd3e2efcf41b2ff6a2b9956e4a4f6fbc7d0206a85f36fc0af365ece",
+        Index: 1
+      }
+    ];
+    const fee = "10000";
+    const memo = "claim reward transaction";
+
+    const tx = subWallet.createDPoSV2ClaimRewardTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+    const signedTx: EncodedTx = await subWallet.signTransaction(tx, passwd);
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
+    expect(info[0].Signers[0]).toBe(
+      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
     );
   });
 });
