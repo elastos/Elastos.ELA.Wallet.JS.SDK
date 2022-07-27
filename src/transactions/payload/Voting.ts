@@ -48,7 +48,29 @@ export const RenewalVoteVersion = 1;
 export type VotesWithLockTimeInfo = {
   Candidate?: string;
   Votes: string;
+  /*
+   * The Locktime means a block height of the ela blockchain, the value of
+   * the Locktime must be zero if the vote type is Delegate, CRC, CRCProposal
+   * or CRCImpeachment, and its value is at least bigger than the current
+   * block height by 7200 blocks When the vote type is DPosV2.
+   */
   Locktime: number;
+};
+
+export type VotesContentInfo = {
+  VoteType: number;
+  VotesInfo: VotesWithLockTimeInfo[];
+};
+
+export type RenewalVotesContentInfo = {
+  ReferKey: string;
+  VoteInfo: VotesWithLockTimeInfo;
+};
+
+export type VotingInfo = {
+  Version?: number;
+  Contents?: VotesContentInfo[];
+  RenewalVotesContent?: RenewalVotesContentInfo[];
 };
 
 export class VotesWithLockTime {
@@ -150,11 +172,6 @@ export class VotesWithLockTime {
   }
 }
 
-export type VotesContentInfo = {
-  VoteType: number;
-  VotesInfo: VotesWithLockTimeInfo[];
-};
-
 export class VotesContent {
   private _voteType: uint8_t;
   private _votesInfo: VotesWithLockTime[];
@@ -248,11 +265,6 @@ export class VotesContent {
   }
 }
 
-export type RenewalVotesContentInfo = {
-  ReferKey: string;
-  VoteInfo: VotesWithLockTimeInfo;
-};
-
 export class RenewalVotesContent {
   private _referKey: uint256;
   private _voteInfo: VotesWithLockTime;
@@ -314,12 +326,6 @@ export class RenewalVotesContent {
     j["VoteInfo"] = rvc._voteInfo.toJson();
   }
 }
-
-export type VotingInfo = {
-  Version?: number;
-  Contents?: VotesContentInfo[];
-  RenewalVotesContent?: RenewalVotesContentInfo[];
-};
 
 export class Voting extends Payload {
   private _contents: VotesContent[]; // 投票
