@@ -630,7 +630,7 @@ export class MasterWalletManager {
       if (masterWallet !== null) {
         await masterWallet.removeLocalStore();
         masterWallet.closeAllSubWallets();
-        this._masterWalletMap.delete(masterWallet.getWalletID());
+        this._masterWalletMap.delete(masterWalletID);
       }
     } else {
       Log.warn("Master wallet is not exist");

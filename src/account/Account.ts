@@ -573,10 +573,7 @@ export class Account {
       .getPublicKeyBytes()
       .toString("hex");
 
-    const encryptedMnemonic: string = AESEncrypt(
-      Buffer.from(mnemonic),
-      payPasswd
-    );
+    const encryptedMnemonic: string = AESEncrypt(mnemonic, payPasswd);
     const encryptedxPrvKey: string = AESEncrypt(
       rootkey.serializeBase58(),
       payPasswd
@@ -984,9 +981,9 @@ export class Account {
       );
       const ethkey = stdrootkey.deriveWithPath("m/44'/60'/0'/0/0");
 
-      const xPubKey: string = Base58Check.encode(
-        rootkey.deriveWithPath("m/44'/0'/0'").getPublicKeyBytes()
-      );
+      const xPubKey: string = rootkey
+        .deriveWithPath("m/44'/0'/0'")
+        .serializePublicKeyBase58();
       if (xPubKey != this._localstore.getxPubKey()) {
         ErrorChecker.throwParamException(
           Error.Code.InvalidArgument,
@@ -995,22 +992,25 @@ export class Account {
       }
 
       const encryptedSinglePrivateKey: string = AESEncrypt(
-        ethkey.getPrivateKeyBytes(),
+        ethkey.serializeBase58(),
         newPassword
       );
-      const encryptedSeed: string = AESEncrypt(seed, newPassword);
-      const encryptedMnemonic: string = AESEncrypt(
-        Buffer.from(mnemonic),
-        newPassword
-      );
-      const encryptedxPrvKey: string = AESEncrypt(
-        rootkey.getPrivateKeyBytes(),
-        newPassword
-      );
-      const requestKey = rootkey.deriveWithPath("m/1'/0");
 
+      const encryptedSeed: string = AESEncrypt(
+        seed.toString("hex"),
+        newPassword
+      );
+
+      const encryptedMnemonic: string = AESEncrypt(mnemonic, newPassword);
+
+      const encryptedxPrvKey: string = AESEncrypt(
+        rootkey.serializeBase58(),
+        newPassword
+      );
+
+      const requestKey = rootkey.deriveWithPath("m/1'/0");
       const encryptedRequestPrvKey: string = AESEncrypt(
-        requestKey.getPublicKeyBytes(),
+        requestKey.serializeBase58(),
         newPassword
       );
 
@@ -1332,24 +1332,24 @@ export class Account {
     let stream = new ByteStream(bytes);
 
     version = stream.readUInt8();
-    if (!version) {
+    if (!version && version !== 0) {
       Log.error("Import read-only wallet: version");
       return false;
     }
 
     let byte = stream.readUInt8();
-    if (!byte) {
+    if (!byte && byte !== 0) {
       Log.error("Import read-only wallet: single address");
       return false;
     }
-    this._localstore.setSingleAddress(byte != 0);
+    this._localstore.setSingleAddress(byte === 0 ? false : true);
 
     byte = stream.readUInt8();
-    if (!byte) {
+    if (!byte && byte !== 0) {
       Log.error("Import read-only wallet: has passphrase");
       return false;
     }
-    this._localstore.setHasPassPhrase(byte != 0);
+    this._localstore.setHasPassPhrase(byte === 0 ? false : true);
 
     let tmpUint = stream.readUInt32();
     if (!tmpUint) {
@@ -1366,7 +1366,7 @@ export class Account {
     this._localstore.setN(tmpUint);
 
     tmpUint = stream.readUInt32();
-    if (!tmpUint) {
+    if (!tmpUint && tmpUint !== 0) {
       Log.error("Import read-only wallet: account");
       return false;
     }
@@ -1379,59 +1379,61 @@ export class Account {
     }
     this._localstore.setDerivationStrategy(str);
 
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let ethSCPubKey: bytes_t;
+    ethSCPubKey = stream.readVarBytes(ethSCPubKey);
+    if (!ethSCPubKey) {
       Log.error("Import read-only wallet: ethsc pubkey");
       return false;
     }
-    this._localstore.setETHSCPrimaryPubKey(bytes.toString("hex"));
+    this._localstore.setETHSCPrimaryPubKey(ethSCPubKey.toString("hex"));
 
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let requestPubKey: bytes_t;
+    requestPubKey = stream.readVarBytes(requestPubKey);
+    if (!requestPubKey) {
       Log.error("Import read-only wallet: request pubkey");
       return false;
     }
-    this._localstore.setRequestPubKey(bytes.toString("hex"));
+    if (requestPubKey.length === 0) this._localstore.setRequestPubKey("");
+    else this._localstore.setRequestPubKey(requestPubKey.toString("hex"));
 
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let ownerPubKey: bytes_t;
+    ownerPubKey = stream.readVarBytes(ownerPubKey);
+    if (!ownerPubKey) {
       Log.error("Import read-only wallet: owner pubkey");
       return false;
     }
-    this._localstore.setOwnerPubKey(bytes.toString("hex"));
+    if (ownerPubKey.length === 0) this._localstore.setOwnerPubKey("");
+    else this._localstore.setOwnerPubKey(ownerPubKey.toString("hex"));
 
     // xpub
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let xPubKey: bytes_t;
+    xPubKey = stream.readVarBytes(xPubKey);
+    if (!xPubKey) {
       Log.error("Import read-only wallet: xpub");
       return false;
     }
-    if (bytes.length === 0) this._localstore.setxPubKey("");
-    else this._localstore.setxPubKey(Base58Check.encode(bytes));
+    if (xPubKey.length === 0) this._localstore.setxPubKey("");
+    else this._localstore.setxPubKey(Base58Check.encode(xPubKey));
 
     // btc xpub
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let xPubKeyBitcoin: bytes_t;
+    xPubKeyBitcoin = stream.readVarBytes(xPubKeyBitcoin);
+    if (!xPubKeyBitcoin) {
       Log.error("Import read-only wallet: btc xpub");
       return false;
     }
-    if (bytes.length === 0) this._localstore.setxPubKeyBitcoin("");
-    else this._localstore.setxPubKeyBitcoin(Base58Check.encode(bytes));
+    if (xPubKeyBitcoin.length === 0) this._localstore.setxPubKeyBitcoin("");
+    else this._localstore.setxPubKeyBitcoin(Base58Check.encode(xPubKeyBitcoin));
 
     // xpub HDPM
-    bytes = Buffer.alloc(0);
-    bytes = stream.readVarBytes(bytes);
-    if (!bytes) {
+    let xPubKeyHDPM: bytes_t;
+    xPubKeyHDPM = stream.readVarBytes(xPubKeyHDPM);
+    if (!xPubKeyHDPM) {
       Log.error("Import read-only wallet: xpubHDPM");
       return false;
     }
-    if (bytes.length === 0) this._localstore.setxPubKeyHDPM("");
-    else this._localstore.setxPubKeyHDPM(Base58Check.encode(bytes));
+    if (xPubKeyHDPM.length === 0) this._localstore.setxPubKeyHDPM("");
+    else this._localstore.setxPubKeyHDPM(Base58Check.encode(xPubKeyHDPM));
 
     if (this._localstore.getN() > 1) {
       let len = stream.readVarUInt();
@@ -1453,17 +1455,18 @@ export class Account {
           return false;
         }
 
-        if (xpub.length === 0)
+        if (xpub.length === 0) {
           this._localstore.addPublicKeyRing(
             new PublicKeyRing(requestPub.toString("hex"), "")
           );
-        else
+        } else {
           this._localstore.addPublicKeyRing(
             new PublicKeyRing(
               requestPub.toString("hex"),
               Base58Check.encode(xpub)
             )
           );
+        }
       }
     } else {
       this._localstore.addPublicKeyRing(
@@ -1722,7 +1725,7 @@ export class Account {
         await this.regenerateKey(payPasswd);
         this.init();
       }
-      const mnemonic = this._localstore.getMnemonic();
+      let mnemonic = AESDecrypt(this._localstore.getMnemonic(), payPasswd);
       const rootkey = HDKey.fromMnemonic(mnemonic, passphrase, KeySpec.Elastos);
       const xpub: HDKey = rootkey.deriveWithPath("m/44'/0'/0'");
       if (xpub.getPublicKeyBase58() != this._xpub.getPublicKeyBase58())
