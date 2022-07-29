@@ -321,7 +321,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     expect(info[0].SignType).toEqual("Standard");
     expect(info[0].Signers.length).toEqual(1);
     expect(info[0].Signers[0]).toEqual(
-      "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+      "0217f1279db6e4b3d6b5c0e06041dee6be1f5145daf7c83db88755af7cd3b653b0"
     );
   });
 
@@ -1919,6 +1919,164 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx);
     expect(info[0].Signers[0]).toBe(
       "035ddbb21dd78b19b887f7f10e82848e4ea57663082e990878946972ce12f3967a"
+    );
+  });
+
+  test("test to claim DPoS v2 reward with a multisig wallet ", async () => {
+    const passphrase = "";
+    const payPassword = "11111111";
+    const singleAddress = false;
+
+    const masterWalletID = "master-wallet-id-48";
+    const mnemonic = `moon always junk crash fun exist stumble shift over benefit fun toe`;
+
+    const masterWallet = await masterWalletManager.createMasterWallet(
+      masterWalletID,
+      mnemonic,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+
+    const xPubKey = masterWallet.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey).toBe(
+      "xpub68yaz1bGWJkFwmWwotAyWXrWdMuQLnjzhs2wEAFtWuVcqpRBnXfLttDaEkP4YtwyPFBf2eAjHk7kjpAUnn7gzkcwfeznsN6F9LqRSFdfEKx"
+    );
+    const subWallet = (await masterWallet.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses = subWallet.getAddresses(0, 1, false);
+    expect(addresses[0]).toBe("EfKiUnAeATTf7UbnMGf5EjAqYNKiG7ZH4L");
+
+    const mnemonic1 = `response soft uphold fun ride cable biology raccoon exchange loyal yellow elegant`;
+    const masterWallet1 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-5",
+      mnemonic1,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+    const subWallet1 = (await masterWallet1.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses1 = subWallet1.getAddresses(0, 1, false);
+    expect(addresses1[0]).toBe("EKJtTjmfJUaUsAoGQUtBjkzSoRtD211cGw");
+    const xPubKey1 = masterWallet1.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey1).toBe(
+      "xpub69AWKAuw1yonLo3Kueatxg1pK1Tbpkqj4b58TBNJbpsfEfEXXA6CBwxEekKSjGDgiHDqC5XKvhYTAYH9qmyYfzsujTUUBC2q2Zx71KmMs3B"
+    );
+
+    const mnemonic2 = `cheap exotic web cabbage discover camera vanish damage version allow merge scheme`;
+    const masterWallet2 = await masterWalletManager.createMasterWallet(
+      "master-wallet-id-49",
+      mnemonic2,
+      passphrase,
+      payPassword,
+      singleAddress
+    );
+
+    const subWallet2 = (await masterWallet2.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses2 = subWallet2.getAddresses(0, 1, false);
+    expect(addresses2[0]).toBe("EHvbf5bwLwdKF8CNzgiqgL7CYhttm7Uezo");
+    const xPubKey2 = masterWallet2.getPubKeyInfo().xPubKeyHDPM;
+    expect(xPubKey2).toBe(
+      "xpub67uvyrCFhKSTqmmv9TsrPc5S85DvdPS8Vg2xCfXr8ALB8YCyRo2hUwLxt6H2pT6GrinwVFFmUuAJijSsUKi9ze5FKmz1PtFapTSUXk6GBR5"
+    );
+
+    const mnemonic3 = `multiple always junk crash fun exist stumble shift over benefit fun toe`;
+    const cosigners = [xPubKey, xPubKey1, xPubKey2];
+    const m = 3;
+    const masterWallet3 =
+      await masterWalletManager.createMultiSignMasterWalletWithMnemonic(
+        "master-wallet-id-50",
+        mnemonic3,
+        passphrase,
+        payPassword,
+        cosigners,
+        m,
+        false
+      );
+
+    const subWallet3 = (await masterWallet3.createSubWallet(
+      "ELA"
+    )) as MainchainSubWallet;
+    const addresses3 = subWallet3.getAddresses(0, 1, false);
+    expect(addresses3[0]).toBe("8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop");
+
+    let digest = subWallet3.getDPoSV2ClaimRewardDigest({
+      Amount: "200000000"
+    });
+    expect(digest).toBe(
+      "f08a6d5727dfc999c62d854dfe494b325d981c6c8af75bf1a655fc011a62afb4"
+    );
+
+    const publicKeyInfo = masterWallet3.getPubKeyInfo();
+    let signature3 = await subWallet3.signDigestWithxPubKey(
+      publicKeyInfo.xPubKeyHDPM,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let signature1 = await subWallet1.signDigestWithxPubKey(
+      xPubKey1,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let signature2 = await subWallet2.signDigestWithxPubKey(
+      xPubKey2,
+      publicKeyInfo.publicKeyRing,
+      digest,
+      payPassword
+    );
+
+    let istream = new ByteStream();
+    istream.writeVarBytes(Buffer.from(signature3, "hex"));
+    istream.writeVarBytes(Buffer.from(signature1, "hex"));
+    istream.writeVarBytes(Buffer.from(signature2, "hex"));
+    let signature = istream.getBytes().toString("hex");
+    expect(signature).toBe(
+      "400ee136edf7942d30da4aa4bcb97749bacf969e178ec7ef80e736c2b790ef34fb5897604ecde64e3ca3f997d9f3324f7a4d36a262717e63908bf477ba494d16f540db9cf619e90c5dd338a8350a85563186a030ce23528aa8426f454e8a7e689ae56fc550f74e24b071fbb0c5a09e17fe87115a99b737659cf3737440df925c9737405d08848c75206a34a51e06827574b93ddf53faac9be86f0304ae54d5f5b4b13751ad1cc0fcf92be6f48aa63e4e1e2d1bd4a33758b618bc9ae181e54a698029a7"
+    );
+
+    let payload = { Amount: "200000000", Signature: signature3 };
+
+    const inputs = [
+      {
+        Address: addresses3[0],
+        Amount: "100000000000",
+        TxHash:
+          "f3e30efec7fae4cf5adc92a0579a5cd6e7bb3612cdb98a190b9bd1415cbf270e",
+        Index: 0
+      }
+    ];
+    const fee = "10000";
+    const memo = "claim reward transaction";
+    const tx = subWallet3.createDPoSV2ClaimRewardTransaction(
+      inputs,
+      payload,
+      fee,
+      memo
+    );
+
+    const signedTx3 = await subWallet3.signTransaction(tx, payPassword);
+    const signedTx1 = await subWallet1.signTransaction(signedTx3, payPassword);
+    const signedTx2 = await subWallet2.signTransaction(signedTx1, payPassword);
+
+    const info: SignedInfo[] = subWallet.getTransactionSignedInfo(signedTx2);
+    expect(info[0].Signers.length).toBe(3);
+    expect(info[0].Signers[0]).toBe(
+      "02ba6d6332cc4b2d499c24b7516a891a9021924fed5028380df6714438476b718a"
+    );
+    expect(info[0].Signers[1]).toBe(
+      "023ceb84fc0655dfdefe56b2292411429c45fc8a8ac98ed8fca23d59ef744f60ab"
+    );
+    expect(info[0].Signers[2]).toBe(
+      "0337a4fac5255cae5d3e4c3c85608c2f340117c1eceb527d485e865ffdd1e4ac27"
     );
   });
 });
