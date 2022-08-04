@@ -145,10 +145,10 @@ import {
   DPoSV2ClaimRewardInfo,
   DPoSV2ClaimRewardVersion
 } from "../transactions/payload/DPoSV2ClaimReward";
-import {
-  CancelVotes,
-  CancelVotesInfo
-} from "../transactions/payload/CancelVotes";
+// import {
+//   CancelVotes,
+//   CancelVotesInfo
+// } from "../transactions/payload/CancelVotes";
 import { Unstake, UnstakeInfo } from "../transactions/payload/Unstake";
 
 export const DEPOSIT_MIN_ELA = 5000;
@@ -334,7 +334,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     nickName: string,
     url: string,
     ipAddress: string,
-    location: uint64_t,
+    location: string,
     stakeUntil: uint32_t,
     payPasswd: string
   ) {
@@ -368,7 +368,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     pr.setNickName(nickName);
     pr.setUrl(url);
     pr.setAddress(ipAddress);
-    pr.setLocation(location);
+    let l: uint64_t = new BigNumber(location);
+    pr.setLocation(l);
 
     let ostream = new ByteStream();
     let version = ProducerInfoVersion;
@@ -1095,7 +1096,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     did: string,
     nickName: string,
     url: string,
-    location: uint64_t
+    location: string
   ): CRInfoPayload {
     // ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
     // ArgInfo("crPublicKey: {}", crPublicKey);
@@ -1121,7 +1122,8 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     crInfo.setDID(didAddress.programHash());
     crInfo.setNickName(nickName);
     crInfo.setUrl(url);
-    crInfo.setLocation(location);
+    let l: uint64_t = new BigNumber(location);
+    crInfo.setLocation(l);
 
     let cid = new Address();
     cid.setRedeemScript(Prefix.PrefixIDChain, crInfo.getCode());

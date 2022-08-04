@@ -171,7 +171,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const nickName = "elastos";
     const url = "elastos.info";
     const ipAddress = "162.241.11.xxx";
-    const location = new BigNumber(0);
+    const location = "0";
     const payPasswd = passwd;
 
     const payload = await subWallet.generateProducerPayload(
@@ -353,7 +353,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const did = "ia61JoWHzfghMrHFqrEVCtdWKjapoJt8av";
     const nickName = "cr10_新未当选1";
     const url = " ";
-    const location = new BigNumber(0);
+    const location = "0";
 
     let crPayload: CRInfoPayload = subWallet.generateCRInfoPayload(
       crPublicKey,
