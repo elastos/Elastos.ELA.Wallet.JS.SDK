@@ -4,7 +4,7 @@
 import { Log } from "./common/Log";
 
 export type ConfigInfo = {
-  [chainID: string]: { chainID?: string; NetworkID?: string } | string;
+  [key: string]: any;
 };
 
 export const CONFIG_MAINNET = "MainNet";
