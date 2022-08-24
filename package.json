@@ -1,6 +1,6 @@
 {
   "name": "@elastosfoundation/wallet-js-sdk",
-  "version": "0.0.8-alpha",
+  "version": "0.0.9-alpha",
   "description": "Elastos Wallet Javascript SDK",
   "scripts": {
     "prepublishOnly": "npm run build",
