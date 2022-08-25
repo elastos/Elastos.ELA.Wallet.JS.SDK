@@ -466,7 +466,16 @@ export class MasterWallet {
   }
 
   closeAllSubWallets() {
-    this._createdWallets = {};
+    let keys = Object.keys(this._createdWallets);
+    for (let i = 0; i < keys.length; i++) {
+      let subWallet = this._createdWallets[keys[i]];
+      let id = this._id + ":" + subWallet.getChainID();
+      Log.info("{} closing...", id);
+
+      delete keys[i];
+      subWallet = null;
+      Log.info("{} closed", keys[i]);
+    }
   }
 
   setupNetworkParameters() {
