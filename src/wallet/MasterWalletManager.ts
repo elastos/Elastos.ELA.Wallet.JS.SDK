@@ -103,6 +103,13 @@ export class MasterWalletManager {
   protected async loadMasterWallet(
     masterWalletID: string
   ): Promise<MasterWallet> {
+    let masterWalletIDs = await this._storage.getMasterWalletIDs();
+    let matchedID = masterWalletIDs.find((value) => value === masterWalletID);
+    if (!matchedID) {
+      Log.error("load master wallet '{}' failed: not exist", masterWalletID);
+      return null;
+    }
+
     Log.info("loading wallet: {} ...", masterWalletID);
 
     let masterWallet: MasterWallet;
