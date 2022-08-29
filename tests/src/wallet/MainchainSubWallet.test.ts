@@ -48,7 +48,6 @@ import {
   VoteContentType,
   ByteStream
 } from "@elastosfoundation/wallet-js-sdk";
-import BigNumber from "bignumber.js";
 
 describe("Mainchain SubWallet Transaction Tests", () => {
   let masterWalletManager: MasterWalletManager;

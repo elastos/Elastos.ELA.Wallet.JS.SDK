@@ -4,8 +4,8 @@ import { LocalStoreInfo } from "../LocalStore";
 import { ErrorChecker, Error } from "../../common/ErrorChecker";
 
 export class NodejsFileStorage implements WalletStorage {
-  loadStore(masterWalletID: string, path: string): Promise<LocalStoreInfo> {
-    let dirPath = `${path}/${masterWalletID}`;
+  loadStore(masterWalletID: string): Promise<LocalStoreInfo> {
+    let dirPath = `/essentials/${masterWalletID}`;
     if (!fs.existsSync(dirPath)) {
       ErrorChecker.throwLogicException(
         Error.Code.MasterWalletNotExist,
@@ -16,12 +16,8 @@ export class NodejsFileStorage implements WalletStorage {
     return Promise.resolve(JSON.parse(data) as LocalStoreInfo);
   }
 
-  saveStore(
-    masterWalletID: string,
-    j: LocalStoreInfo,
-    path: string
-  ): Promise<void> {
-    let dirPath = `${path}/${masterWalletID}`;
+  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void> {
+    let dirPath = `/essentials/${masterWalletID}`;
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath);
     }
@@ -33,8 +29,8 @@ export class NodejsFileStorage implements WalletStorage {
     return Promise.resolve(rs);
   }
 
-  removeStore(masterWalletID: string, path: string): Promise<void> {
-    let dirPath = `${path}/${masterWalletID}`;
+  removeStore(masterWalletID: string): Promise<void> {
+    let dirPath = `/essentials/${masterWalletID}`;
     if (!fs.existsSync(dirPath)) {
       ErrorChecker.throwLogicException(
         Error.Code.MasterWalletNotExist,
@@ -47,7 +43,8 @@ export class NodejsFileStorage implements WalletStorage {
     return Promise.resolve(rs);
   }
 
-  getMasterWalletIDs(path: string): Promise<string[]> {
+  getMasterWalletIDs(): Promise<string[]> {
+    let path = "/essentials";
     if (!fs.existsSync(path)) {
       ErrorChecker.throwLogicException(
         Error.Code.MasterWalletNotExist,

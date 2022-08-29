@@ -7,21 +7,17 @@ export interface WalletStorage {
   /**
    * Loads a saved store and returns it as json.
    */
-  loadStore(masterWalletID: string, path?: string): Promise<LocalStoreInfo>;
+  loadStore(masterWalletID: string): Promise<LocalStoreInfo>;
   /**
    * Saves the given local store JSON representation to persistent storage.
    */
-  saveStore(
-    masterWalletID: string,
-    j: LocalStoreInfo,
-    path?: string
-  ): Promise<void>;
+  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void>;
   /**
    * remove a saved store from persistent storage.
    */
-  removeStore(masterWalletID: string, path?: string): Promise<void>;
+  removeStore(masterWalletID: string): Promise<void>;
   /**
    * get all saved store IDs from persistent storage.
    */
-  getMasterWalletIDs(path?: string): Promise<string[]>;
+  getMasterWalletIDs(): Promise<string[]>;
 }
