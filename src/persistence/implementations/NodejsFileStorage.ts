@@ -1,47 +1,67 @@
+import * as fs from "fs";
 import { WalletStorage } from "../WalletStorage";
 import { LocalStoreInfo } from "../LocalStore";
+import { ErrorChecker, Error } from "../../common/ErrorChecker";
 
 export class NodejsFileStorage implements WalletStorage {
-  loadStore(masterWalletID: string): Promise<LocalStoreInfo> {
-    /* TODO fs::path filepath = _path;
-  filepath /= LOCAL_STORE_FILE;
-  if (!fs:: exists(filepath)) {
-    filepath = _path;
-    filepath /= MASTER_WALLET_STORE_FILE;
-    if (!fs:: exists(filepath)) {
-      ErrorChecker:: ThrowLogicException(Error:: MasterWalletNotExist, "master wallet " +
-        filepath.parent_path().filename().string() + " not exist");
+  loadStore(masterWalletID: string, path: string): Promise<LocalStoreInfo> {
+    let dirPath = `${path}/${masterWalletID}`;
+    if (!fs.existsSync(dirPath)) {
+      ErrorChecker.throwLogicException(
+        Error.Code.MasterWalletNotExist,
+        "master wallet " + masterWalletID + " not exist"
+      );
     }
+    let data = fs.readFileSync(`${dirPath}/masterWalletStore.json`, "utf8");
+    return Promise.resolve(JSON.parse(data) as LocalStoreInfo);
   }
 
-  std::ifstream is(filepath.string());
-  nlohmann::json j;
-  is >> j;
-*/
-    return Promise.resolve({} as LocalStoreInfo);
+  saveStore(
+    masterWalletID: string,
+    j: LocalStoreInfo,
+    path: string
+  ): Promise<void> {
+    let dirPath = `${path}/${masterWalletID}`;
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath);
+    }
+    let rs = fs.writeFileSync(
+      `${dirPath}/masterWalletStore.json`,
+      JSON.stringify(j, null, 2),
+      "utf8"
+    );
+    return Promise.resolve(rs);
   }
 
-  saveStore(masterWalletID: string, j: LocalStoreInfo): Promise<void> {
-    /* TODO nlohmann::json j = ToJson();
+  removeStore(masterWalletID: string, path: string): Promise<void> {
+    let dirPath = `${path}/${masterWalletID}`;
+    if (!fs.existsSync(dirPath)) {
+      ErrorChecker.throwLogicException(
+        Error.Code.MasterWalletNotExist,
+        "master wallet " + masterWalletID + " not exist"
+      );
+    }
 
-    if (!j.is_null() && !j.empty() && !_path.empty()) {
-      boost:: filesystem::path path = _path;
-      if (!boost:: filesystem:: exists(path))
-      boost:: filesystem:: create_directory(path);
-
-      path /= LOCAL_STORE_FILE;
-      std::ofstream o(path.string());
-      o << j;
-      o.flush();
-    } */
-    return Promise.resolve();
+    fs.unlinkSync(`${dirPath}/masterWalletStore.json`);
+    let rs = fs.rmdirSync(dirPath);
+    return Promise.resolve(rs);
   }
 
-  removeStore(masterWalletID: string): Promise<void> {
-    return Promise.resolve();
-  }
-
-  getMasterWalletIDs(): Promise<string[]> {
-    return;
+  getMasterWalletIDs(path: string): Promise<string[]> {
+    if (!fs.existsSync(path)) {
+      ErrorChecker.throwLogicException(
+        Error.Code.MasterWalletNotExist,
+        "master wallet path" + path + " not exist"
+      );
+    }
+    let masterWalletIDs = [];
+    let files = fs.readdirSync(path);
+    files.forEach(function (file) {
+      let isValid = fs.existsSync(`${path}/${file}/masterWalletStore.json`);
+      if (isValid) {
+        masterWalletIDs.push(file);
+      }
+    });
+    return Promise.resolve(masterWalletIDs);
   }
 }
