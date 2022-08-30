@@ -120,15 +120,12 @@ export class HDKey {
       this.spec === obj.spec &&
       this.key.depth === obj.key.depth &&
       this.key.index === obj.key.index &&
-      this.key.chainCode.toString() === obj.key.chainCode.toString() &&
+      this.key.chainCode.equals(obj.key.chainCode) &&
       this.key.parentFingerprint === obj.key.parentFingerprint &&
-      this.key._publicKey.toString() === obj.key._publicKey.toString();
+      this.key._publicKey.equals(obj.key._publicKey);
 
     if (this.key._privateKey && obj.key._privateKey) {
-      return (
-        equal &&
-        this.key._privateKey.toString() === obj.key._privateKey.toString()
-      );
+      return equal && this.key._privateKey.equals(obj.key._privateKey);
     } else {
       return equal && this.key._privateKey === obj.key._privateKey;
     }

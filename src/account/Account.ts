@@ -1069,18 +1069,18 @@ export class Account {
     }
 
     if (this._xpub == null && account.masterPubKey() == null) {
-      return (
-        this.getETHSCPubKey().toString() == account.getETHSCPubKey().toString()
-      );
+      return this.getETHSCPubKey().equals(account.getETHSCPubKey());
     }
 
     if (this.getSignType() == SignType.MultiSign) {
-      if (this._allMultiSigners.length != account.multiSignCosigner().length)
+      if (this._allMultiSigners.length != account.multiSignCosigner().length) {
         return false;
+      }
 
       for (let i = 0; i < this._allMultiSigners.length; ++i) {
-        if (!this._allMultiSigners[i].equals(account.multiSignCosigner()[i]))
+        if (!this._allMultiSigners[i].equals(account.multiSignCosigner()[i])) {
           return false;
+        }
       }
 
       return true;
