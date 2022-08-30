@@ -23,23 +23,23 @@
 import {
   MasterWallet,
   MasterWalletManager,
-  BrowserLocalStorage,
   EncodedTx,
   SignedInfo,
   MainchainSubWallet,
   KeystoreInfo
 } from "@elastosfoundation/wallet-js-sdk";
+import { NodejsFileStorage } from "../../../../src/persistence/implementations/NodejsFileStorage";
 
 describe("Standard Wallet Payment Tests", () => {
   let masterWalletManager: MasterWalletManager;
   beforeEach(async () => {
     const netType = "TestNet";
 
-    const browserStorage = new BrowserLocalStorage();
+    const walletStorage = new NodejsFileStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
     masterWalletManager = await MasterWalletManager.create(
-      browserStorage,
+      walletStorage,
       netType,
       netConfig
     );
@@ -197,7 +197,7 @@ describe("Standard Wallet Payment Tests", () => {
   });
 
   test("create a wallet with keystore", async () => {
-    const masterWalletID = "master-wallet-id-43";
+    const masterWalletID = "master-wallet-id-51";
     let seed = `3c6f6c0a5aba9e1456a827587f36a45430812ef04aa8cac4774a7d533ecb486dca476c004ae65271305f8907128583d2112e1648a902d44e61d942b02121c2a4`;
     const passphrase = "";
     const passwd = "11111111";
@@ -220,7 +220,7 @@ describe("Standard Wallet Payment Tests", () => {
     await masterWalletManager.destroyWallet(masterWalletID);
 
     const masterWallet1 = await masterWalletManager.importWalletWithKeystore(
-      "master-wallet-id-44",
+      "master-wallet-id-52",
       keystoreInfo,
       backupPassword,
       passwd

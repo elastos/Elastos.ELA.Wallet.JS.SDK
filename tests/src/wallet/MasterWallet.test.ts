@@ -20,21 +20,19 @@
  * SOFTWARE.
  */
 
-import {
-  MasterWalletManager,
-  BrowserLocalStorage
-} from "@elastosfoundation/wallet-js-sdk";
+import { MasterWalletManager } from "@elastosfoundation/wallet-js-sdk";
+import { NodejsFileStorage } from "../../../src/persistence/implementations/NodejsFileStorage";
 
 describe("MasterWallet Tests", () => {
   test("test some apis", async () => {
     let masterWalletManager: MasterWalletManager;
     const netType = "TestNet";
 
-    const browserStorage = new BrowserLocalStorage();
+    const walletStorage = new NodejsFileStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
     masterWalletManager = await MasterWalletManager.create(
-      browserStorage,
+      walletStorage,
       netType,
       netConfig
     );

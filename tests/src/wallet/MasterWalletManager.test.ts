@@ -22,20 +22,20 @@
 
 import {
   MasterWalletManager,
-  BrowserLocalStorage,
   MasterWallet
 } from "@elastosfoundation/wallet-js-sdk";
+import { NodejsFileStorage } from "../../../src/persistence/implementations/NodejsFileStorage";
 
 describe("MasterWalletManager Tests", () => {
   test("generate a multisig master wallet with mnemonic", async () => {
     let masterWalletManager: MasterWalletManager;
     const netType = "TestNet";
 
-    const browserStorage = new BrowserLocalStorage();
+    const walletStorage = new NodejsFileStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
     masterWalletManager = await MasterWalletManager.create(
-      browserStorage,
+      walletStorage,
       netType,
       netConfig
     );
@@ -117,7 +117,7 @@ describe("MasterWalletManager Tests", () => {
       SinglePrivateKey:
         "U2FsdGVkX1/15eV0X76Czgwc88mP+nmTb8/WKE+Juove7DkjTSPs5oZrjAFQ6rEQ5M+hbNSYogB9XOMH4ibvIvcYedIAt/SB10Hh0hZLuR2A+rDpv8Y8DJhapvEC+4MG4exVP+sRToRcr/q9UxFyK60jB2Gu37opGhO/xR/IhyQEbU8BGFkzQc4G6OkzZ9mi"
     };
-    const savedData = await browserStorage.loadStore("master-wallet-id-7");
+    const savedData = await walletStorage.loadStore("master-wallet-id-7");
     expect(savedData.xPubKey).toEqual(localStoreData.xPubKey);
     expect(savedData.xPubKeyHDPM).toEqual(localStoreData.xPubKeyHDPM);
     expect(savedData.requestPubKey).toEqual(localStoreData.requestPubKey);

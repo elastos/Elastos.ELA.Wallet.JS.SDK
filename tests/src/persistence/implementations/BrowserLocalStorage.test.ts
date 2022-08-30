@@ -21,7 +21,7 @@
  */
 
 import "jest-localstorage-mock";
-import { BrowserLocalStorage } from "@elastosfoundation/wallet-js-sdk";
+import { BrowserLocalStorage } from "../../../../src/persistence/implementations/BrowserLocalStorage";
 
 const setItem = localStorage.setItem as jest.MockedFunction<
   typeof localStorage.setItem

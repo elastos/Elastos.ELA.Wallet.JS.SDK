@@ -18,7 +18,7 @@ import size from "rollup-plugin-size";
 import { visualizer } from "rollup-plugin-visualizer";
 // import replaceFiles from 'rollup-plugin-file-content-replace';
 import eslint from "@rollup/plugin-eslint";
-import sourcemaps from 'rollup-plugin-sourcemaps';
+import sourcemaps from "rollup-plugin-sourcemaps";
 
 import { writeFileSync } from "fs";
 
@@ -61,7 +61,7 @@ const commitHash = (function () {
   }
 })();
 
-process.env.prodbuild = false //TMP
+process.env.prodbuild = false; //TMP
 
 const prodBuild = process.env.prodbuild || false;
 console.log("Prod build: ", prodBuild);
@@ -392,5 +392,5 @@ export default (command) => {
     ]
   };
 
-  return [/* nodeBuild, nodeEsmBuild, */ browserEsmBuild];
+  return [nodeBuild, nodeEsmBuild, browserEsmBuild];
 };

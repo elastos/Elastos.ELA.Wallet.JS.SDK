@@ -22,7 +22,6 @@
 
 import {
   MasterWalletManager,
-  BrowserLocalStorage,
   MainchainSubWallet,
   SignedInfo,
   EncodedTx,
@@ -30,16 +29,18 @@ import {
   MasterWallet
 } from "@elastosfoundation/wallet-js-sdk";
 
+import { NodejsFileStorage } from "../../../../src/persistence/implementations/NodejsFileStorage";
+
 describe("MultiSig Wallet Payment Tests", () => {
   let masterWalletManager: MasterWalletManager;
   beforeEach(async () => {
     const netType = "TestNet";
 
-    const browserStorage = new BrowserLocalStorage();
+    const walletStorage = new NodejsFileStorage();
     const netConfig = { NetType: netType, ELA: {} };
 
     masterWalletManager = await MasterWalletManager.create(
-      browserStorage,
+      walletStorage,
       netType,
       netConfig
     );
