@@ -2,30 +2,30 @@ import { KeystoreStorage } from "../KeystoreStorage";
 import { KeystoreInfo } from "../../walletcore/keystore";
 
 export class KeystoreBrowserLocalStorage implements KeystoreStorage {
-  loadStore(storageID: string): Promise<KeystoreInfo> {
-    let data = localStorage.getItem(storageID);
+  loadStore(keystoreID: string): Promise<KeystoreInfo> {
+    let data = localStorage.getItem(keystoreID);
     return Promise.resolve(data && JSON.parse(data));
   }
 
-  saveStore(storageID: string, j: KeystoreInfo): Promise<void> {
+  saveStore(keystoreID: string, j: KeystoreInfo): Promise<void> {
     const data = localStorage.getItem("keystoreIDs");
     if (data) {
-      const storageIDs = JSON.parse(data);
-      if (!storageIDs.includes(storageID)) {
-        storageIDs.push(storageID);
-        localStorage.setItem("storageIDs", JSON.stringify(storageIDs));
+      const keystoreIDs = JSON.parse(data);
+      if (!keystoreIDs.includes(keystoreID)) {
+        keystoreIDs.push(keystoreID);
+        localStorage.setItem("keystoreIDs", JSON.stringify(keystoreIDs));
       }
     } else {
-      localStorage.setItem("storageIDs", JSON.stringify([storageID]));
+      localStorage.setItem("keystoreIDs", JSON.stringify([keystoreID]));
     }
-    return Promise.resolve(localStorage.setItem(storageID, JSON.stringify(j)));
+    return Promise.resolve(localStorage.setItem(keystoreID, JSON.stringify(j)));
   }
 
-  async removeStore(storageID: string): Promise<void> {
-    localStorage.removeItem(storageID);
-    let storageIDs = await this.getKeystoreIDs();
-    storageIDs = storageIDs.filter((id) => id !== storageID);
-    localStorage.setItem("keystoreIDs", JSON.stringify(storageIDs));
+  async removeStore(keystoreID: string): Promise<void> {
+    localStorage.removeItem(keystoreID);
+    let keystoreIDs = await this.getKeystoreIDs();
+    keystoreIDs = keystoreIDs.filter((id) => id !== keystoreID);
+    localStorage.setItem("keystoreIDs", JSON.stringify(keystoreIDs));
   }
 
   getKeystoreIDs(): Promise<string[]> {

@@ -1,4 +1,3 @@
-import { BrowserLocalStorage } from "./persistence/implementations/BrowserLocalStorage";
 import { WalletStorage } from "./persistence/WalletStorage";
 import { MainchainSubWallet } from "./wallet/MainchainSubWallet";
 import { IDChainSubWallet } from "./wallet/IDChainSubWallet";
@@ -48,14 +47,13 @@ import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward"
 import { CancelVotesInfo } from "./transactions/payload/CancelVotes";
 import { SHA256 } from "./walletcore/sha256";
 import { ByteStream } from "./common/bytestream";
-import { KeystoreBrowserLocalStorage } from "./persistence/implementations/KeystoreBrowserLocalStorage";
+import { KeystoreStorage } from "./persistence/KeystoreStorage";
 import { KeystoreInfo, KeyStore } from "./walletcore/keystore";
 
 export * from "./transactions/payload";
 
 export {
   Address,
-  BrowserLocalStorage,
   Mnemonic,
   KeySpec,
   HDKey,
@@ -72,12 +70,12 @@ export {
   get32BytesOfBNAsHexString,
   SHA256,
   ByteStream,
-  KeystoreBrowserLocalStorage,
   KeyStore
 };
 
 export type {
   WalletStorage,
+  KeystoreStorage,
   AccountBasicInfo,
   AccountPubKeyInfo,
   EncodedTx,

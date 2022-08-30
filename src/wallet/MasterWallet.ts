@@ -472,9 +472,9 @@ export class MasterWallet {
       let id = this._id + ":" + subWallet.getChainID();
       Log.info("{} closing...", id);
 
-      delete keys[i];
+      delete this._createdWallets[keys[i]];
       subWallet = null;
-      Log.info("{} closed", keys[i]);
+      Log.info("{} closed", id);
     }
   }
 
