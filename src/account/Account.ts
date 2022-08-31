@@ -1073,6 +1073,10 @@ export class Account {
     }
 
     if (this.getSignType() == SignType.MultiSign) {
+      if (this._localstore.getM() != account._localstore.getM()) {
+        return false;
+      }
+
       if (this._allMultiSigners.length != account.multiSignCosigner().length) {
         return false;
       }
