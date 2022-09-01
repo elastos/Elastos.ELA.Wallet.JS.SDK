@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { isAddress } from "ethers/lib/utils";
+import { isAddress } from "@ethersproject/address";
 import {
   Account,
   AccountBasicInfo,

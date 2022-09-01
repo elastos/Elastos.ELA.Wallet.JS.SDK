@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import BigNumber from "bignumber.js";
-import { isAddress } from "ethers/lib/utils";
+import { isAddress } from "@ethersproject/address";
 import { Buffer } from "buffer";
 import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
