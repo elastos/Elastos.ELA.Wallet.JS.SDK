@@ -143,13 +143,19 @@ import { Voting, VotingInfo } from "../transactions/payload/Voting";
 import {
   DPoSV2ClaimReward,
   DPoSV2ClaimRewardInfo,
-  DPoSV2ClaimRewardVersion
+  DPoSV2ClaimRewardVersion,
+  DPoSV2ClaimRewardVersion_01
 } from "../transactions/payload/DPoSV2ClaimReward";
 // import {
 //   CancelVotes,
 //   CancelVotesInfo
 // } from "../transactions/payload/CancelVotes";
-import { Unstake, UnstakeInfo } from "../transactions/payload/Unstake";
+import {
+  DPoSV2UnstakeVersion,
+  DPoSV2UnstakeVersion_01,
+  Unstake,
+  UnstakeInfo
+} from "../transactions/payload/Unstake";
 
 export const DEPOSIT_MIN_ELA = 5000;
 
@@ -3763,9 +3769,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   ...
    * ]
    * @param payload
+   * if payload version is 0x00
    * {
    *   "Amount": "100000000", // Bigint string in SELA, 1 ELA = 100000000 SELA
    *   "Signature": "..."
+   * }
+   * if payload version is 0x01
+   * {
+   *   "ToAddress": "...",
+   *   "Amount": "100000000"
    * }
    * @fee Fee amount. Bigint string in SELA
    * @memo Remark string
@@ -3789,6 +3801,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     let version = DPoSV2ClaimRewardVersion;
     let p = new DPoSV2ClaimReward();
+    if (!payload.Signature) {
+      version = DPoSV2ClaimRewardVersion_01;
+    }
     try {
       p.fromJson(payload, version);
     } catch (e) {
@@ -3951,8 +3966,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
 
-    let version = 0;
+    let version = DPoSV2UnstakeVersion;
     let p = new Unstake();
+    if (!payload.Signature) {
+      version = DPoSV2UnstakeVersion_01;
+    }
     try {
       p.fromJson(payload, version);
     } catch (e) {

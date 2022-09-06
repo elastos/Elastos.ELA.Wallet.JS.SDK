@@ -37,10 +37,13 @@ import { SHA256 } from "../../walletcore/sha256";
 
 export type UnstakeInfo = {
   ToAddress: string;
-  Code: string;
   Value: string;
+  Code?: string;
   Signature?: string;
 };
+
+export const DPoSV2UnstakeVersion = 0;
+export const DPoSV2UnstakeVersion_01 = 0x01;
 
 export class Unstake extends Payload {
   private _toAddr: uint168;
@@ -50,21 +53,27 @@ export class Unstake extends Payload {
 
   static newFromParams(
     toAddr: uint168,
-    code: bytes_t,
     value: uint64_t,
-    signature: bytes_t
+    code?: bytes_t,
+    signature?: bytes_t
   ) {
     let unstake = new Unstake();
     unstake._toAddr = toAddr;
-    unstake._code = code;
     unstake._value = value;
-    unstake._signature = signature;
+    if (code.length > 0) {
+      unstake._code = code;
+    }
+    if (signature.length > 0) {
+      unstake._signature = signature;
+    }
     return unstake;
   }
 
   serializeUnsigned(stream: ByteStream, version: uint8_t) {
     stream.writeBytes(this._toAddr.bytes());
-    stream.writeVarBytes(this._code);
+    if (version === DPoSV2UnstakeVersion) {
+      stream.writeVarBytes(this._code);
+    }
     stream.writeBNAsUIntOfSize(this._value, 8);
   }
 
@@ -77,13 +86,15 @@ export class Unstake extends Payload {
     }
     this._toAddr = uint168.newFrom21BytesBuffer(toAddr);
 
-    let code: bytes_t;
-    code = stream.readVarBytes(code);
-    if (!code) {
-      Log.error("Unstake deserialize code");
-      return false;
+    if (version === DPoSV2UnstakeVersion) {
+      let code: bytes_t;
+      code = stream.readVarBytes(code);
+      if (!code) {
+        Log.error("Unstake deserialize code");
+        return false;
+      }
+      this._code = code;
     }
-    this._code = code;
 
     let value = stream.readUIntOfBytesAsBN(8);
     if (!value) {
@@ -98,14 +109,18 @@ export class Unstake extends Payload {
   toJsonUnsigned(version: uint8_t): UnstakeInfo {
     let j = <UnstakeInfo>{};
     j["ToAddress"] = Address.newFromProgramHash(this._toAddr).string();
-    j["Code"] = this._code.toString("hex");
+    if (version === DPoSV2UnstakeVersion) {
+      j["Code"] = this._code.toString("hex");
+    }
     j["Value"] = this._value.toString();
     return j;
   }
 
   fromJsonUnsigned(j: UnstakeInfo, version: uint8_t) {
     this._toAddr = Address.newFromAddressString(j["ToAddress"]).programHash();
-    this._code = Buffer.from(j["Code"], "hex");
+    if (version === DPoSV2UnstakeVersion) {
+      this._code = Buffer.from(j["Code"], "hex");
+    }
     this._value = new BigNumber(j["Value"]);
   }
 
@@ -120,18 +135,24 @@ export class Unstake extends Payload {
     let stream = new ByteStream();
 
     size += this._toAddr.bytes().length;
-    size += stream.writeVarUInt(this._code.length);
-    size += this._code.length;
+    if (version === DPoSV2UnstakeVersion) {
+      size += stream.writeVarUInt(this._code.length);
+      size += this._code.length;
+    }
     size += sizeof_uint64_t();
-    size += stream.writeVarUInt(this._signature.length);
-    size += this._signature.length;
+    if (version === DPoSV2UnstakeVersion) {
+      size += stream.writeVarUInt(this._signature.length);
+      size += this._signature.length;
+    }
 
     return size;
   }
 
   serialize(stream: ByteStream, version: uint8_t) {
     this.serializeUnsigned(stream, version);
-    stream.writeVarBytes(this._signature);
+    if (version === DPoSV2UnstakeVersion) {
+      stream.writeVarBytes(this._signature);
+    }
   }
 
   deserialize(stream: ByteStream, version: uint8_t): boolean {
@@ -140,26 +161,32 @@ export class Unstake extends Payload {
       return false;
     }
 
-    let signature: bytes_t;
-    signature = stream.readVarBytes(signature);
-    if (!signature) {
-      Log.error("Unstake deserialize signature");
-      return false;
+    if (version === DPoSV2UnstakeVersion) {
+      let signature: bytes_t;
+      signature = stream.readVarBytes(signature);
+      if (!signature) {
+        Log.error("Unstake deserialize signature");
+        return false;
+      }
+      this._signature = signature;
     }
-    this._signature = signature;
 
     return true;
   }
 
   toJson(version: uint8_t): UnstakeInfo {
     let j = this.toJsonUnsigned(version);
-    j["Signature"] = this._signature.toString("hex");
+    if (version === DPoSV2UnstakeVersion) {
+      j["Signature"] = this._signature.toString("hex");
+    }
     return j;
   }
 
   fromJson(j: UnstakeInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
-    this._signature = Buffer.from(j["Signature"], "hex");
+    if (version === DPoSV2UnstakeVersion) {
+      this._signature = Buffer.from(j["Signature"], "hex");
+    }
   }
 
   isValid(version: uint8_t): boolean {
@@ -179,21 +206,32 @@ export class Unstake extends Payload {
 
   copyUnstake(payload: Unstake) {
     this._toAddr = payload._toAddr;
-    this._code = payload._code;
     this._value = payload._value;
-    this._signature = payload._signature;
+    if (payload._code) {
+      this._code = payload._code;
+    }
+    if (payload._signature) {
+      this._signature = payload._signature;
+    }
     return this;
   }
 
   equals(payload: Payload, version: uint8_t): boolean {
     try {
       const p = payload as Unstake;
-      return (
-        this._toAddr.bytes().equals(p._toAddr.bytes()) &&
-        this._code.equals(p._code) &&
-        this._value.eq(p._value) &&
-        this._signature.equals(p._signature)
-      );
+      if (version == DPoSV2UnstakeVersion) {
+        return (
+          this._toAddr.bytes().equals(p._toAddr.bytes()) &&
+          this._code.equals(p._code) &&
+          this._value.eq(p._value) &&
+          this._signature.equals(p._signature)
+        );
+      } else {
+        return (
+          this._toAddr.bytes().equals(p._toAddr.bytes()) &&
+          this._value.eq(p._value)
+        );
+      }
     } catch (e) {
       Log.error("payload is not instance of Unstake");
     }

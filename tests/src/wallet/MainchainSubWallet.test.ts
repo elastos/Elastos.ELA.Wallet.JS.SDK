@@ -2043,7 +2043,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "400ee136edf7942d30da4aa4bcb97749bacf969e178ec7ef80e736c2b790ef34fb5897604ecde64e3ca3f997d9f3324f7a4d36a262717e63908bf477ba494d16f540db9cf619e90c5dd338a8350a85563186a030ce23528aa8426f454e8a7e689ae56fc550f74e24b071fbb0c5a09e17fe87115a99b737659cf3737440df925c9737405d08848c75206a34a51e06827574b93ddf53faac9be86f0304ae54d5f5b4b13751ad1cc0fcf92be6f48aa63e4e1e2d1bd4a33758b618bc9ae181e54a698029a7"
     );
 
-    let payload = { Amount: "200000000", Signature: signature3 };
+    let payload = { Amount: "200000000", Signature: signature };
 
     const inputs = [
       {
