@@ -52,7 +52,7 @@ export type VotesWithLockTimeInfo = {
    * The Locktime means a block height of the ela blockchain, the value of
    * the Locktime must be zero if the vote type is Delegate, CRC, CRCProposal
    * or CRCImpeachment, and its value is at least bigger than the current
-   * block height by 7200 blocks When the vote type is DPosV2.
+   * block height by 7200 blocks if the vote type is DPosV2.
    */
   Locktime: number;
 };

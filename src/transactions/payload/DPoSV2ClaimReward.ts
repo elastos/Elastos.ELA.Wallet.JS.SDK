@@ -35,27 +35,25 @@ import { Address } from "../../walletcore/Address";
 import { SHA256 } from "../../walletcore/sha256";
 import { Payload } from "./Payload";
 
-export const DPoSV2ClaimRewardVersion = 0;
-export const DPoSV2ClaimRewardVersion_01 = 0x01;
+export const DPoSV2ClaimRewardVersionV0 = 0x00;
+export const DPoSV2ClaimRewardVersionV1 = 0x01;
 
 export type DPoSV2ClaimRewardInfo = {
-  Amount: string;
-  ToAddress?: string;
+  ToAddress: string;
+  Value: string;
+  Code?: string;
   Signature?: string;
 };
 
 export class DPoSV2ClaimReward extends Payload {
-  private _amount: uint64_t;
-  private _signature: bytes_t;
   private _toAddr: uint168;
+  private _code: bytes_t;
+  private _value: uint64_t;
+  private _signature: bytes_t;
 
-  static newFromParams(
-    amount: uint64_t,
-    signature?: bytes_t,
-    toAddr?: uint168
-  ) {
+  static newFromParams(value: uint64_t, signature?: bytes_t, toAddr?: uint168) {
     let claimReward = new DPoSV2ClaimReward();
-    claimReward._amount = amount;
+    claimReward._value = value;
     if (signature.length > 0) {
       claimReward._signature = signature;
     }
@@ -67,21 +65,30 @@ export class DPoSV2ClaimReward extends Payload {
   }
 
   serializeUnsigned(stream: ByteStream, version: uint8_t) {
-    if (version === DPoSV2ClaimRewardVersion_01) {
-      stream.writeBytes(this._toAddr.bytes());
+    stream.writeBytes(this._toAddr.bytes());
+    if (version === DPoSV2ClaimRewardVersionV0) {
+      stream.writeVarBytes(this._code);
     }
-    stream.writeBNAsUIntOfSize(this._amount, 8);
+    stream.writeBNAsUIntOfSize(this._value, 8);
   }
 
   deserializeUnsigned(stream: ByteStream, version: uint8_t): boolean {
-    if (version === DPoSV2ClaimRewardVersion_01) {
-      let toAddr: bytes_t;
-      toAddr = stream.readBytes(toAddr, 21);
-      if (!toAddr) {
-        Log.error("DPoSV2ClaimReward deserialize toAddr");
+    let toAddr: bytes_t;
+    toAddr = stream.readBytes(toAddr, 21);
+    if (!toAddr) {
+      Log.error("DPoSV2ClaimReward deserialize toAddr");
+      return false;
+    }
+    this._toAddr = uint168.newFrom21BytesBuffer(toAddr);
+
+    if (version === DPoSV2ClaimRewardVersionV0) {
+      let code: bytes_t;
+      code = stream.readVarBytes(code);
+      if (!code) {
+        Log.error("DPoSV2ClaimReward deserialize code");
         return false;
       }
-      this._toAddr = uint168.newFrom21BytesBuffer(toAddr);
+      this._code = code;
     }
 
     let amount = stream.readUIntOfBytesAsBN(8);
@@ -89,25 +96,28 @@ export class DPoSV2ClaimReward extends Payload {
       Log.error("DPoSV2ClaimReward deserialize unsigned amount");
       return false;
     }
-    this._amount = amount;
+    this._value = amount;
 
     return true;
   }
 
   toJsonUnsigned(version: uint8_t) {
     let j = <DPoSV2ClaimRewardInfo>{};
-    if (version === DPoSV2ClaimRewardVersion_01) {
-      j["ToAddress"] = Address.newFromProgramHash(this._toAddr).string();
+    j["ToAddress"] = Address.newFromProgramHash(this._toAddr).string();
+    if (version === DPoSV2ClaimRewardVersionV0) {
+      j["Code"] = this._code.toString("hex");
     }
-    j["Amount"] = this._amount.toString();
+    j["Value"] = this._value.toString();
     return j;
   }
 
   fromJsonUnsigned(j: DPoSV2ClaimRewardInfo, version: uint8_t) {
-    if (version === DPoSV2ClaimRewardVersion_01) {
-      this._toAddr = Address.newFromAddressString(j["ToAddress"]).programHash();
+    this._toAddr = Address.newFromAddressString(j["ToAddress"]).programHash();
+
+    if (version === DPoSV2ClaimRewardVersionV0) {
+      this._code = Buffer.from(j["Code"], "hex");
     }
-    this._amount = new BigNumber(j["Amount"]);
+    this._value = new BigNumber(j["Value"]);
   }
 
   digestDPoSV2ClaimReward(version: uint8_t): string {
@@ -119,11 +129,13 @@ export class DPoSV2ClaimReward extends Payload {
   estimateSize(version: uint8_t): size_t {
     let size = 0;
     let stream = new ByteStream();
-    if (version === DPoSV2ClaimRewardVersion_01) {
-      size += this._toAddr.bytes().length;
+    size += this._toAddr.bytes().length;
+    if (version === DPoSV2ClaimRewardVersionV0) {
+      size += stream.writeVarUInt(this._code.length);
+      size += this._code.length;
     }
     size += sizeof_uint64_t();
-    if (version === DPoSV2ClaimRewardVersion) {
+    if (version === DPoSV2ClaimRewardVersionV0) {
       size += stream.writeVarUInt(this._signature.length);
       size += this._signature.length;
     }
@@ -132,7 +144,7 @@ export class DPoSV2ClaimReward extends Payload {
 
   serialize(stream: ByteStream, version: uint8_t) {
     this.serializeUnsigned(stream, version);
-    if (version === DPoSV2ClaimRewardVersion) {
+    if (version === DPoSV2ClaimRewardVersionV0) {
       stream.writeVarBytes(this._signature);
     }
   }
@@ -142,7 +154,7 @@ export class DPoSV2ClaimReward extends Payload {
       Log.error("deserialize unsigned");
       return false;
     }
-    if (version === DPoSV2ClaimRewardVersion) {
+    if (version === DPoSV2ClaimRewardVersionV0) {
       let signature: bytes_t;
       signature = stream.readVarBytes(signature);
       if (!signature) {
@@ -157,7 +169,7 @@ export class DPoSV2ClaimReward extends Payload {
 
   toJson(version: uint8_t): DPoSV2ClaimRewardInfo {
     let j = this.toJsonUnsigned(version);
-    if (version === DPoSV2ClaimRewardVersion) {
+    if (version === DPoSV2ClaimRewardVersionV0) {
       j["Signature"] = this._signature.toString("hex");
     }
     return j;
@@ -165,7 +177,7 @@ export class DPoSV2ClaimReward extends Payload {
 
   fromJson(j: DPoSV2ClaimRewardInfo, version: uint8_t) {
     this.fromJsonUnsigned(j, version);
-    if (version === DPoSV2ClaimRewardVersion) {
+    if (version === DPoSV2ClaimRewardVersionV0) {
       this._signature = Buffer.from(j["Signature"], "hex");
     }
   }
@@ -186,27 +198,32 @@ export class DPoSV2ClaimReward extends Payload {
   }
 
   copyDPoSV2ClaimReward(payload: DPoSV2ClaimReward) {
-    if (payload._toAddr) {
-      this._toAddr = payload._toAddr;
+    this._toAddr = payload._toAddr;
+    if (payload._code) {
+      this._code = payload._code;
     }
     if (payload._signature) {
       this._signature = payload._signature;
     }
-    this._amount = payload._amount;
+    this._value = payload._value;
     return this;
   }
 
   equals(payload: Payload, version: uint8_t): boolean {
     try {
       const p = payload as DPoSV2ClaimReward;
-      if (version === DPoSV2ClaimRewardVersion_01) {
+
+      if (version === DPoSV2ClaimRewardVersionV1) {
         return (
           this._toAddr.bytes().equals(p._toAddr.bytes()) &&
-          this._amount.eq(p._amount)
+          this._value.eq(p._value)
         );
-      } else {
+      } else if (version === DPoSV2ClaimRewardVersionV0) {
         return (
-          this._amount.eq(p._amount) && this._signature.equals(p._signature)
+          this._toAddr.bytes().equals(p._toAddr.bytes()) &&
+          this._code.equals(p._code) &&
+          this._value.eq(p._value) &&
+          this._signature.equals(p._signature)
         );
       }
     } catch (e) {

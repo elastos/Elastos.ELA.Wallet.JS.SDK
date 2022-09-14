@@ -1892,22 +1892,33 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "ELA"
     )) as MainchainSubWallet;
     const addresses = subWallet.getAddresses(0, 1, false);
+    let code = subWallet.getCodeofOwnerStakeAddress();
+
     // Use the rpc dposv2rewardinfo to check your rewards
-    let digest = subWallet.getDPoSV2ClaimRewardDigest({ Amount: "100000000" });
+    let digest = subWallet.getDPoSV2ClaimRewardDigest({
+      ToAddress: addresses[0],
+      Code: code,
+      Value: "30000"
+    });
     let signature = await subWallet.signDigest(addresses[0], digest, passwd);
-    let payload = { Amount: "100000000", Signature: signature };
+    let payload = {
+      ToAddress: addresses[0],
+      Code: code,
+      Value: "30000",
+      Signature: signature
+    };
 
     const inputs = [
       {
         Address: addresses[0],
-        Amount: "799960000",
+        Amount: "949999968000",
         TxHash:
-          "58997f685cd3e2efcf41b2ff6a2b9956e4a4f6fbc7d0206a85f36fc0af365ece",
-        Index: 1
+          "424b8829732183b95f12d464f7da6f896790d0a2b0a1c2ea67c8951b17e1d84f",
+        Index: 0
       }
     ];
     const fee = "10000";
-    const memo = "claim reward transaction";
+    const memo = "standard wallet claim reward transaction";
 
     const tx = subWallet.createDPoSV2ClaimRewardTransaction(
       inputs,
@@ -1922,7 +1933,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     );
   });
 
-  test("test to claim DPoS v2 reward with a multisig wallet ", async () => {
+  test("test to claim reward with a multisig wallet ", async () => {
     const passphrase = "";
     const payPassword = "11111111";
     const singleAddress = false;
@@ -2005,12 +2016,13 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const addresses3 = subWallet3.getAddresses(0, 1, false);
     expect(addresses3[0]).toBe("8TW3SaMpAd1RwcGLnsgmG8EPuHrYsMUSop");
 
+    let code = subWallet3.getCodeofOwnerStakeAddress();
+
     let digest = subWallet3.getDPoSV2ClaimRewardDigest({
-      Amount: "200000000"
+      ToAddress: addresses3[0],
+      Code: code,
+      Value: "50000"
     });
-    expect(digest).toBe(
-      "f08a6d5727dfc999c62d854dfe494b325d981c6c8af75bf1a655fc011a62afb4"
-    );
 
     const publicKeyInfo = masterWallet3.getPubKeyInfo();
     let signature3 = await subWallet3.signDigestWithxPubKey(
@@ -2043,19 +2055,24 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       "400ee136edf7942d30da4aa4bcb97749bacf969e178ec7ef80e736c2b790ef34fb5897604ecde64e3ca3f997d9f3324f7a4d36a262717e63908bf477ba494d16f540db9cf619e90c5dd338a8350a85563186a030ce23528aa8426f454e8a7e689ae56fc550f74e24b071fbb0c5a09e17fe87115a99b737659cf3737440df925c9737405d08848c75206a34a51e06827574b93ddf53faac9be86f0304ae54d5f5b4b13751ad1cc0fcf92be6f48aa63e4e1e2d1bd4a33758b618bc9ae181e54a698029a7"
     );
 
-    let payload = { Amount: "200000000", Signature: signature };
+    let payload = {
+      ToAddress: addresses3[0],
+      Code: code,
+      Value: "50000",
+      Signature: signature
+    };
 
     const inputs = [
       {
         Address: addresses3[0],
-        Amount: "100000000000",
+        Amount: "989999960000",
         TxHash:
-          "f3e30efec7fae4cf5adc92a0579a5cd6e7bb3612cdb98a190b9bd1415cbf270e",
+          "b417e8cd9a0ca8feba7f0a36d6673224813b0dd3d86e5e6930297c1c61563d19",
         Index: 0
       }
     ];
     const fee = "10000";
-    const memo = "claim reward transaction";
+    const memo = "multisign claim reward transaction";
     const tx = subWallet3.createDPoSV2ClaimRewardTransaction(
       inputs,
       payload,

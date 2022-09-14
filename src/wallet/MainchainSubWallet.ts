@@ -143,8 +143,8 @@ import { Voting, VotingInfo } from "../transactions/payload/Voting";
 import {
   DPoSV2ClaimReward,
   DPoSV2ClaimRewardInfo,
-  DPoSV2ClaimRewardVersion,
-  DPoSV2ClaimRewardVersion_01
+  DPoSV2ClaimRewardVersionV0,
+  DPoSV2ClaimRewardVersionV1
 } from "../transactions/payload/DPoSV2ClaimReward";
 // import {
 //   CancelVotes,
@@ -3734,7 +3734,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   /**
    * @param payload
    * {
-   *   "Amount": "100000000" // Bigint string in SELA, 1 ELA = 100000000 SELA
+   *   "ToAddress": "..." // return ela to this address
+   *   "Code": "..." // hex-string of code
+   *   "Value": "100000000" // Bigint string in SELA, 1 ELA = 100000000 SELA
    * }
    * @return digest of the payload which will be signed
    */
@@ -3743,7 +3745,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
-    let version = DPoSV2ClaimRewardVersion;
+    let version = DPoSV2ClaimRewardVersionV0;
     let p = new DPoSV2ClaimReward();
     try {
       p.fromJsonUnsigned(payload, version);
@@ -3771,13 +3773,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param payload
    * if payload version is 0x00
    * {
-   *   "Amount": "100000000", // Bigint string in SELA, 1 ELA = 100000000 SELA
+   *   "ToAddress": "...",
+   *   "Code": "...",
+   *   "Value": "100000000", // Bigint string in SELA, 1 ELA = 100000000 SELA
    *   "Signature": "..."
    * }
    * if payload version is 0x01
    * {
    *   "ToAddress": "...",
-   *   "Amount": "100000000"
+   *   "Value": "100000000"
    * }
    * @fee Fee amount. Bigint string in SELA
    * @memo Remark string
@@ -3799,10 +3803,10 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
 
-    let version = DPoSV2ClaimRewardVersion;
+    let version = DPoSV2ClaimRewardVersionV1;
     let p = new DPoSV2ClaimReward();
-    if (!payload.Signature) {
-      version = DPoSV2ClaimRewardVersion_01;
+    if (payload.Signature) {
+      version = DPoSV2ClaimRewardVersionV0;
     }
     try {
       p.fromJson(payload, version);
@@ -3903,7 +3907,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   /**
    * @param payload
    * {
-   *   "ToAddress": "...", // return voting rights to here
+   *   "ToAddress": "...", // return ela to here
    *   "Code": "...", // hex-string of code
    *   "Value": "100000000" // SELA
    * }
