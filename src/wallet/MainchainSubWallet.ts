@@ -3572,7 +3572,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   "Version": 0, // uint8_t
    *   "StakeAddress": "...",
    * }
-   * @param lockAddress lock addres
+   * @param lockAddress lock address
    * @param amount stake amount. bigint string in SELA
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remark string
