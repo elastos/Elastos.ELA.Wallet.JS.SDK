@@ -49,6 +49,12 @@ import { SHA256 } from "./walletcore/sha256";
 import { ByteStream } from "./common/bytestream";
 import { KeystoreStorage } from "./persistence/KeystoreStorage";
 import { KeystoreInfo, KeyStore } from "./walletcore/keystore";
+import { ConfigInfo } from "./config";
+import { PublickeysInfo } from "./account/SubAccount";
+import { CancelProducerInfo } from "./transactions/payload/CancelProducer";
+import { ProducerInfoJson } from "./transactions/payload/ProducerInfo";
+import { UnregisterCRPayload } from "./transactions/payload/UnregisterCR";
+import { JSONObject, json } from "./types";
 
 export * from "./transactions/payload";
 
@@ -74,6 +80,8 @@ export {
 };
 
 export type {
+  json,
+  JSONObject,
   WalletStorage,
   KeystoreStorage,
   AccountBasicInfo,
@@ -106,5 +114,10 @@ export type {
   UnstakeInfo,
   DPoSV2ClaimRewardInfo,
   CancelVotesInfo,
-  KeystoreInfo
+  KeystoreInfo,
+  ConfigInfo,
+  PublickeysInfo,
+  CancelProducerInfo,
+  ProducerInfoJson,
+  UnregisterCRPayload
 };
