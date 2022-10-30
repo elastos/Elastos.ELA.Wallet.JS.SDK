@@ -158,6 +158,7 @@ import {
 } from "../transactions/payload/Unstake";
 
 export const DEPOSIT_MIN_ELA = 5000;
+export const DPoSV2_DEPOSIT_MIN_ELA = 2000;
 
 export class MainchainSubWallet extends ElastosBaseSubWallet {
   constructor(
@@ -478,14 +479,19 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
+    let version = ProducerInfoVersion;
+    if (payloadJson.StakeUntil) {
+      version = ProducerInfoDposV2Version;
+    }
 
     ErrorChecker.checkBigIntAmount(amount);
     let bgAmount = new BigNumber(amount);
-    let minAmount = new BigNumber(DEPOSIT_MIN_ELA);
+    let minAmount = new BigNumber(
+      version === ProducerInfoVersion ? DEPOSIT_MIN_ELA : DPoSV2_DEPOSIT_MIN_ELA
+    );
     let feeAmount = new BigNumber(fee);
 
     minAmount = minAmount.multipliedBy(SELA_PER_ELA);
-
     ErrorChecker.checkParam(
       bgAmount.lt(minAmount),
       Error.Code.DepositAmountInsufficient,
@@ -493,10 +499,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     );
 
     let payload = new ProducerInfo();
-    let version = ProducerInfoVersion;
-    if (payloadJson.StakeUntil) {
-      version = ProducerInfoDposV2Version;
-    }
+
     try {
       payload.fromJson(payloadJson, version);
     } catch (e) {

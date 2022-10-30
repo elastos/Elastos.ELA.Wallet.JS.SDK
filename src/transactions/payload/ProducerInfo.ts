@@ -38,7 +38,7 @@ export class ProducerInfo extends Payload {
   private _url: string;
   private _location: uint64_t;
   private _address: string;
-  private _StakeUntil: uint32_t;
+  private _stakeUntil: uint32_t;
   private _signature: bytes_t;
 
   static newFromParams(
@@ -59,7 +59,7 @@ export class ProducerInfo extends Payload {
     producerInfo._location = location;
     producerInfo._address = address;
     if (stakeUntil) {
-      producerInfo._StakeUntil = stakeUntil;
+      producerInfo._stakeUntil = stakeUntil;
     }
     producerInfo._signature = signature;
     return producerInfo;
@@ -121,11 +121,11 @@ export class ProducerInfo extends Payload {
   }
 
   getStakeUntil(): uint32_t {
-    return this._StakeUntil;
+    return this._stakeUntil;
   }
 
   setStakeUntil(stakeUntil: uint32_t) {
-    this._StakeUntil = stakeUntil;
+    this._stakeUntil = stakeUntil;
   }
 
   getSignature(): bytes_t {
@@ -144,7 +144,7 @@ export class ProducerInfo extends Payload {
     ostream.writeBNAsUIntOfSize(this._location, 8);
     ostream.writeVarString(this._address);
     if (version === ProducerInfoDposV2Version) {
-      ostream.writeUInt32(this._StakeUntil);
+      ostream.writeUInt32(this._stakeUntil);
     }
   }
 
@@ -187,7 +187,7 @@ export class ProducerInfo extends Payload {
     this._location = location;
 
     const address = istream.readVarString();
-    if (!address) {
+    if (!address && address !== "") {
       Log.error("Deserialize: read address");
       return false;
     }
@@ -199,7 +199,7 @@ export class ProducerInfo extends Payload {
         Log.error("Deserialize: read stakeUntil");
         return false;
       }
-      this._StakeUntil = stakeUntil;
+      this._stakeUntil = stakeUntil;
     }
 
     return true;
@@ -269,7 +269,7 @@ export class ProducerInfo extends Payload {
     j["Location"] = this._location.toString(16);
     j["Address"] = this._address;
     if (version === ProducerInfoDposV2Version) {
-      j["StakeUntil"] = this._StakeUntil;
+      j["StakeUntil"] = this._stakeUntil;
     }
     j["Signature"] = this._signature.toString("hex");
     return j;
@@ -283,7 +283,7 @@ export class ProducerInfo extends Payload {
     this._location = new BigNumber(j["Location"], 16);
     this._address = j["Address"];
     if (version === ProducerInfoDposV2Version) {
-      this._StakeUntil = j["StakeUntil"];
+      this._stakeUntil = j["StakeUntil"];
     }
     this._signature = Buffer.from(j["Signature"], "hex");
   }
@@ -306,8 +306,8 @@ export class ProducerInfo extends Payload {
     this._url = payload._url;
     this._location = payload._location;
     this._address = payload._address;
-    if (payload._StakeUntil) {
-      this._StakeUntil = payload._StakeUntil;
+    if (payload._stakeUntil) {
+      this._stakeUntil = payload._stakeUntil;
     }
     this._signature = payload._signature;
     return this;
@@ -325,7 +325,7 @@ export class ProducerInfo extends Payload {
         this._address == p._address &&
         this._signature.equals(p._signature);
       if (version === ProducerInfoDposV2Version) {
-        equal = equal && this._StakeUntil == p._StakeUntil;
+        equal = equal && this._stakeUntil == p._stakeUntil;
       }
       return equal;
     } catch (e) {
