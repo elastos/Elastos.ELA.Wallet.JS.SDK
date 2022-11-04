@@ -1086,8 +1086,6 @@ export class Account {
           return false;
         }
       }
-
-      return true;
     }
 
     return this._xpub.equals(account.masterPubKey());
