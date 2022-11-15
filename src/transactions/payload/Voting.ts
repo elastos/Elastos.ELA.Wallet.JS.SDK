@@ -27,16 +27,7 @@ import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
 import { reverseHashString } from "../../common/utils";
 import {
-  bytes_t,
-  uint64_t,
-  uint32_t,
-  uint8_t,
-  size_t,
-  sizeof_uint64_t,
-  sizeof_uint32_t,
-  sizeof_uint8_t,
-  uint256,
-  sizeof_uint256_t
+    bytes_t, sizeof_uint256_t, sizeof_uint32_t, sizeof_uint64_t, sizeof_uint8_t, size_t, uint256, uint32_t, uint64_t, uint8_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { VoteContentType } from "./OutputPayload/PayloadVote";
@@ -168,7 +159,7 @@ export class VotesWithLockTime {
     }
     j["Votes"] = this._votes.toString();
     j["Locktime"] = this._lockTime;
-    return;
+    return j;
   }
 }
 
