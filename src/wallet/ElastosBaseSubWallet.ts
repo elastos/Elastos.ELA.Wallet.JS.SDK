@@ -261,6 +261,22 @@ export class ElastosBaseSubWallet
     return signature;
   }
 
+  async signDigestWithOwnerKey(
+    digest: string,
+    payPassword: string
+  ): Promise<string> {
+    ErrorChecker.checkParam(
+      digest.length != 64,
+      Error.Code.InvalidArgument,
+      "invalid digest"
+    );
+    const signature: string = await this._wallet.signDigestWithOwnerKey(
+      digest,
+      payPassword
+    );
+    return signature;
+  }
+
   async signDigestWithxPubKey(
     xPubKey: string,
     xPubKeys: string[],

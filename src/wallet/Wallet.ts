@@ -347,6 +347,14 @@ export class Wallet extends Lockable {
     );
   }
 
+  async signDigestWithOwnerKey(digest: string, payPasswd: string) {
+    const key = await this._subAccount.deriveOwnerKey(payPasswd);
+    return EcdsaSigner.sign(
+      key.getPrivateKeyBytes(),
+      Buffer.from(digest, "hex")
+    ).toString("hex");
+  }
+
   protected loadUsedAddress() {}
 
   clearData() {

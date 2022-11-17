@@ -792,6 +792,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     return addrPtr.redeemScript().toString("hex");
   }
 
+  /**
+   * Get code of owner address.
+   */
+  getCodeofOwnerAddress(): string {
+    let wallet = this.getWallet();
+    let addrPtr = wallet.getOwnerAddress();
+    return addrPtr.redeemScript().toString("hex");
+  }
+
   voteAmountFromJson(voteAmount: BigNumber, j: string): boolean {
     ErrorChecker.checkParam(
       typeof j !== "string",
