@@ -27,7 +27,16 @@ import { Log } from "../../common/Log";
 import { uint168 } from "../../common/uint168";
 import { reverseHashString } from "../../common/utils";
 import {
-    bytes_t, sizeof_uint256_t, sizeof_uint32_t, sizeof_uint64_t, sizeof_uint8_t, size_t, uint256, uint32_t, uint64_t, uint8_t
+  bytes_t,
+  sizeof_uint256_t,
+  sizeof_uint32_t,
+  sizeof_uint64_t,
+  sizeof_uint8_t,
+  size_t,
+  uint256,
+  uint32_t,
+  uint64_t,
+  uint8_t
 } from "../../types";
 import { Address } from "../../walletcore/Address";
 import { VoteContentType } from "./OutputPayload/PayloadVote";
@@ -154,6 +163,8 @@ export class VotesWithLockTime {
       j["Candidate"] = Address.newFromProgramHash(
         uint168.newFrom21BytesBuffer(this._candidate)
       ).string();
+    } else if (this._candidate.length === 32) {
+      j["Candidate"] = reverseHashString(this._candidate.toString("hex"));
     } else {
       j["Candidate"] = this._candidate.toString("hex");
     }
