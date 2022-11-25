@@ -34,7 +34,8 @@ import {
 import {
   CRCouncilMemberClaimNode,
   CRCouncilMemberClaimNodeInfo,
-  CRCouncilMemberClaimNodeVersion
+  CurrentCRClaimDPoSNodeVersion,
+  NextCRClaimDPoSNodeVersion
 } from "../transactions/payload/CRCouncilMemberClaimNode";
 import {
   ChangeCustomIDFeeOwnerInfo,
@@ -1500,16 +1501,27 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   "NodePublicKey": "...",
    *   "CRCouncilMemberDID": "...",
    * }
+   * @param version payload version
    * @return
    */
   CRCouncilMemberClaimNodeDigest(
-    payload: CRCouncilMemberClaimNodeInfo
+    payload: CRCouncilMemberClaimNodeInfo,
+    version: number
   ): string {
     // let wallet = this.getWallet();
     // ArgInfo("{} {}", wallet.getWalletID(), GetFunName());
     // ArgInfo("payload: {}", payload.dump());
 
-    let version: uint8_t = CRCouncilMemberClaimNodeVersion;
+    if (
+      version != CurrentCRClaimDPoSNodeVersion &&
+      version != NextCRClaimDPoSNodeVersion
+    ) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid version"
+      );
+    }
+
     let p = new CRCouncilMemberClaimNode();
     try {
       p.fromJsonUnsigned(payload, version);
@@ -1531,6 +1543,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
   }
 
   /**
+   * @param version payload version
    * @param inputs UTXO which will be used. eg
    * [
    *   {
@@ -1552,6 +1565,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @return
    */
   createCRCouncilMemberClaimNodeTransaction(
+    version: number,
     inputs: UTXOInput[],
     payloadJson: CRCouncilMemberClaimNodeInfo,
     fee: string,
@@ -1566,8 +1580,15 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
     let utxo = new UTXOSet();
     this.UTXOFromJson(utxo, inputs);
+    if (
+      version != CurrentCRClaimDPoSNodeVersion &&
+      version != NextCRClaimDPoSNodeVersion
+    )
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "invalid version"
+      );
 
-    let version: uint8_t = CRCProposalDefaultVersion;
     let payload = new CRCouncilMemberClaimNode();
     try {
       payload.fromJson(payloadJson, version);

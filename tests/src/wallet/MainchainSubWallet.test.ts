@@ -490,7 +490,8 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     };
 
     const digest = subWallet.CRCouncilMemberClaimNodeDigest(
-      councilMemberClaimNodeInfo
+      councilMemberClaimNodeInfo,
+      0
     );
     let signature = await subWallet.signDigest(addresses[0], digest, passwd);
     councilMemberClaimNodeInfo.CRCouncilMemberSignature = signature;
@@ -508,6 +509,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
     const memo = "test the CR council member claim node transaction";
 
     const tx: EncodedTx = subWallet.createCRCouncilMemberClaimNodeTransaction(
+      0,
       inputs,
       councilMemberClaimNodeInfo,
       fee,

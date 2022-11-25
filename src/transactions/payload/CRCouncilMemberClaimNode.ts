@@ -33,7 +33,9 @@ import { Payload } from "./Payload";
 export const JsonKeyNodePublicKey = "NodePublicKey";
 export const JsonKeyCRCouncilMemberDID = "CRCouncilMemberDID";
 export const JsonKeyCRCouncilMemberSignature = "CRCouncilMemberSignature";
-export const CRCouncilMemberClaimNodeVersion = 0;
+
+export const CurrentCRClaimDPoSNodeVersion = 0x00;
+export const NextCRClaimDPoSNodeVersion = 0x01;
 
 export type CRCouncilMemberClaimNodeInfo = {
   NodePublicKey: string;
