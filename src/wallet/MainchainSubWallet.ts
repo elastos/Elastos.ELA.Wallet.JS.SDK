@@ -1504,7 +1504,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    * @param version payload version
    * @return
    */
-  CRCouncilMemberClaimNodeDigest(
+  crCouncilMemberClaimNodeDigest(
     payload: CRCouncilMemberClaimNodeInfo,
     version: number
   ): string {

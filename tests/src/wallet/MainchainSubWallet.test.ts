@@ -489,7 +489,7 @@ describe("Mainchain SubWallet Transaction Tests", () => {
       CRCouncilMemberDID: "iSrCAT6BPaJbDTG9aL6GtLdhZUixZwAxJy"
     };
 
-    const digest = subWallet.CRCouncilMemberClaimNodeDigest(
+    const digest = subWallet.crCouncilMemberClaimNodeDigest(
       councilMemberClaimNodeInfo,
       0
     );
