@@ -21,15 +21,17 @@
  */
 
 import BigNumber from "bignumber.js";
-import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Log } from "../common/Log";
+import { get32BytesOfBNAsHexString } from "../common/bnutils";
+import { ByteStream } from "../common/bytestream";
+import { reverseHashString } from "../common/utils";
 import {
   INT32_MAX,
   JSONValue,
+  UINT16_MAX,
   size_t,
   time_t,
-  UINT16_MAX,
   uint256,
   uint32_t,
   uint64_t,
@@ -37,38 +39,37 @@ import {
 } from "../types";
 import { SHA256 } from "../walletcore/sha256";
 import { Attribute, AttributeInfo } from "./Attribute";
-import { CoinBase } from "./payload/CoinBase";
-import { TransferAsset } from "./payload/TransferAsset";
-import { RegisterAsset } from "./payload/RegisterAsset";
-import { Payload } from "./payload/Payload";
 import { Program, ProgramInfo, SignedInfo } from "./Program";
 import { TransactionInput, TransactionInputInfo } from "./TransactionInput";
 import { TransactionOutput, TransactionOutputInfo } from "./TransactionOutput";
-import { Record } from "./payload/Record";
-import { SideChainPow } from "./payload/SideChainPow";
-import { RechargeToSideChain } from "./payload/RechargeToSideChain";
-import { WithdrawFromSideChain } from "./payload/WithdrawFromSideChain";
-import { TransferCrossChainAsset } from "./payload/TransferCrossChainAsset";
-import { ProducerInfo } from "./payload/ProducerInfo";
-import { CancelProducer } from "./payload/CancelProducer";
-import { ReturnDepositCoin } from "./payload/ReturnDepositCoin";
-import { NextTurnDPoSInfo } from "./payload/NextTurnDPoSInfo";
-import { CRInfo } from "./payload/CRInfo";
-import { UnregisterCR } from "./payload/UnregisterCR";
+import { CRCAssetsRectify } from "./payload/CRCAssetsRectify";
 import { CRCProposal } from "./payload/CRCProposal";
+import { CRCProposalRealWithdraw } from "./payload/CRCProposalRealWithdraw";
 import { CRCProposalReview } from "./payload/CRCProposalReview";
 import { CRCProposalTracking } from "./payload/CRCProposalTracking";
 import { CRCProposalWithdraw } from "./payload/CRCProposalWithdraw";
-import { CRCProposalRealWithdraw } from "./payload/CRCProposalRealWithdraw";
-import { CRCAssetsRectify } from "./payload/CRCAssetsRectify";
 import { CRCouncilMemberClaimNode } from "./payload/CRCouncilMemberClaimNode";
-import { get32BytesOfBNAsHexString } from "../common/bnutils";
-import { reverseHashString } from "../common/utils";
-import { Stake } from "./payload/Stake";
+import { CRInfo } from "./payload/CRInfo";
+import { CancelProducer } from "./payload/CancelProducer";
+import { CoinBase } from "./payload/CoinBase";
 import { DPoSV2ClaimReward } from "./payload/DPoSV2ClaimReward";
 import { DPoSV2ClaimRewardRealWithdraw } from "./payload/DPoSV2ClaimRewardRealWithdraw";
+import { NextTurnDPoSInfo } from "./payload/NextTurnDPoSInfo";
+import { Payload } from "./payload/Payload";
+import { ProducerInfo } from "./payload/ProducerInfo";
+import { RechargeToSideChain } from "./payload/RechargeToSideChain";
+import { Record } from "./payload/Record";
+import { RegisterAsset } from "./payload/RegisterAsset";
+import { ReturnDepositCoin } from "./payload/ReturnDepositCoin";
+import { SideChainPow } from "./payload/SideChainPow";
+import { Stake } from "./payload/Stake";
+import { TransferAsset } from "./payload/TransferAsset";
+import { TransferCrossChainAsset } from "./payload/TransferCrossChainAsset";
+import { UnregisterCR } from "./payload/UnregisterCR";
 import { Voting } from "./payload/Voting";
+import { WithdrawFromSideChain } from "./payload/WithdrawFromSideChain";
 // import { CancelVotes } from "./payload/CancelVotes";
+import { CreateNFT } from "./payload/CreateNFT";
 import { Unstake } from "./payload/Unstake";
 import { UnstakeRealWithdraw } from "./payload/UnstakeRealWithdraw";
 
@@ -124,6 +125,10 @@ export enum TransactionType {
   // CancelVotes = 0x64, // removed
   Unstake = 0x64,
   UnstakeRealWithdraw = 0x65,
+
+  // Mint NFT
+  MintNFT = 0x71,
+
   // DPoS2.0 end
 
   TypeMaxCount
@@ -901,6 +906,8 @@ export class Transaction {
       payload = new Unstake();
     } else if (type == TransactionType.UnstakeRealWithdraw) {
       payload = new UnstakeRealWithdraw();
+    } else if (type == TransactionType.MintNFT) {
+      payload = new CreateNFT();
     }
 
     return payload;

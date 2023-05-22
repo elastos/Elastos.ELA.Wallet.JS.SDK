@@ -4,6 +4,8 @@ import { get32BytesOfBNAsHexString } from "./common/bnutils";
 import { ByteStream } from "./common/bytestream";
 import { WalletErrorException } from "./common/exceptions/walleterror.exception";
 import { ConfigInfo } from "./config";
+import { BrowserLocalStorage } from "./persistence/implementations/BrowserLocalStorage";
+import { NodejsFileStorage } from "./persistence/implementations/NodejsFileStorage";
 import { KeystoreStorage } from "./persistence/KeystoreStorage";
 import { LocalStoreInfo } from "./persistence/LocalStore";
 import { WalletStorage } from "./persistence/WalletStorage";
@@ -19,6 +21,7 @@ import {
   CRCProposalTrackingType
 } from "./transactions/payload/CRCProposalTracking";
 import { CRCProposalWithdrawInfo } from "./transactions/payload/CRCProposalWithdraw";
+import { CreateNFTInfo } from "./transactions/payload/CreateNFT";
 import { CRInfoJson, CRInfoPayload } from "./transactions/payload/CRInfo";
 import { DPoSV2ClaimRewardInfo } from "./transactions/payload/DPoSV2ClaimReward";
 import { PayloadStakeInfo } from "./transactions/payload/OutputPayload/PayloadStake";
@@ -56,6 +59,8 @@ export {
   MasterWalletManager,
   SubWallet,
   MainchainSubWallet,
+  NodejsFileStorage,
+  BrowserLocalStorage,
   WalletErrorException,
   CRCProposalType,
   VoteContentType,
@@ -83,6 +88,7 @@ export type {
   CRInfoJson,
   CRCouncilMemberClaimNodeInfo,
   CRCProposalInfo,
+  CreateNFTInfo,
   NormalProposalOwnerInfo,
   ChangeProposalOwnerInfo,
   TerminateProposalOwnerInfo,

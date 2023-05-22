@@ -19,32 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import BigNumber from "bignumber.js";
 import { isAddress } from "@ethersproject/address";
+import BigNumber from "bignumber.js";
 import { Buffer } from "buffer";
-import { ByteStream } from "../common/bytestream";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
+import { ByteStream } from "../common/bytestream";
 import { reverseHashString } from "../common/utils";
 import { ChainConfig } from "../config";
 import { Asset } from "../transactions/Asset";
+import { Transaction, TransactionType } from "../transactions/Transaction";
 import {
-  CancelProducer,
-  CancelProducerInfo
-} from "../transactions/payload/CancelProducer";
+  OutputArray,
+  TransactionOutput,
+  Type
+} from "../transactions/TransactionOutput";
 import {
-  CRCouncilMemberClaimNode,
-  CRCouncilMemberClaimNodeInfo,
-  CurrentCRClaimDPoSNodeVersion,
-  NextCRClaimDPoSNodeVersion
-} from "../transactions/payload/CRCouncilMemberClaimNode";
-import {
-  ChangeCustomIDFeeOwnerInfo,
-  ChangeProposalOwnerInfo,
   CRCProposal,
   CRCProposalDefaultVersion,
   CRCProposalInfo,
   CRCProposalType,
   CRCProposalVersion01,
+  ChangeCustomIDFeeOwnerInfo,
+  ChangeProposalOwnerInfo,
   JsonKeyDraftData,
   JsonKeyType,
   NormalProposalOwnerInfo,
@@ -70,10 +66,16 @@ import {
   JsonKeySecretaryGeneralOpinionData
 } from "../transactions/payload/CRCProposalTracking";
 import {
-  CRCProposalWithdrawVersion_01,
   CRCProposalWithdraw,
-  CRCProposalWithdrawInfo
+  CRCProposalWithdrawInfo,
+  CRCProposalWithdrawVersion_01
 } from "../transactions/payload/CRCProposalWithdraw";
+import {
+  CRCouncilMemberClaimNode,
+  CRCouncilMemberClaimNodeInfo,
+  CurrentCRClaimDPoSNodeVersion,
+  NextCRClaimDPoSNodeVersion
+} from "../transactions/payload/CRCouncilMemberClaimNode";
 import {
   CRInfo,
   CRInfoDIDVersion,
@@ -81,26 +83,41 @@ import {
   CRInfoPayload
 } from "../transactions/payload/CRInfo";
 import {
+  CancelProducer,
+  CancelProducerInfo
+} from "../transactions/payload/CancelProducer";
+import {
+  DPoSV2ClaimReward,
+  DPoSV2ClaimRewardInfo,
+  DPoSV2ClaimRewardVersionV0,
+  DPoSV2ClaimRewardVersionV1
+} from "../transactions/payload/DPoSV2ClaimReward";
+import {
   CrossChainOutputVersion,
   PayloadCrossChain
 } from "../transactions/payload/OutputPayload/PayloadCrossChain";
 import {
+  PayloadStake,
+  PayloadStakeInfo
+} from "../transactions/payload/OutputPayload/PayloadStake";
+import {
   CandidateVotes,
   PayloadVote,
+  VOTE_PRODUCER_CR_VERSION,
   VoteContent,
   VoteContentArray,
-  VoteContentType,
-  VOTE_PRODUCER_CR_VERSION,
-  VoteContentInfo
+  VoteContentInfo,
+  VoteContentType
 } from "../transactions/payload/OutputPayload/PayloadVote";
 import { Payload } from "../transactions/payload/Payload";
 import {
   ProducerInfo,
+  ProducerInfoDposV2Version,
   ProducerInfoJson,
-  ProducerInfoVersion,
-  ProducerInfoDposV2Version
+  ProducerInfoVersion
 } from "../transactions/payload/ProducerInfo";
 import { ReturnDepositCoin } from "../transactions/payload/ReturnDepositCoin";
+import { Stake } from "../transactions/payload/Stake";
 import { TransferAsset } from "../transactions/payload/TransferAsset";
 import {
   TransferCrossChainAsset,
@@ -113,12 +130,7 @@ import {
   UnregisterCRInfo,
   UnregisterCRPayload
 } from "../transactions/payload/UnregisterCR";
-import { Transaction, TransactionType } from "../transactions/Transaction";
-import {
-  OutputArray,
-  TransactionOutput,
-  Type
-} from "../transactions/TransactionOutput";
+import { Voting, VotingInfo } from "../transactions/payload/Voting";
 import { bytes_t, size_t, uint32_t, uint64_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
 import { CoinInfo } from "../walletcore/CoinInfo";
@@ -135,22 +147,11 @@ import {
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
 } from "./WalletCommon";
-import { Stake } from "../transactions/payload/Stake";
-import {
-  PayloadStake,
-  PayloadStakeInfo
-} from "../transactions/payload/OutputPayload/PayloadStake";
-import { Voting, VotingInfo } from "../transactions/payload/Voting";
-import {
-  DPoSV2ClaimReward,
-  DPoSV2ClaimRewardInfo,
-  DPoSV2ClaimRewardVersionV0,
-  DPoSV2ClaimRewardVersionV1
-} from "../transactions/payload/DPoSV2ClaimReward";
 // import {
 //   CancelVotes,
 //   CancelVotesInfo
 // } from "../transactions/payload/CancelVotes";
+import { CreateNFT, CreateNFTInfo } from "../transactions/payload/CreateNFT";
 import {
   DPoSV2UnstakeVersion,
   DPoSV2UnstakeVersion_01,
@@ -4032,6 +4033,69 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
     // ArgInfo("r => {}", result.dump());
+    return result;
+  }
+
+  /**
+   * @param inputs tx inputs in json format
+   * [
+   *   {
+   *     "TxHash": "...", // string
+   *     "Index": 123, // int
+   *     "Address": "...", // string
+   *     "Amount": "100000000" // bigint string in SELA
+   *   },
+   *   ...
+   * ]
+   * @param payload
+   * {
+   *   "ReferKey": "...",
+   *   "StakeAddress": "...",
+   *   "GenesisBlockHash": "...",
+   * }
+   * @param fee Fee amount. Bigint string in SELA
+   * @param memo Remark string
+   * @return
+   */
+  createMintNFTTransaction(
+    inputs: UTXOInput[],
+    payloadJson: CreateNFTInfo,
+    fee: string,
+    memo: string
+  ) {
+    let wallet = this.getWallet();
+    // ArgInfo("{} {}", GetSubWalletID(), GetFunName());
+    // ArgInfo("inputs: {}", inputs.dump());
+    // ArgInfo("payload: {}", payloadJson.dump());
+    // ArgInfo("fee: {}", fee);
+    // ArgInfo("memo: {}", memo);
+
+    let utxo = new UTXOSet();
+    this.UTXOFromJson(utxo, inputs);
+
+    let payload = new CreateNFT();
+    try {
+      payload.fromJson(payloadJson);
+    } catch (e) {
+      ErrorChecker.throwParamException(
+        Error.Code.InvalidArgument,
+        "payload from json"
+      );
+    }
+
+    let feeAmount = new BigNumber(fee);
+
+    let tx = wallet.createTransaction(
+      TransactionType.MintNFT,
+      payload,
+      utxo,
+      [],
+      memo,
+      feeAmount
+    );
+
+    let result = <EncodedTx>{};
+    this.encodeTx(result, tx);
     return result;
   }
 }

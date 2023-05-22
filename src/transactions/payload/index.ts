@@ -1,34 +1,35 @@
-import { CoinBase } from "./CoinBase";
-import { TransferAsset } from "./TransferAsset";
-import { RegisterAsset } from "./RegisterAsset";
-import { Payload } from "./Payload";
-import { Record } from "./Record";
-import { SideChainPow } from "./SideChainPow";
-import { RechargeToSideChain } from "./RechargeToSideChain";
-import { WithdrawFromSideChain } from "./WithdrawFromSideChain";
-import { TransferCrossChainAsset } from "./TransferCrossChainAsset";
-import { ProducerInfo } from "./ProducerInfo";
-import { CancelProducer } from "./CancelProducer";
-import { ReturnDepositCoin } from "./ReturnDepositCoin";
-import { NextTurnDPoSInfo } from "./NextTurnDPoSInfo";
-import { CRInfo } from "./CRInfo";
-import { UnregisterCR } from "./UnregisterCR";
+import { CRCAppropriation } from "./CRCAppropriation";
+import { CRCAssetsRectify } from "./CRCAssetsRectify";
 import { CRCProposal } from "./CRCProposal";
+import { CRCProposalRealWithdraw } from "./CRCProposalRealWithdraw";
 import { CRCProposalReview } from "./CRCProposalReview";
 import { CRCProposalTracking } from "./CRCProposalTracking";
 import { CRCProposalWithdraw } from "./CRCProposalWithdraw";
-import { CRCProposalRealWithdraw } from "./CRCProposalRealWithdraw";
-import { CRCAssetsRectify } from "./CRCAssetsRectify";
-import { CRCAppropriation } from "./CRCAppropriation";
 import { CRCouncilMemberClaimNode } from "./CRCouncilMemberClaimNode";
-import { Stake } from "./Stake";
+import { CRInfo } from "./CRInfo";
+import { CancelProducer } from "./CancelProducer";
+import { CancelVotes } from "./CancelVotes";
+import { CoinBase } from "./CoinBase";
 import { DPoSV2ClaimReward } from "./DPoSV2ClaimReward";
 import { DPoSV2ClaimRewardRealWithdraw } from "./DPoSV2ClaimRewardRealWithdraw";
-import { Voting } from "./Voting";
-import { CancelVotes } from "./CancelVotes";
+import { NextTurnDPoSInfo } from "./NextTurnDPoSInfo";
+import { Payload } from "./Payload";
+import { ProducerInfo } from "./ProducerInfo";
+import { RechargeToSideChain } from "./RechargeToSideChain";
+import { Record } from "./Record";
+import { RegisterAsset } from "./RegisterAsset";
+import { ReturnDepositCoin } from "./ReturnDepositCoin";
+import { SideChainPow } from "./SideChainPow";
+import { Stake } from "./Stake";
+import { TransferAsset } from "./TransferAsset";
+import { TransferCrossChainAsset } from "./TransferCrossChainAsset";
+import { UnregisterCR } from "./UnregisterCR";
 import { Unstake } from "./Unstake";
 import { UnstakeRealWithdraw } from "./UnstakeRealWithdraw";
+import { Voting } from "./Voting";
+import { WithdrawFromSideChain } from "./WithdrawFromSideChain";
 
+import { CreateNFT } from "./CreateNFT";
 import { OutputPayload } from "./OutputPayload/OutputPayload";
 import { PayloadCrossChain } from "./OutputPayload/PayloadCrossChain";
 import { PayloadDefault } from "./OutputPayload/PayloadDefault";
@@ -59,6 +60,7 @@ export {
   CRCAssetsRectify,
   CRCAppropriation,
   CRCouncilMemberClaimNode,
+  CreateNFT,
   Stake,
   DPoSV2ClaimReward,
   DPoSV2ClaimRewardRealWithdraw,
