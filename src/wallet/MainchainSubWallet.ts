@@ -4052,6 +4052,11 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
    *   "ReferKey": "...",
    *   "StakeAddress": "...",
    *   "GenesisBlockHash": "...",
+   *   "StartHeight": "...",
+   *   "EndHeight": "...",
+   *   "Votes": "...",
+   *   "VoteRights": "...",
+   *   "TargetOwnerKey": "...",
    * }
    * @param fee Fee amount. Bigint string in SELA
    * @param memo Remark string
@@ -4093,6 +4098,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
       memo,
       feeAmount
     );
+
+    // 1: support startHeight, endHeight, votes, voteRights.
+    tx.setPayloadVersion(1);
 
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
