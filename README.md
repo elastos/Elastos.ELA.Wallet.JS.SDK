@@ -15,6 +15,11 @@ This JS SDK diverges a little bit from that original SDK in a few ways:
 - The current version is based on that [04bee6d](https://github.com/elastos/Elastos.ELA.SPV.Cpp/tree/dev) commit ID.
 - For now we continue to migrate C++ -> TS on this version
 
+## SDK development workflow
+
+- From the SDK folder: `npm run dev` (this enables hot reload when SDK files change)
+- Or `npm run build` without hot reload.
+
 ## App integration - known issues
 
 ### "$n" is not a constructor

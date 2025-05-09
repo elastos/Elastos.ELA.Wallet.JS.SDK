@@ -139,10 +139,11 @@ import { SHA256 } from "../walletcore/sha256";
 import { ElastosBaseSubWallet } from "./ElastosBaseSubWallet";
 import { EncodedTx } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
-import { DEPOSIT_OR_WITHDRAW_FEE, SELA_PER_ELA } from "./SubWallet";
+import { DEPOSIT_OR_WITHDRAW_FEE, DEPOSIT_OR_WITHDRAW_FEE_ECO, SELA_PER_ELA } from "./SubWallet";
 import { UTXOInput, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
+  CHAINID_ECOCHAIN,
   CHAINID_IDCHAIN,
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
@@ -264,12 +265,17 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let outputs: OutputArray = [];
     let receiveAddr = Address.newFromAddressString(lockAddress);
 
+    let crossChainFee = DEPOSIT_OR_WITHDRAW_FEE;
+    if (sideChainID == CHAINID_ECOCHAIN) {
+      crossChainFee = DEPOSIT_OR_WITHDRAW_FEE_ECO;
+    }
+
     if (payloadVersion == TransferCrossChainVersion) {
       let info = TransferInfo.newFromParams(sideChainAddress, 0, bgAmount);
       payload = TransferCrossChainAsset.newFromParams([info]);
       outputs.push(
         TransactionOutput.newFromParams(
-          bgAmount.plus(DEPOSIT_OR_WITHDRAW_FEE),
+          bgAmount.plus(crossChainFee),
           receiveAddr
         )
       );
@@ -284,7 +290,7 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
 
       outputs.push(
         TransactionOutput.newFromParams(
-          bgAmount.plus(DEPOSIT_OR_WITHDRAW_FEE),
+          bgAmount.plus(crossChainFee),
           receiveAddr,
           Asset.getELAAssetID(),
           Type.CrossChain,

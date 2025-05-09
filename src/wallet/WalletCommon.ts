@@ -23,3 +23,4 @@
 export const CHAINID_MAINCHAIN = "ELA";
 export const CHAINID_IDCHAIN = "IDChain";
 export const CHAINID_TOKENCHAIN = "TokenChain";
+export const CHAINID_ECOCHAIN = "ETHECO";
