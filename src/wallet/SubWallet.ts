@@ -27,9 +27,10 @@ import type { MasterWallet } from "./MasterWallet";
 
 export const SELA_PER_ELA = 100000000;
 export const DEPOSIT_OR_WITHDRAW_FEE = 10000;
-// The minimum gas price set for eco sidechain is 500, The gas limit for cross chain transactions is approximately 21512,
-// so set the minimum fee 1500000 in the SDK.
-export const DEPOSIT_OR_WITHDRAW_FEE_ECO = 1500000;
+// TODO: It might be better to pass it in as a parameter from the caller.
+// The minimum gas price set for eco sidechain is 50, The gas limit for cross chain transactions is approximately 21512,
+// so set the minimum fee 150000 in the SDK.
+export const DEPOSIT_OR_WITHDRAW_FEE_ECO = 150000;
 
 // TODO: merge methods doc from ISubwallet.h
 export abstract class SubWallet {
