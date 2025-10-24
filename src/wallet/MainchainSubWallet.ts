@@ -144,6 +144,7 @@ import { UTXOInput, UTXOSet } from "./UTXO";
 import { Wallet } from "./Wallet";
 import {
   CHAINID_ECOCHAIN,
+  CHAINID_ECOPGPCHAIN,
   CHAINID_IDCHAIN,
   CHAINID_MAINCHAIN,
   CHAINID_TOKENCHAIN
@@ -265,8 +266,9 @@ export class MainchainSubWallet extends ElastosBaseSubWallet {
     let outputs: OutputArray = [];
     let receiveAddr = Address.newFromAddressString(lockAddress);
 
+    // TODO: crossChainFee as parameter
     let crossChainFee = DEPOSIT_OR_WITHDRAW_FEE;
-    if (sideChainID == CHAINID_ECOCHAIN) {
+    if (sideChainID == CHAINID_ECOCHAIN || sideChainID == CHAINID_ECOPGPCHAIN) {
       crossChainFee = DEPOSIT_OR_WITHDRAW_FEE_ECO;
     }
 
