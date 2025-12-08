@@ -2,9 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-import { Buffer } from "buffer";
 import BigNumber from "bignumber.js";
+import { Buffer } from "buffer";
 import randomInteger from "random-int";
+import {
+  AccountBasicInfo,
+  SignType as AccountSignType,
+} from "../account/Account";
 import { PublickeysInfo, SubAccount } from "../account/SubAccount";
 import { Error, ErrorChecker } from "../common/ErrorChecker";
 import { Lockable } from "../common/Lockable";
@@ -15,18 +19,14 @@ import { Transaction, TxVersion } from "../transactions/Transaction";
 import { TransactionInput } from "../transactions/TransactionInput";
 import {
   OutputArray,
-  TransactionOutput
+  TransactionOutput,
 } from "../transactions/TransactionOutput";
 import { bytes_t, size_t, uint32_t, uint8_t } from "../types";
 import { Address, AddressArray, Prefix } from "../walletcore/Address";
-import { UTXOSet } from "./UTXO";
-import { CHAINID_MAINCHAIN } from "./WalletCommon";
-import {
-  AccountBasicInfo,
-  SignType as AccountSignType
-} from "../account/Account";
 import { EcdsaSigner } from "../walletcore/ecdsasigner";
 import { SHA256 } from "../walletcore/sha256";
+import { UTXOSet } from "./UTXO";
+import { CHAINID_MAINCHAIN } from "./WalletCommon";
 
 export class Wallet extends Lockable {
   protected _walletID: string;
@@ -49,15 +49,16 @@ export class Wallet extends Lockable {
     outputs: OutputArray,
     memo: string,
     fee: BigNumber,
-    changeBack2FirstInput = false
+    changeBack2FirstInput = false,
+    useRawMemo = false
   ): Transaction {
     let totalOutputAmount: BigNumber = new BigNumber(0);
     let totalInputAmount: BigNumber = new BigNumber(0);
 
     let tx = Transaction.newFromParams(type, payload);
     if (memo) {
-      let memoFixed = "type:text,msg:" + memo;
-      tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(memoFixed)));
+      let finalMemo = useRawMemo ? memo : "type:text,msg:" + memo;
+      tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(finalMemo)));
     }
 
     const noneData = Buffer.from(randomInteger(0xffffffff).toString(10));

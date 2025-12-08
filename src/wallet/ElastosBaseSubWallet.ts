@@ -41,7 +41,7 @@ import {
   HDKey,
   KeySpec,
   SEQUENCE_EXTERNAL_CHAIN,
-  SEQUENCE_INTERNAL_CHAIN
+  SEQUENCE_INTERNAL_CHAIN,
 } from "../walletcore/hdkey";
 import { EncodedTx, IElastosBaseSubWallet } from "./IElastosBaseSubWallet";
 import { MasterWallet } from "./MasterWallet";
@@ -51,7 +51,7 @@ import { Wallet } from "./Wallet";
 import {
   CHAINID_IDCHAIN,
   CHAINID_MAINCHAIN,
-  CHAINID_TOKENCHAIN
+  CHAINID_TOKENCHAIN,
 } from "./WalletCommon";
 
 //type WalletManagerPtr = SpvService;
@@ -114,7 +114,7 @@ export class ElastosBaseSubWallet
 
     return {
       Info: this.getWallet().getBasicInfo(),
-      ChainID: this._info.getChainID()
+      ChainID: this._info.getChainID(),
     };
   }
 
@@ -184,7 +184,8 @@ export class ElastosBaseSubWallet
     inputsJson: UTXOInput[],
     outputsJson: OutputItem[],
     fee: string,
-    memo: string
+    memo: string,
+    useRawMemo = false
   ): EncodedTx {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("inputs: {}", inputsJson.dump());
@@ -208,7 +209,9 @@ export class ElastosBaseSubWallet
       utxos,
       outputs,
       memo,
-      feeAmount
+      feeAmount,
+      false,
+      useRawMemo
     );
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
