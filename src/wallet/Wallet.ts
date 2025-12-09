@@ -47,18 +47,18 @@ export class Wallet extends Lockable {
     payload: Payload,
     utxo: UTXOSet,
     outputs: OutputArray,
-    memo: string,
+    memo: string | Buffer,
     fee: BigNumber,
-    changeBack2FirstInput = false,
-    useRawMemo = false
+    changeBack2FirstInput = false
   ): Transaction {
     let totalOutputAmount: BigNumber = new BigNumber(0);
     let totalInputAmount: BigNumber = new BigNumber(0);
 
     let tx = Transaction.newFromParams(type, payload);
     if (memo) {
-      let finalMemo = useRawMemo ? memo : "type:text,msg:" + memo;
-      tx.addAttribute(new Attribute(Usage.Memo, Buffer.from(finalMemo)));
+      let finalMemo =
+        typeof memo === "string" ? Buffer.from("type:text,msg:" + memo) : memo;
+      tx.addAttribute(new Attribute(Usage.Memo, finalMemo));
     }
 
     const noneData = Buffer.from(randomInteger(0xffffffff).toString(10));

@@ -184,8 +184,7 @@ export class ElastosBaseSubWallet
     inputsJson: UTXOInput[],
     outputsJson: OutputItem[],
     fee: string,
-    memo: string,
-    useRawMemo = false
+    memo: string | Buffer
   ): EncodedTx {
     //ArgInfo("{} {}", GetSubWalletID(), GetFunName());
     //ArgInfo("inputs: {}", inputsJson.dump());
@@ -210,8 +209,7 @@ export class ElastosBaseSubWallet
       outputs,
       memo,
       feeAmount,
-      false,
-      useRawMemo
+      false
     );
     let result = <EncodedTx>{};
     this.encodeTx(result, tx);
